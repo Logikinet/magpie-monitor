@@ -73,6 +73,14 @@ public struct Weighed: Decodable, Sendable {
     public let routing: String?
     public let fallback: Bool?
     public let shared: Bool?
+    public let used: FlexibleDouble?
+    public let amount: FlexibleDouble?
+    public let limit: FlexibleDouble?
+    public let unit: String?
+    public let pace: FlexibleDouble?
+    public let tokens: FlexibleDouble?
+    public let rank: FlexibleInt?
+    public let turn: Bool?
 }
 
 public struct RouteGroup: Decodable, Sendable {
