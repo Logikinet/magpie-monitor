@@ -2,6 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: 'tests/e2e',
+  // demo.spec.ts is driven only by playwright.demo.config.ts (long video run).
+  testIgnore: '**/demo.spec.ts',
   use: { baseURL: 'http://localhost:4173' },
   projects: [
     {
