@@ -57,6 +57,29 @@ final class ModelTests: XCTestCase {
         XCTAssertNil(minimal.sessionRole); XCTAssertNil(minimal.time)
     }
 
+    func testQuotaPercentagesPreferReportedUsageOverAmount() throws {
+        let quotas = try fixture("quotas", as: QuotaList.self)
+        let percentages = quotas.data.elements.flatMap { quota in
+            quota.windows?.elements.compactMap(\.usedPercentage) ?? []
+        }
+        XCTAssertEqual(percentages, [48, 52, 73, 27, 94, 6, 29, 71])
+    }
+
+    func testQuotaPercentageFallbacksAndBounds() throws {
+        func percentage(_ fields: String) throws -> Double? {
+            let data = Data(("{\"name\":\"5-hour\"," + fields + "}").utf8)
+            return try MagpieJSON.decoder.decode(QuotaSpan.self, from: data).usedPercentage
+        }
+        XCTAssertEqual(try percentage(#""remaining": 65, "amount": 100, "limit": 100"#), 35)
+        XCTAssertEqual(try percentage(#""amount": 40, "limit": 200"#), 20)
+        XCTAssertEqual(try percentage(#""used": 0, "remaining": 20"#), 0)
+        XCTAssertEqual(try percentage(#""used": 125"#), 100)
+        XCTAssertEqual(try percentage(#""used": -5"#), 0)
+        XCTAssertNil(try percentage(#""amount": 10, "limit": 0"#))
+        XCTAssertNil(try percentage(#""used": 25, "unlimited": true"#))
+        XCTAssertNil(try percentage(#""limit": 100"#))
+    }
+
     func testWindowLookupNormalizesNames() throws {
         let url = Bundle.module.url(forResource: "quota_windows", withExtension: "json", subdirectory: "Fixtures")!
         let data = try Data(contentsOf: url)

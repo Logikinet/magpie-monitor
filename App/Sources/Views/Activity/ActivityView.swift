@@ -97,6 +97,15 @@ struct ActivityView: View {
                             """
                         )
                 }
+                .chartXAxis {
+                    AxisMarks(values: store.series.enumerated().compactMap { index, point in
+                        index.isMultiple(of: max(1, (store.series.count + 3) / 4)) ? point.label : nil
+                    }) { _ in
+                        AxisGridLine()
+                        AxisTick()
+                        AxisValueLabel()
+                    }
+                }
                 .chartYAxisLabel("请求数")
                 .frame(height: 180)
                 .accessibilityLabel("请求趋势图")

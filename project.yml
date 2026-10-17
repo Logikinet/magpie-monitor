@@ -35,6 +35,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Magpie
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSApplicationQueriesSchemes:
           - tailscale
           - uuremote

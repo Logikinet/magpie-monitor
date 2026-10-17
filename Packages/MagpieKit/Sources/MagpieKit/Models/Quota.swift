@@ -48,6 +48,23 @@ public struct QuotaSpan: Decodable {
     public let pool: String?
     public let holds: WindowHolds?
     public let holdsWhy: String?
+
+    /// `used` and `remaining` are percentages; `amount` and `limit` are counts.
+    public var usedPercentage: Double? {
+        guard unlimited != true else { return nil }
+        let percentage: Double
+        if let used = used?.value, used.isFinite {
+            percentage = used
+        } else if let remaining = remaining?.value, remaining.isFinite {
+            percentage = 100 - remaining
+        } else if let amount = amount?.value, amount.isFinite,
+                  let limit = limit?.value, limit.isFinite, limit > 0 {
+            percentage = amount / limit * 100
+        } else {
+            return nil
+        }
+        return min(100, max(0, percentage))
+    }
 }
 
 public struct WindowHolds: Decodable {

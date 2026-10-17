@@ -62,21 +62,11 @@ final class OverviewStore {
                 for (span, title) in windows {
                     guard let span else { continue }
                     guard span.unlimited != true else { continue }
-                    // The server reports used/remaining as percentages, amount/limit as counts.
-                    let used: Double?
-                    let total: Double
-                    if let amount = span.amount?.value, let limit = span.limit?.value, limit > 0 {
-                        used = amount
-                        total = limit
-                    } else {
-                        used = span.used?.value ?? span.remaining.map { 100 - $0.value }
-                        total = 100
-                    }
-                    if let used {
+                    if let used = span.usedPercentage {
                         items.append(
                             OverviewQuota(
                                 id: "\(quota.provider ?? quota.name ?? "provider")-\(title)",
-                                provider: quota.name ?? quota.provider ?? "提供方", window: title, used: used, limit: total))
+                                provider: quota.name ?? quota.provider ?? "提供方", window: title, used: used, limit: 100))
                     }
                 }
             }

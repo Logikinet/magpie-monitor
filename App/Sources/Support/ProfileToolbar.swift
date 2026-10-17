@@ -31,6 +31,12 @@ struct ProfileToolbar: ViewModifier {
                 .accessibilityLabel("服务器：\(appState.currentProfile?.name ?? "未选择")")
             }
             ToolbarItem(placement: .topBarTrailing) {
+                VStack(alignment: .trailing, spacing: DS.Spacing.xSmall) {
+                    if appState.isMockMode { MockBadge() }
+                    if appState.currentProfile?.isInsecure == true { InsecureBadge() }
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showingSettings = true
                 } label: {
@@ -38,16 +44,6 @@ struct ProfileToolbar: ViewModifier {
                 }
                 .accessibilityLabel("设置")
             }
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            HStack(spacing: DS.Spacing.small) {
-                if appState.isMockMode { MockBadge() }
-                if appState.currentProfile?.isInsecure == true { InsecureBadge() }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, DS.Spacing.medium)
-            .padding(.vertical, DS.Spacing.xSmall)
-            .background(.bar)
         }
         .sheet(isPresented: $showingSettings) { SettingsView() }
     }

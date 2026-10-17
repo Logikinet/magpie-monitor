@@ -28,7 +28,7 @@ struct MagpieApp: App {
             view
                 .id("\(appState.currentProfile?.id.uuidString ?? "none")-\(appState.isMockMode)")
                 .navigationTitle(title)
-                .navigationBarTitleDisplayMode(.large)
+                .navigationBarTitleDisplayMode(.inline)
                 .profileToolbar()
         }
         .tabItem { Label(title, systemImage: symbol) }
