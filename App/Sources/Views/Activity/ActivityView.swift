@@ -91,7 +91,7 @@ struct ActivityView: View {
                     let value = """
                     \(point.calls?.value ?? 0) 次请求，\
                     \(point.tokens?.value ?? 0) 个令牌，\
-                    费用 \(point.cost?.value ?? 0, format: .number.precision(.fractionLength(4)))
+                    费用 \((point.cost?.value ?? 0).formatted(.number.precision(.fractionLength(4))))
                     """
                     if hasDates, let date = point.time?.date {
                         BarMark(

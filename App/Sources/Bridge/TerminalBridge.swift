@@ -52,13 +52,13 @@ struct TerminalBridge: UIViewRepresentable {
         view.nativeForegroundColor = UIColor.label.resolvedColor(with: view.traitCollection)
         view.nativeBackgroundColor = UIColor.systemBackground.resolvedColor(with: view.traitCollection)
         view.isUserInteractionEnabled = channel != nil && !isDemo
-        if channel == nil { view.resignFirstResponder() }
+        if channel == nil { _ = view.resignFirstResponder() }
     }
 
     static func dismantleUIView(_ view: TerminalView, coordinator: Coordinator) {
         coordinator.stop()
         view.terminalDelegate = nil
-        view.resignFirstResponder()
+        _ = view.resignFirstResponder()
     }
 
     @MainActor
