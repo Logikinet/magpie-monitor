@@ -80,13 +80,24 @@ export class MockTransport implements Transport {
     constructor(private options: {
         latencyMs?: number;
         traceWaitMs?: number;
+        now?: () => Date;
     } = {}) { }
+    private fixtures() {
+        const all = Object.fromEntries(Object.entries(fixtures).map(([key, value]) => [key, structuredClone(value)])) as Record<string, any>;
+        const recordTimes: number[] = [];
+        const visit = (value: any): void => { if (!value || typeof value !== 'object') return; if (Array.isArray(value)) { value.forEach(visit); return; } for (const key of ['time', 't']) { const n = Date.parse(value[key]); if (Number.isFinite(n)) recordTimes.push(n); } Object.values(value).forEach(visit); };
+        for (const key of ['ledger', 'usage', 'trace', 'route']) visit(all[`../mock/fixtures/${key}.json`]);
+        const now = (this.options.now?.() ?? new Date()).getTime(), offset = now - 60_000 - Math.max(...recordTimes);
+        const shift = (value: any): void => { if (!value || typeof value !== 'object') return; if (Array.isArray(value)) { value.forEach(shift); return; } for (const [key, item] of Object.entries(value)) { if (typeof item === 'string' && /^(t|time|resetsAt|asOf|readAt|until|since|day)$/.test(key) && Number.isFinite(Date.parse(item))) { let ms = Date.parse(item) + offset; if (key === 'resetsAt') while (ms <= now) ms += 86_400_000; value[key] = key === 'day' ? new Date(ms).toISOString().slice(0, 10) : new Date(ms).toISOString(); } else shift(item); } };
+        Object.values(all).forEach(shift);
+        return all;
+    }
     async request(req: Request) { const names: Record<string, string> = { '/api/hello': 'hello', '/v1/magpie/limit': 'hello', '/v1/magpie/usage': 'usage', '/v1/magpie/usage/requests': 'ledger', '/v1/magpie/quotas': 'quotas', '/v1/magpie/quotas/cards': 'quota_cards', '/v1/magpie/concurrency': 'concurrency', '/api/gateway/trace': 'trace', '/v1/magpie/route': 'route' }; const name = names[req.path]; if (req.path === '/api/gateway/trace' && this.traceCalls++ > 0) await sleep(this.options.traceWaitMs ?? 4000, req.signal); else await sleep(req.path === '/api/gateway/trace' ? 0 : this.options.latencyMs ?? 0, req.signal); if (req.path === '/v1/magpie/quotas/history')
-        return { status: 200, json: { data: [] } }; if (req.path === '/api/gateway/history')
-        return { status: 200, json: { days: ['2026-10-17'], routes: (fixtures['../mock/fixtures/trace.json'] as {
+        return { status: 200, json: { data: [] } }; if (req.path === '/api/gateway/history') {
+        const shifted = this.fixtures(); return { status: 200, json: { days: [new Date((this.options.now?.() ?? new Date()).getTime() - 60_000).toISOString().slice(0, 10)], routes: (shifted['../mock/fixtures/trace.json'] as {
                     routes: unknown[];
-    }).routes, cut: false } }; if (!name)
-    throw statusError(404); const json = structuredClone(fixtures[`../mock/fixtures/${name}.json`]) as Record<string, unknown>; if (name === 'trace') {
+    }).routes, cut: false } }; } if (!name)
+    throw statusError(404); const json = this.fixtures()[`../mock/fixtures/${name}.json`] as Record<string, unknown>; if (name === 'trace') {
         const fixtureRoutes = json.routes as Record<string, any>[];
         if (Number(req.query?.after) === 0 && this.traceCalls === 1) {
             const routes = fixtureRoutes.slice().sort((a,b) => Number(b.seq)-Number(a.seq));
@@ -96,7 +107,7 @@ export class MockTransport implements Transport {
             this.seq = Math.max(this.seq, Number(req.query?.after) || 0, Number(json.seq) || 0) + 1;
             const source = fixtureRoutes[(this.seq - 632) % fixtureRoutes.length];
             json.seq = this.seq;
-            json.routes = [{ ...source, seq: this.seq, id: this.seq + 3500, time: new Date().toISOString(), session: `sess-demo-${String(this.seq).slice(-3)}` }];
+            json.routes = [{ ...source, seq: this.seq, id: this.seq + 3500, time: new Date((this.options.now?.() ?? new Date()).getTime() - 60_000).toISOString(), session: `sess-demo-${String(this.seq).slice(-3)}` }];
         }
     } if (name === 'ledger') {
         const rows = json.rows as unknown[], offset = Math.max(0, Number(req.query?.offset) || 0), limit = Math.max(0, Number(req.query?.limit ?? rows.length));
