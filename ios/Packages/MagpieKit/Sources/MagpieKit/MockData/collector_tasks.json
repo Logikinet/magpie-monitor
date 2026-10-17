@@ -1,0 +1,19 @@
+{
+  "tasks": [
+    {
+      "name": "devbox.timer",
+      "kind": "timer",
+      "scope": "user",
+      "state": "waiting",
+      "next": 1700000000000000,
+      "command": "devbox.service"
+    },
+    {
+      "name": "demo cron",
+      "kind": "cron",
+      "scope": "user",
+      "expr": "0 * * * *",
+      "command": "/srv/devbox/check"
+    }
+  ]
+}

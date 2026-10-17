@@ -4,6 +4,7 @@ import SwiftUI
 struct ServicesView: View {
     @Environment(AppState.self) private var appState
     @State private var store = ServicesStore()
+    @State private var useSSH = false
     @State private var category: ServicesCategory = .containers
     @State private var searchText = ""
     @State private var pendingOperation: ServiceOperation?
@@ -18,105 +19,121 @@ struct ServicesView: View {
     }
 
     var body: some View {
-        List {
-            Section {
-                Picker(String(localized: "服务类型"), selection: $category) {
-                    ForEach(ServicesCategory.allCases) { item in Text(item.title).tag(item) }
-                }
-                .pickerStyle(.segmented)
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-            }
-
-            if category == .systemd {
-                Section {
-                    Toggle(String(localized: "systemctl 使用 sudo -n"), isOn: $store.useSudo)
-                    Text(String(localized: "仅保存于当前服务器配置。sudo -n 不会等待输入密码。"))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            if appState.isMockMode {
-                Section {
-                    Label(String(localized: "模拟数据；服务操作仅在本机模拟，不会连接 SSH。"), systemImage: "play.rectangle")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-
-            if let message = category == .containers ? store.containersError : store.unitsError,
-                entries.isEmpty
-            {
-                Section {
-                    ContentUnavailableView {
-                        Label(String(localized: "无法读取服务"), systemImage: "wifi.exclamationmark")
-                    } description: {
-                        Text(message)
-                    } actions: {
-                        Button(String(localized: "重试")) { Task { await store.refresh(appState: appState) } }
-                    }
-                }
-            } else if entries.isEmpty {
-                Section {
-                    EmptyStateView(
-                        title: searchText.isEmpty ? String(format: String(localized: "暂无%@"), locale: Locale.current, String(describing: category.title)) : String(localized: "没有匹配的服务"),
-                        description: searchText.isEmpty ? String(localized: "下拉刷新以重新读取服务器状态。") : String(localized: "尝试其他名称或关键词。"),
-                        systemImage: category == .containers ? "shippingbox" : "gearshape.2"
-                    )
-                }
+        Group {
+            if !useSSH, let services = store.collectorServices {
+                CollectorServicesView(services: services)
             } else {
-                Section {
-                    ForEach(entries) { entry in
-                        ServiceRow(entry: entry, isLoading: store.inFlightIDs.contains(entry.id))
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                actionButton(.stop, for: entry, role: .destructive)
-                                actionButton(.restart, for: entry)
-                                actionButton(.start, for: entry)
-                            }
-                            .contextMenu {
-                                actionButton(.start, for: entry)
-                                actionButton(.stop, for: entry, role: .destructive)
-                                actionButton(.restart, for: entry)
-                            }
+                List {
+                    Section {
+                        Picker(String(localized: "服务类型"), selection: $category) {
+                            ForEach(ServicesCategory.allCases) { item in Text(item.title).tag(item) }
+                        }
+                        .pickerStyle(.segmented)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                     }
-                } header: {
-                    HStack {
-                        Text(category.title)
-                        Spacer()
-                        if store.isRefreshing {
-                            ProgressView().controlSize(.small).accessibilityLabel(String(localized: "正在刷新"))
-                        } else if let updated = store.lastUpdated {
-                            Text(updated, style: .relative).textCase(nil)
+
+                    if category == .systemd {
+                        Section {
+                            Toggle(String(localized: "systemctl 使用 sudo -n"), isOn: $store.useSudo)
+                            Text(String(localized: "仅保存于当前服务器配置。sudo -n 不会等待输入密码。"))
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if appState.isMockMode {
+                        Section {
+                            Label(String(localized: "模拟数据；服务操作仅在本机模拟，不会连接 SSH。"), systemImage: "play.rectangle")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    if let message = category == .containers ? store.containersError : store.unitsError,
+                        entries.isEmpty
+                    {
+                        Section {
+                            ContentUnavailableView {
+                                Label(String(localized: "无法读取服务"), systemImage: "wifi.exclamationmark")
+                            } description: {
+                                Text(message)
+                            } actions: {
+                                Button(String(localized: "重试")) { Task { await store.refresh(appState: appState, useCollector: !useSSH) } }
+                            }
+                        }
+                    } else if entries.isEmpty {
+                        Section {
+                            EmptyStateView(
+                                title: searchText.isEmpty ? String(format: String(localized: "暂无%@"), locale: Locale.current, String(describing: category.title)) : String(localized: "没有匹配的服务"),
+                                description: searchText.isEmpty ? String(localized: "下拉刷新以重新读取服务器状态。") : String(localized: "尝试其他名称或关键词。"),
+                                systemImage: category == .containers ? "shippingbox" : "gearshape.2"
+                            )
+                        }
+                    } else {
+                        Section {
+                            ForEach(entries) { entry in
+                                ServiceRow(entry: entry, isLoading: store.inFlightIDs.contains(entry.id))
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                        actionButton(.stop, for: entry, role: .destructive)
+                                        actionButton(.restart, for: entry)
+                                        actionButton(.start, for: entry)
+                                    }
+                                    .contextMenu {
+                                        actionButton(.start, for: entry)
+                                        actionButton(.stop, for: entry, role: .destructive)
+                                        actionButton(.restart, for: entry)
+                                    }
+                            }
+                        } header: {
+                            HStack {
+                                Text(category.title)
+                                Spacer()
+                                if store.isRefreshing {
+                                    ProgressView().controlSize(.small).accessibilityLabel(String(localized: "正在刷新"))
+                                } else if let updated = store.lastUpdated {
+                                    Text(updated, style: .relative).textCase(nil)
+                                }
+                            }
+                        }
+                    }
+
+                    if let message = category == .containers ? store.containersError : store.unitsError,
+                        !entries.isEmpty
+                    {
+                        Section { Label(message, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange) }
+                    }
+
+                    if let notice = store.notice {
+                        Section { Label(notice, systemImage: "checkmark.circle").foregroundStyle(.secondary).textSelection(.enabled) }
+                    }
+                    if let error = store.error {
+                        Section {
+                            Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).fixedSize(
+                                horizontal: false, vertical: true)
                         }
                     }
                 }
+                .listStyle(.insetGrouped)
             }
-
-            if let message = category == .containers ? store.containersError : store.unitsError,
-                !entries.isEmpty
-            {
-                Section { Label(message, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange) }
-            }
-
-            if let notice = store.notice {
-                Section { Label(notice, systemImage: "checkmark.circle").foregroundStyle(.secondary).textSelection(.enabled) }
-            }
-            if let error = store.error {
-                Section {
-                    Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).fixedSize(
-                        horizontal: false, vertical: true)
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                if appState.makeCollectorClient() != nil {
+                    Button(useSSH ? String(localized: "Collector 视图") : String(localized: "SSH 控制")) {
+                        useSSH.toggle()
+                        Task { await store.refresh(appState: appState, useCollector: !useSSH) }
+                    }
                 }
             }
         }
-        .listStyle(.insetGrouped)
         .searchable(text: $searchText, prompt: String(localized: "搜索容器或服务"))
-        .refreshable { await store.refresh(appState: appState) }
+        .refreshable { await store.refresh(appState: appState, useCollector: !useSSH) }
         .navigationTitle(String(localized: "服务"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    Task { await store.refresh(appState: appState) }
+                    Task { await store.refresh(appState: appState, useCollector: !useSSH) }
                 } label: {
                     Image(systemName: "arrow.clockwise")
                 }
@@ -145,11 +162,11 @@ struct ServicesView: View {
         .task(id: "\(appState.currentProfile?.id.uuidString ?? "mock")-\(appState.isMockMode)-\(appState.isActive)") {
             guard appState.isActive else { return }
             store.loadPreference(appState: appState)
-            await store.refresh(appState: appState)
+            await store.refresh(appState: appState, useCollector: !useSSH)
             while !Task.isCancelled {
                 do { try await Task.sleep(for: .seconds(appState.refreshInterval)) } catch { return }
                 guard appState.isActive else { return }
-                await store.refresh(appState: appState)
+                await store.refresh(appState: appState, useCollector: !useSSH)
             }
         }
     }

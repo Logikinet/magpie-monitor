@@ -16,26 +16,34 @@ struct OverviewView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: DS.Spacing.large) {
                         statusHeader
+                        if let sys = store.collectorSys {
+                            CollectorOverviewView(sys: sys, samples: store.collectorChart,
+                                activity: store.collectorActivity, tmux: store.collectorTmux,
+                                services: store.collectorServices, runtimes: store.collectorRuntimes, quotas: store.quotas)
+                        }
+                        if let error = store.collectorError { sectionError(error) }
                         quotaSection
                         concurrencySection
-                        listSection(
-                            title: String(localized: "服务"), symbol: "shippingbox", error: store.containersError,
-                            items: store.containers.prefix(3).map { "\($0.name) · \($0.status)" },
-                            allItems: store.containers.map { "\($0.name) · \($0.status)" })
-                        listSection(
-                            title: String(localized: "端口"), symbol: "point.3.connected.trianglepath.dotted", error: store.portsError,
-                            items: store.ports.prefix(3).map { "\($0.address):\($0.port) · \($0.processName ?? String(localized: "未知进程"))" },
-                            allItems: store.ports.map { "\($0.address):\($0.port) · \($0.processName ?? String(localized: "未知进程"))" })
-                        listSection(
-                            title: String(localized: "系统服务"), symbol: "gearshape.2", error: store.unitsError,
-                            items: store.units.prefix(3).map { "\($0.name) · \($0.active)" },
-                            allItems: store.units.map { "\($0.name) · \($0.active) · \($0.description)" })
-                        listSection(
-                            title: String(localized: "高占用进程"), symbol: "cpu", error: store.processesError,
-                            items: store.processes.prefix(3).map { "\($0.command) · CPU \($0.cpu.formatted())%" },
-                            allItems: store.processes.map {
-                                String(format: String(localized: "PID %@ · %@ · CPU %@%% · 内存 %@%%"), locale: Locale.current, String(describing: $0.pid), String(describing: $0.command), String(describing: $0.cpu.formatted()), String(describing: $0.memory.formatted()))
-                            })
+                        if store.collectorSys == nil {
+                            listSection(
+                                title: String(localized: "服务"), symbol: "shippingbox", error: store.containersError,
+                                items: store.containers.prefix(3).map { "\($0.name) · \($0.status)" },
+                                allItems: store.containers.map { "\($0.name) · \($0.status)" })
+                            listSection(
+                                title: String(localized: "端口"), symbol: "point.3.connected.trianglepath.dotted", error: store.portsError,
+                                items: store.ports.prefix(3).map { "\($0.address):\($0.port) · \($0.processName ?? String(localized: "未知进程"))" },
+                                allItems: store.ports.map { "\($0.address):\($0.port) · \($0.processName ?? String(localized: "未知进程"))" })
+                            listSection(
+                                title: String(localized: "系统服务"), symbol: "gearshape.2", error: store.unitsError,
+                                items: store.units.prefix(3).map { "\($0.name) · \($0.active)" },
+                                allItems: store.units.map { "\($0.name) · \($0.active) · \($0.description)" })
+                            listSection(
+                                title: String(localized: "高占用进程"), symbol: "cpu", error: store.processesError,
+                                items: store.processes.prefix(3).map { "\($0.command) · CPU \($0.cpu.formatted())%" },
+                                allItems: store.processes.map {
+                                    String(format: String(localized: "PID %@ · %@ · CPU %@%% · 内存 %@%%"), locale: Locale.current, String(describing: $0.pid), String(describing: $0.command), String(describing: $0.cpu.formatted()), String(describing: $0.memory.formatted()))
+                                })
+                        }
                     }
                     .padding(DS.Spacing.medium)
                     .frame(maxWidth: 900, alignment: .leading)

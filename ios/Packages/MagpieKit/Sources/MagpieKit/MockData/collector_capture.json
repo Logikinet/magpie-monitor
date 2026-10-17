@@ -1,0 +1,5 @@
+{
+  "ok": true,
+  "text": "\u001b[38;5;114mdevbox\u001b[0m $ npm test\nAll demo checks passed.\n",
+  "target": "%1"
+}

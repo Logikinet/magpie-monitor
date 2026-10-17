@@ -50,6 +50,8 @@ struct ServiceOperation: Identifiable {
 
 @MainActor @Observable
 final class ServicesStore {
+    private(set) var collectorServices: [CollectorRecord]?
+    private(set) var collectorError: String?
     private(set) var containers: [Container] = []
     private(set) var units: [ServiceUnit] = []
     private(set) var containersError: String?
@@ -116,11 +118,20 @@ final class ServicesStore {
         }
     }
 
-    func refresh(appState: AppState) async {
+    func refresh(appState: AppState, useCollector: Bool = true) async {
         guard !isRefreshing else { return }
         loadPreference(appState: appState)
         isRefreshing = true
         defer { isRefreshing = false }
+        if useCollector, let client = appState.makeCollectorClient() {
+            do {
+                collectorServices = try await client.services().records("services")
+                collectorError = nil
+                lastUpdated = Date()
+                return
+            } catch { collectorError = message(for: error) }
+        }
+        collectorServices = nil
         do {
             let runner = try await appState.makeOverviewSSHRunner()
             do {

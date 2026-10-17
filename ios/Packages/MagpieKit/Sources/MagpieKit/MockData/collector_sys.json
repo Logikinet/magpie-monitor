@@ -1,0 +1,21 @@
+{
+  "hostname": "devbox",
+  "loadavg": [
+    0.8,
+    0.7,
+    0.6
+  ],
+  "cpu_count": 8,
+  "cpu_usage": 24,
+  "mem": {
+    "used": 8589934592,
+    "total": 17179869184,
+    "percent": 50
+  },
+  "disk": {
+    "used": 107374182400,
+    "total": 536870912000,
+    "percent": 20
+  },
+  "uptime": 86460
+}

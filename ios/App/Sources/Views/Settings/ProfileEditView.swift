@@ -8,6 +8,8 @@ struct ProfileEditView: View {
     @State private var name = ""
     @State private var gatewayURL = ""
     @State private var webURL = ""
+    @State private var collectorURL = ""
+    @State private var collectorKey = ""
     @State private var sshHost = ""
     @State private var sshPort = "22"
     @State private var sshUser = ""
@@ -32,6 +34,13 @@ struct ProfileEditView: View {
                         Label(String(localized: "HTTP 连接未加密，仅建议在 Tailscale 等私有网络内使用。"), systemImage: "lock.open.fill").foregroundStyle(.orange).font(.footnote)
                     }
                     Text(String(localized: "非本机访问需在 magpie 设置开启 Share on local network")).font(.footnote).foregroundStyle(.secondary)
+                }
+                Section("Collector") {
+                    TextField("Collector URL", text: $collectorURL).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                    SecureField(String(localized: "Collector 密钥"), text: $collectorKey)
+                    if collectorURL.lowercased().hasPrefix("http://") {
+                        Label(String(localized: "HTTP 连接未加密，仅建议在 Tailscale 等私有网络内使用。"), systemImage: "lock.open.fill").font(.footnote).foregroundStyle(.orange)
+                    }
                 }
                 Section("SSH") {
                     TextField(String(localized: "主机"), text: $sshHost).textInputAutocapitalization(.never).autocorrectionDisabled()
@@ -72,6 +81,7 @@ struct ProfileEditView: View {
         name = p.name
         gatewayURL = p.gatewayURL
         webURL = p.webURL ?? ""
+        collectorURL = p.collectorURL ?? ""
         sshHost = p.sshHost
         sshPort = String(p.sshPort)
         sshUser = p.sshUser
@@ -86,11 +96,12 @@ struct ProfileEditView: View {
         let profile = ProfileConfig(
             id: initial?.id ?? UUID(), name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             gatewayURL: gatewayURL.trimmingCharacters(in: .whitespacesAndNewlines),
-            webURL: webURL.isEmpty ? nil : webURL.trimmingCharacters(in: .whitespacesAndNewlines), sshHost: sshHost, sshPort: port,
+            webURL: webURL.isEmpty ? nil : webURL.trimmingCharacters(in: .whitespacesAndNewlines), collectorURL: collectorURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : collectorURL.trimmingCharacters(in: .whitespacesAndNewlines), sshHost: sshHost, sshPort: port,
             sshUser: sshUser, sshAuthKind: authKind, refreshInterval: initial?.refreshInterval ?? 20)
-        errors = profile.validate()
+        errors = profile.validate().map { NSLocalizedString($0, comment: "Profile validation") }
         guard errors.isEmpty else { return }
         var secrets: [SecretField: String] = [:]
+        if !collectorKey.isEmpty { secrets[.collectorKey] = collectorKey }
         if !gatewayKey.isEmpty { secrets[.gatewayKey] = gatewayKey }
         if !runtimeKey.isEmpty { secrets[.runtimeKey] = runtimeKey }
         if !privateKey.isEmpty { secrets[.sshPrivateKey] = privateKey }

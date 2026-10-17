@@ -1,7 +1,7 @@
 import Foundation
 
 public enum SecretField: String, CaseIterable, Sendable {
-    case gatewayKey, runtimeKey, sshPrivateKey, sshPassphrase, sshPassword, hostKey
+    case collectorKey, gatewayKey, runtimeKey, sshPrivateKey, sshPassphrase, sshPassword, hostKey
 
     public func account(profileID: UUID) -> String {
         "magpie-ios.\(profileID.uuidString).\(rawValue)"

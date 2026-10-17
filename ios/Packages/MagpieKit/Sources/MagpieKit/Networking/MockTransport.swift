@@ -35,6 +35,15 @@ public actor MockTransport: HTTPTransport {
         return MockTransport(fixtures: fixtures)
     }
 
+    public static func collectorFixtures() throws -> MockTransport {
+        let routes = ["hello", "sys", "services", "chart", "tmux", "runtimes", "tasks", "activity", "repos", "tailscale"]
+        var fixtures: [String: Data] = [:]
+        for route in routes { fixtures["/v1/collector/" + route] = try MockFixtures.data(named: "collector_" + route) }
+        fixtures["/v1/collector/tmux/capture"] = try MockFixtures.data(named: "collector_capture")
+        fixtures["/v1/collector/runtimes/codex"] = try MockFixtures.data(named: "collector_runtime")
+        return MockTransport(fixtures: fixtures)
+    }
+
     private static func rebaseTrace(_ data: Data, now: Date) throws -> Data {
         guard var root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let routes = root["routes"] as? [[String: Any]],

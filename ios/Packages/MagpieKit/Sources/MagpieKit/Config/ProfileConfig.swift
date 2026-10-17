@@ -9,22 +9,23 @@ public struct ProfileConfig: Codable, Equatable, Identifiable, Sendable {
     public var name: String
     public var gatewayURL: String
     public var webURL: String?
+    public var collectorURL: String?
     public var sshHost: String
     public var sshPort: Int
     public var sshUser: String
     public var sshAuthKind: SSHAuthKind
     public var refreshInterval: TimeInterval
 
-    public init(id: UUID = UUID(), name: String, gatewayURL: String, webURL: String? = nil,
+    public init(id: UUID = UUID(), name: String, gatewayURL: String, webURL: String? = nil, collectorURL: String? = nil,
                 sshHost: String = "", sshPort: Int = 22, sshUser: String = "",
                 sshAuthKind: SSHAuthKind = .privateKey, refreshInterval: TimeInterval = 20) {
-        self.id = id; self.name = name; self.gatewayURL = gatewayURL; self.webURL = webURL
+        self.id = id; self.name = name; self.gatewayURL = gatewayURL; self.webURL = webURL; self.collectorURL = collectorURL
         self.sshHost = sshHost; self.sshPort = sshPort; self.sshUser = sshUser
         self.sshAuthKind = sshAuthKind; self.refreshInterval = refreshInterval
     }
 
     public var isInsecure: Bool {
-        [gatewayURL, webURL].compactMap { $0 }.contains { URLComponents(string: $0)?.scheme?.lowercased() == "http" }
+        [gatewayURL, webURL, collectorURL].compactMap { $0 }.contains { URLComponents(string: $0)?.scheme?.lowercased() == "http" }
     }
 
     public var webPort: Int {
@@ -36,6 +37,7 @@ public struct ProfileConfig: Codable, Equatable, Identifiable, Sendable {
         var errors: [String] = []
         if !Self.validURL(gatewayURL) { errors.append("网关地址无效，请输入完整的 http 或 https 地址，且不要包含凭据、查询参数或片段。") }
         if let webURL, !webURL.isEmpty, !Self.validURL(webURL) { errors.append("Web 地址无效，请输入完整的 http 或 https 地址，且不要包含凭据、查询参数或片段。") }
+        if let collectorURL, !collectorURL.isEmpty, !Self.validURL(collectorURL) { errors.append("Collector 地址无效，请输入完整的 http 或 https 地址。") }
         if !(1...65535).contains(sshPort) { errors.append("SSH 端口须在 1 到 65535 之间。") }
         if !refreshInterval.isFinite || refreshInterval <= 0 { errors.append("刷新间隔须大于零。") }
         return errors

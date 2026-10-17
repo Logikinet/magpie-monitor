@@ -1,0 +1,33 @@
+{
+  "services": [
+    {
+      "name": "devbox",
+      "port": 5173,
+      "ip": "0.0.0.0",
+      "scope": "user",
+      "type": "direct",
+      "res": {
+        "cpu": 1.5,
+        "mem_mb": 64,
+        "up_sec": 3600
+      }
+    },
+    {
+      "name": "demo-api",
+      "port": 8080,
+      "ip": "127.0.0.1",
+      "scope": "docker",
+      "type": "docker",
+      "res": {
+        "cpu": 0.5,
+        "mem_mb": 32
+      }
+    },
+    {
+      "name": "devbox.service",
+      "port": null,
+      "scope": "system",
+      "type": "systemd"
+    }
+  ]
+}

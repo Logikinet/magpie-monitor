@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "backend_state": "Running",
+  "self": {
+    "hostname": "devbox",
+    "dns_name": "devbox.example.ts.net",
+    "ips": [],
+    "online": true
+  },
+  "peers": [
+    {
+      "id": "fake-peer-1",
+      "hostname": "demo-peer",
+      "dns_name": "demo-peer.example.ts.net",
+      "online": false,
+      "ips": []
+    }
+  ]
+}

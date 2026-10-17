@@ -18,6 +18,7 @@ final class TmuxStore {
         case disconnected
     }
 
+    private(set) var collectorTopology: CollectorRecord?
     private(set) var sessions: [TmuxSession] = []
     private(set) var isLoading = false
     private(set) var state: ConnectionState = .disconnected
@@ -30,8 +31,20 @@ final class TmuxStore {
     private var target: String?
     private var createsSession = false
 
-    func refresh(appState: AppState) async {
-        guard !appState.isMockMode, appState.isActive, !isLoading else { return }
+    func refresh(appState: AppState, useCollector: Bool = true) async {
+        guard appState.isActive, !isLoading else { return }
+        if useCollector, let client = appState.makeCollectorClient() {
+            isLoading = true
+            do {
+                collectorTopology = try await client.tmux()
+                error = nil
+                isLoading = false
+                return
+            } catch { self.error = ErrorMessages.chinese(for: error) }
+            isLoading = false
+        }
+        collectorTopology = nil
+        guard !appState.isMockMode else { return }
         isLoading = true
         let token = attempt
         defer { if token == attempt { isLoading = false } }
@@ -119,6 +132,7 @@ final class TmuxStore {
 
     func reset() {
         disconnect()
+        collectorTopology = nil
         sessions = []
         selectedSession = ""
         target = nil

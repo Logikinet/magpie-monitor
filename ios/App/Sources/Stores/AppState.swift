@@ -60,6 +60,16 @@ final class AppState {
         return GatewayClient(baseURL: url, key: key, transport: transport)
     }
 
+    func makeCollectorClient() -> CollectorClient? {
+        if isMockMode {
+            guard let transport = try? MockTransport.collectorFixtures(), let url = URL(string: "https://example.ts.net") else { return nil }
+            return CollectorClient(baseURL: url, key: nil, transport: transport)
+        }
+        guard let profile = currentProfile, let raw = profile.collectorURL, let url = URL(string: raw) else { return nil }
+        let key = try? secretStore.read(account: SecretField.collectorKey.account(profileID: profile.id))
+        return CollectorClient(baseURL: url, key: key, transport: LiveTransport())
+    }
+
     func makeWebClient() -> WebClient? {
         guard let profile = currentProfile, let rawURL = profile.webURL, let url = URL(string: rawURL) else { return nil }
         let account = SecretField.runtimeKey.account(profileID: profile.id)

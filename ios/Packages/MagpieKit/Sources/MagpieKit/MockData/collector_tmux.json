@@ -1,0 +1,46 @@
+{
+  "summary": {
+    "total": 1,
+    "attached": 1,
+    "detached": 0,
+    "agents": 1,
+    "panes_total": 1
+  },
+  "sessions": [
+    {
+      "name": "devbox",
+      "windows_count": 1,
+      "attached": true,
+      "is_agent": true,
+      "main_command": "codex",
+      "windows": [
+        {
+          "name": "main",
+          "index": 0,
+          "panes": [
+            {
+              "target": "%1",
+              "pane": "%1",
+              "command": "codex",
+              "preview": [
+                "devbox $ ready"
+              ],
+              "active": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "panes": [
+    {
+      "target": "%1",
+      "pane": "%1",
+      "command": "codex",
+      "preview": [
+        "devbox $ ready"
+      ],
+      "active": true
+    }
+  ]
+}

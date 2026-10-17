@@ -24,6 +24,13 @@ struct OverviewQuota: Identifiable {
 
 @MainActor @Observable
 final class OverviewStore {
+    private(set) var collectorSys: CollectorRecord?
+    private(set) var collectorChart: [CollectorRecord] = []
+    private(set) var collectorServices: CollectorRecord?
+    private(set) var collectorTmux: CollectorRecord?
+    private(set) var collectorActivity: CollectorRecord?
+    private(set) var collectorRuntimes: CollectorRecord?
+    private(set) var collectorError: String?
     private(set) var quotas: [OverviewQuota] = []
     private(set) var quotaError: String?
     private(set) var concurrency: Concurrency?
@@ -110,6 +117,32 @@ final class OverviewStore {
             gatewayError = nil
         } catch { gatewayError = message(for: error) }
         if case .success(let value) = await limitResult { limit = value }
+
+        if let collector = appState.makeCollectorClient() {
+            do {
+                collectorSys = try await collector.sys()
+                collectorError = nil
+                collectorChart = (try? await collector.chart()) ?? []
+                collectorServices = try await collector.services()
+                collectorTmux = try? await collector.tmux()
+                collectorActivity = try? await collector.activity()
+                collectorRuntimes = try? await collector.runtimes()
+                lastUpdated = Date()
+                return
+            } catch {
+                collectorSys = nil
+                collectorChart = []
+                collectorServices = nil
+                collectorTmux = nil
+                collectorActivity = nil
+                collectorRuntimes = nil
+                collectorError = message(for: error)
+            }
+        } else {
+            collectorSys = nil
+            collectorChart = []
+            collectorError = nil
+        }
 
         do {
             let runner = try await appState.makeOverviewSSHRunner()
