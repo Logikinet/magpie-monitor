@@ -5,6 +5,6 @@ xcuserdata/
 *.ipa
 Payload/
 .swiftpm/
-docs/.temp-installs.txt
+**/docs/.temp-installs.txt
 .DS_Store
-docs/design-notes.md
+**/docs/design-notes.md
