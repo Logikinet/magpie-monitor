@@ -30,7 +30,7 @@ public enum MagpieError: Error, Equatable, Sendable {
     public var localizedChinese: String {
         switch self {
         case .badStatus(let status): return "服务器返回错误（\(status)），请稍后重试。"
-        case .unauthorized: return "认证失败，请检查 gateway key；若为 Web 认证，runtime key 失效，请重新从 web GUI 复制，建议固定 MAGPIE_WEB_KEY。"
+        case .unauthorized: return "认证失败，请检查 gateway key；若为 Web 认证，runtime key 可能已因 magpie 重启而改变；请从 web GUI 重新复制 key，建议在 magpie 中固定 MAGPIE_WEB_KEY。"
         case .forbidden: return "请在 magpie 设置中开启 \"Share on local network\" 并检查 gateway key。"
         case .network: return "网络连接失败，请检查网络和服务器地址。"
         case .timeout: return "请求超时，请稍后重试。"

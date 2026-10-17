@@ -1,6 +1,6 @@
 import Foundation
 
-public struct TraceEnvelope: Decodable {
+public struct TraceEnvelope: Decodable, Sendable {
     public let seq: FlexibleInt?
     public let routes: LossyArray<Route>?
     public let totals: TraceTotals?
@@ -8,13 +8,13 @@ public struct TraceEnvelope: Decodable {
     public let now: MagpieDate?
 }
 
-public struct TraceTotals: Decodable {
+public struct TraceTotals: Decodable, Sendable {
     public let requests: FlexibleInt?
     public let rerouted: FlexibleInt?
     public let errors: FlexibleInt?
 }
 
-public struct Route: Decodable {
+public struct Route: Decodable, Sendable {
     public let seq: FlexibleInt?
     public let id: FlexibleInt?
     public let time: MagpieDate?
@@ -39,7 +39,7 @@ public struct Route: Decodable {
     public let priced: Bool?
 }
 
-public struct RouteUsage: Decodable {
+public struct RouteUsage: Decodable, Sendable {
     public let provider: String?
     public let model: String?
     public let input: FlexibleInt?
@@ -57,7 +57,7 @@ public struct RouteUsage: Decodable {
     }
 }
 
-public struct Weighed: Decodable {
+public struct Weighed: Decodable, Sendable {
     public let id: String?
     public let provider: String?
     public let name: String?
@@ -75,7 +75,7 @@ public struct Weighed: Decodable {
     public let shared: Bool?
 }
 
-public struct RouteGroup: Decodable {
+public struct RouteGroup: Decodable, Sendable {
     public let id: String?
     public let name: String?
     public let routing: String?
@@ -83,30 +83,30 @@ public struct RouteGroup: Decodable {
     public let members: [String]?
 }
 
-public struct RouteRule: Decodable {
+public struct RouteRule: Decodable, Sendable {
     public let name: String?
     public let reason: String?
 }
 
-public struct RouteSubagent: Decodable {
+public struct RouteSubagent: Decodable, Sendable {
     public let name: String?
     public let model: String?
     public let effort: String?
 }
 
-public struct RouteLookup: Decodable {
+public struct RouteLookup: Decodable, Sendable {
     public let session: String?
     public let seq: FlexibleInt?
     public let route: Route?
 }
 
-public struct HistoryEnvelope: Decodable {
+public struct HistoryEnvelope: Decodable, Sendable {
     public let days: LossyArray<HistoryDay>?
     public let routes: LossyArray<Route>?
     public let cut: Bool?
 }
 
-public struct HistoryDay: Decodable {
+public struct HistoryDay: Decodable, Sendable {
     public let day: String?
     public let requests: FlexibleInt?
 }

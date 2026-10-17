@@ -1,6 +1,6 @@
 import Foundation
 
-public struct FlexibleDouble: Decodable, Equatable {
+public struct FlexibleDouble: Decodable, Equatable, Sendable {
     public let value: Double
 
     public init(_ value: Double) {
@@ -22,7 +22,7 @@ public struct FlexibleDouble: Decodable, Equatable {
     }
 }
 
-public struct FlexibleInt: Decodable, Equatable {
+public struct FlexibleInt: Decodable, Equatable, Sendable {
     public let value: Int
 
     public init(_ value: Int) {
@@ -78,7 +78,7 @@ public struct LossyArray<Element: Decodable>: Decodable {
     }
 }
 
-public struct MagpieDate: Decodable, Equatable {
+public struct MagpieDate: Decodable, Equatable, Sendable {
     public let date: Date?
     public let rawString: String?
 
@@ -200,3 +200,5 @@ public struct CallerKeyGroup: Decodable {
         case callerKeyName = "callerKeyName"
     }
 }
+
+extension LossyArray: Sendable where Element: Sendable {}

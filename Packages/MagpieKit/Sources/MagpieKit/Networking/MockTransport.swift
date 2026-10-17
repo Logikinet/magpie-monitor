@@ -3,7 +3,34 @@ import Foundation
 import FoundationNetworking
 #endif
 
-public struct MockTransport: HTTPTransport {
+public actor MockTransport: HTTPTransport {
+    public struct Response: Sendable {
+        public let data: Data
+        public let status: Int
+        public let headers: [String: String]
+        public let error: MagpieError?
+
+        public init(data: Data = Data(), status: Int = 200,
+                    headers: [String: String] = [:], error: MagpieError? = nil) {
+            self.data = data
+            self.status = status
+            self.headers = headers
+            self.error = error
+        }
+    }
+
+    public private(set) var requests: [URLRequest] = []
+    private var responses: [Response] = []
+
+    /// Scripted responses are consumed in order, then fixture routing resumes.
+    public init(responses: [Response]) {
+        self.responses = responses
+        self.fixtures = [:]
+        self.delay = 0
+        self.errors = [:]
+        self.statuses = [:]
+    }
+
     private let fixtures: [String: Data]
     private let delay: TimeInterval
     private let errors: [String: MagpieError]
@@ -33,11 +60,21 @@ public struct MockTransport: HTTPTransport {
 
     public func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         try Task.checkCancellation()
+        requests.append(request)
         if delay > 0, delay.isFinite {
             try await Task.sleep(for: .seconds(delay))
         }
         try Task.checkCancellation()
         guard let url = request.url else { throw URLError(.badURL) }
+        if !responses.isEmpty {
+            let next = responses.removeFirst()
+            if let error = next.error { throw error }
+            guard let response = HTTPURLResponse(url: url, statusCode: next.status, httpVersion: "HTTP/1.1",
+                                                 headerFields: next.headers) else {
+                throw MagpieError.network("无法创建模拟响应")
+            }
+            return (next.data, response)
+        }
         let path = url.path
         let exact = path + (url.query.map { "?" + $0 } ?? "")
         if let error = errors[exact] ?? errors[path] { throw error }
