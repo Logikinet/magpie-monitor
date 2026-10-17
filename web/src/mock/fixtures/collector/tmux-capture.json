@@ -1,5 +1,6 @@
 {
   "ok": true,
-  "text": "\u001b[38;5;114mdevbox\u001b[0m $ npm test\nAll demo checks passed.\n",
-  "target": "%1"
+  "text": "devbox ~/demo-ui $ codex\n> Review the sanitized dashboard fixtures\nReading src/dashboard.tsx\n✓ Updated card spacing and labels\nWaiting for the next demo task…",
+  "target": "%1",
+  "raw": "devbox ~/demo-ui $ codex\n> Review the sanitized dashboard fixtures\nReading src/dashboard.tsx\n✓ Updated card spacing and labels\nWaiting for the next demo task…"
 }

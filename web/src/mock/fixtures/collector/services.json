@@ -10,7 +10,10 @@
         "cpu": 1.5,
         "mem_mb": 64,
         "up_sec": 3600
-      }
+      },
+      "web": true,
+      "scheme": "http",
+      "state": "active"
     },
     {
       "name": "demo-api",
@@ -20,14 +23,25 @@
       "type": "docker",
       "res": {
         "cpu": 0.5,
-        "mem_mb": 32
-      }
+        "mem_mb": 32,
+        "up_sec": 7200
+      },
+      "http": true,
+      "scheme": "http",
+      "state": "active"
     },
     {
       "name": "devbox.service",
       "port": null,
       "scope": "system",
-      "type": "systemd"
+      "type": "systemd",
+      "unit": "devbox.service",
+      "state": "active",
+      "res": {
+        "cpu": 0,
+        "mem_mb": 18,
+        "up_sec": 86460
+      }
     }
   ]
 }

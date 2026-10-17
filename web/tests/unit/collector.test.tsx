@@ -175,11 +175,137 @@ it('shows five categories, header settings and the collector activity by default
     render(<App />, root);
     await new Promise((resolve) => setTimeout(resolve, 30));
   });
-  await act(async () => { await new Promise(resolve => setTimeout(resolve, 30)); });
-  expect(root.querySelectorAll('.sidebar nav a')).toHaveLength(5);
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 30));
+  });
+  expect(root.querySelectorAll('.desktop-nav a')).toHaveLength(5);
   expect(root.querySelector('[data-testid="view-activity"]')).not.toBeNull();
   expect(root.querySelector('.activity-timeline')).not.toBeNull();
   const settings = root.querySelector<HTMLButtonElement>('.top-actions button[aria-label]')!;
   await act(() => settings.click());
   expect(root.querySelector('[data-testid="view-settings"]')).not.toBeNull();
+});
+
+it('formats durations for all supported languages without inventing missing values', async () => {
+  const { duration } = await import('../../src/views/collector/CollectorViews');
+  for (const [lang, expected] of [
+    ['zh', '1天0时1分'],
+    ['en', '1d 0h 1m'],
+    ['ja', '1日0時間1分'],
+  ]) {
+    localStorage.setItem('mm-lang', lang);
+    expect(duration(86460)).toBe(expected);
+  }
+  expect(duration(undefined)).toBe('—');
+  localStorage.removeItem('mm-lang');
+});
+
+it('renders all activity filters, file truncation, nodes and only supplied diff links', async () => {
+  const d = await data();
+  await act(() => render(<ActivityTimeline data={d} />, root));
+  expect(root.querySelectorAll('.collector-chips button')).toHaveLength(7);
+  expect(root.querySelectorAll('.activity-timeline')).toHaveLength(3);
+  expect(root.querySelector('.act-spine.first .act-node')).not.toBeNull();
+  expect(root.querySelector('.act-spine.last')).not.toBeNull();
+  expect(root.querySelector('.commit-files')?.querySelectorAll('p')).toHaveLength(8);
+  expect(root.querySelector('.commit-files small')?.textContent).toContain('3');
+  expect(root.querySelector('.pii')).not.toBeNull();
+  for (const anchor of root.querySelectorAll('a')) {
+    expect(d.activity.events.some((e: any) => e.url === anchor.href)).toBe(true);
+  }
+  await act(() => root.querySelectorAll<HTMLButtonElement>('.collector-chips button')[2].click());
+  expect(root.querySelectorAll('.act-node')).toHaveLength(3);
+  await act(() => root.querySelectorAll<HTMLButtonElement>('.collector-chips button')[5].click());
+  expect(root.querySelectorAll('.act-node')).toHaveLength(3);
+});
+
+it('classifies HTTP services from metadata and preserves zero resources', async () => {
+  const { isWebService } = await import('../../src/views/collector/CollectorViews');
+  expect(isWebService({ port: 5173 })).toBe(false);
+  expect(isWebService({ port: 9101, http: true })).toBe(true);
+  expect(isWebService({ port: 9101, scheme: 'https' })).toBe(true);
+  await act(() =>
+    render(
+      <ServicesView
+        data={{
+          services: {
+            services: [
+              {
+                name: 'demo-http',
+                port: 9101,
+                web: true,
+                scope: 'user',
+                state: 'active',
+                res: { cpu: 0, mem_mb: 0, up_sec: 0 },
+              },
+              { name: 'demo-socket', port: 5173, scope: 'user', state: 'failed' },
+            ],
+          },
+        }}
+      />,
+      root,
+    ),
+  );
+  await act(() => root.querySelectorAll<HTMLButtonElement>('.collector-chips button')[1].click());
+  expect(root.textContent).toContain('demo-http');
+  expect(root.textContent).not.toContain('demo-socket');
+  expect(root.textContent).toContain('0% · 0 M · 0天0时0分');
+  expect(root.querySelector('.service-dot.active')).not.toBeNull();
+  expect(root.querySelectorAll('.service-filters nav')).toHaveLength(2);
+});
+
+it('keeps writes hidden unless hello explicitly permits them and copies attach commands', async () => {
+  const d = await data();
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+  await act(() => render(<TmuxView data={{ ...d, hello: { readonly: true } }} />, root));
+  expect(root.querySelectorAll('button[disabled]')).toHaveLength(0);
+  const copy = [...root.querySelectorAll<HTMLButtonElement>('button')].find(
+    (b) => b.textContent === '复制连接命令',
+  )!;
+  await act(() => copy.click());
+  expect(writeText).toHaveBeenCalledWith('tmux attach-session -t devbox');
+  await act(() => render(<TmuxView data={{ ...d, hello: { readonly: false } }} />, root));
+  expect(root.querySelectorAll('button[disabled]')).toHaveLength(3);
+});
+
+it('ends collector home at portals and locks auto refresh after 500ms', async () => {
+  const { default: App } = await import('../../src/app');
+  Object.defineProperty(HTMLElement.prototype, 'onpointerdown', {
+    configurable: true,
+    writable: true,
+    value: null,
+  });
+  history.replaceState(null, '', '/?mock=1#cat=home');
+  await act(async () => {
+    render(<App />, root);
+    await new Promise((resolve) => setTimeout(resolve, 60));
+  });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 30));
+  });
+  expect(root.querySelectorAll('.collector-portals > section')).toHaveLength(4);
+  expect(root.querySelector('.limit-card')).toBeNull();
+  expect(root.textContent).toContain('magpie monitor');
+  expect(root.querySelectorAll('.desktop-nav a')).toHaveLength(5);
+  vi.useFakeTimers();
+  try {
+    const button = root.querySelector<HTMLButtonElement>('.refresh-button')!;
+    await act(() => {
+      button.dispatchEvent(new MouseEvent('pointerdown', { button: 0, bubbles: true }));
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(499);
+    });
+    expect(button.getAttribute('aria-pressed')).toBe('false');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(button.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('[role=status]')?.textContent).toContain('自动刷新已暂停');
+    await act(() => button.click());
+    expect(button.getAttribute('aria-pressed')).toBe('true');
+  } finally {
+    vi.useRealTimers();
+  }
 });

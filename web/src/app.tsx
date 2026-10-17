@@ -197,6 +197,15 @@ export default function App() {
   const [showKeys, setShowKeys] = useState(false);
   const [profileEdit, setProfileEdit] = useState<Profile | null>(null);
   const [notice, setNotice] = useState('');
+  const [autoLocked, setAutoLocked] = useState(false);
+  const pressTimer = useRef<ReturnType<typeof setTimeout>>();
+  const longPressed = useRef(false);
+  useEffect(() => () => clearTimeout(pressTimer.current), []);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(''), 3600);
+    return () => clearTimeout(timer);
+  }, [notice]);
   const keyStore = useMemo(() => createKeyStore(), []);
   const keys = useMemo(() => keyStore.getKeys(profile.id), [keyStore, profile.id, keysVersion]);
   useEffect(() => {
@@ -222,11 +231,16 @@ export default function App() {
         : undefined,
     [transport, profile.collectorUrl, profile.mode],
   );
-  const { data: collectorData, error: collectorError } = useCollector(collector, agentRevision);
+  const {
+    data: collectorData,
+    error: collectorError,
+    loading: collectorLoading,
+  } = useCollector(collector, agentRevision, autoLocked);
   const [activityView, setActivityView] = useState('timeline');
   const isMock = profile.mode === 'mock';
   const refresh = useCallback(
     async (signal?: AbortSignal) => {
+      setLoading(true);
       setError('');
       const results = await Promise.allSettled([
         gateway.usage(period),
@@ -260,11 +274,11 @@ export default function App() {
     [gateway, profile.mode, period],
   );
   useEffect(() => {
-    void refresh();
+    if (!autoLocked) void refresh();
     const poll = createPoller(profile.refreshSec * 1000, refresh);
-    poll.start();
+    if (!autoLocked) poll.start();
     return () => poll.stop();
-  }, [refresh, profile.refreshSec, profile.id]);
+  }, [refresh, profile.refreshSec, profile.id, autoLocked]);
   useEffect(() => {
     const themeValue = ['dark', 'light'].includes(theme) ? theme : '';
     if (themeValue) document.documentElement.dataset.theme = themeValue;
@@ -395,28 +409,34 @@ export default function App() {
           onClick={() => chooseTab('home')}
           aria-label={`magpie ${t('overview.title')}`}
         >
-          <span class="brand-mark">m</span>
-          <span>magpie</span>
+          <span class="brand-mark">M</span>
+          <span>magpie monitor</span>
         </a>
-        <div class="header-profile">
-          <label class="sr-only" for="profile-switch">
-            {t('app.profileSelect')}
-          </label>
-          <select
-            id="profile-switch"
-            value={profile.id}
-            onChange={(e) => chooseProfile((e.currentTarget as HTMLSelectElement).value)}
-          >
-            {profiles.map((p) => (
-              <option value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        </div>
+        <span class="header-host">
+          {collectorData.sys?.hostname ?? collectorData.hello?.host ?? profile.name}
+        </span>
         <div class="header-state">
           {collectorData.hello?.readonly && <span class="badge">{t('collector.readonly')}</span>}
-          <Status kind={error ? 'error' : 'ok'}>
-            {error ? t('app.connectionError') : t('app.connected')}
-          </Status>
+          <button
+            class="connection-pill"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(
+                  collectorData.hello?.ssh ??
+                    collectorData.hello?.host ??
+                    collectorData.sys?.hostname ??
+                    profile.name,
+                );
+                setNotice(t('collector.copied'));
+              } catch {
+                setNotice(t('collector.copyFailed'));
+              }
+            }}
+          >
+            <Status kind={error || collectorError ? 'error' : 'ok'}>
+              {error || collectorError ? t('app.connectionError') : t('app.connected')}
+            </Status>
+          </button>
           {isMock && (
             <span
               class="badge badge-secondary"
@@ -440,6 +460,17 @@ export default function App() {
             {profile.mode === 'live' ? t('settings.live') : t('settings.directPill')}
           </span>
         )}
+        <nav class="desktop-nav" aria-label={t('app.mainNav')}>
+          {nav.map((n) => (
+            <a
+              href={`#cat=${n.id}`}
+              onClick={() => chooseTab(n.id)}
+              aria-current={tab === n.id ? 'page' : undefined}
+            >
+              {t(n.label)}
+            </a>
+          ))}
+        </nav>
         <div class="top-actions">
           <button
             class="button button-quiet"
@@ -477,8 +508,30 @@ export default function App() {
             </a>
           )}
           <button
-            class="button button-quiet refresh-button"
+            class={`button button-quiet refresh-button ${loading || collectorLoading ? 'spinning' : ''}`}
+            aria-label={t('app.refresh')}
+            aria-pressed={autoLocked}
+            onPointerDown={(e) => {
+              if (e.button !== 0) return;
+              longPressed.current = false;
+              pressTimer.current = setTimeout(() => {
+                longPressed.current = true;
+                setAutoLocked((v) => !v);
+                setNotice(t(autoLocked ? 'collector.unlocked' : 'collector.locked'));
+              }, 500);
+            }}
+            onPointerUp={() => clearTimeout(pressTimer.current)}
+            onPointerCancel={() => {
+              clearTimeout(pressTimer.current);
+              longPressed.current = true;
+            }}
+            onPointerLeave={() => clearTimeout(pressTimer.current)}
+            onContextMenu={(e) => e.preventDefault()}
             onClick={() => {
+              if (longPressed.current) {
+                longPressed.current = false;
+                return;
+              }
               void refresh();
               setAgentRevision((v) => v + 1);
             }}
@@ -488,26 +541,6 @@ export default function App() {
           </button>
         </div>
       </header>
-      <aside class="sidebar">
-        <nav aria-label={t('app.mainNav')}>
-          {nav.map((n) => (
-            <a
-              href={`#/${n.id}`}
-              onClick={() => chooseTab(n.id)}
-              aria-current={tab === n.id ? 'page' : undefined}
-            >
-              <Icon name={n.icon} />
-              <span>{t(n.label)}</span>
-            </a>
-          ))}
-        </nav>
-        <div class="sidebar-foot">
-          <Status kind={error ? 'error' : 'ok'}>
-            {error ? t('app.connectionError') : t('app.connected')}
-          </Status>
-          <small>{profile.name}</small>
-        </div>
-      </aside>
       <nav class="mobile-nav" aria-label={t('app.mainNav')}>
         {nav.map((n) => (
           <a
@@ -520,6 +553,11 @@ export default function App() {
           </a>
         ))}
       </nav>
+      {notice && (
+        <div class="shell-toast" role="status">
+          {notice}
+        </div>
+      )}
       <main class="main-content">
         <div class="page-wrap">
           {collectorError && (
@@ -560,7 +598,7 @@ export default function App() {
               {activityView === 'timeline' && <ActivityTimeline data={collectorData} />}
             </>
           )}
-          {tab === 'home' && (
+          {((tab === 'home' && !collector) || (tab === 'activity' && activityView === 'ledger')) && (
             <>
               <div class="page-heading">
                 <div>
@@ -1161,7 +1199,11 @@ function KeyValueCard({ title, subtitle, value }: { title: string; subtitle: str
                   ? v
                     ? t('app.yes')
                     : t('app.no')
-                  : String(v)}
+                  : k === 'period' && ['month', '本月'].includes(String(v))
+                    ? t('collector.month')
+                    : /caller.*label/i.test(k)
+                      ? t('collector.callerLabel')
+                      : String(v)}
             </dd>
           </div>
         ))}

@@ -4,49 +4,376 @@
       "repo": "devbox",
       "sha": "0000000000000000000000000000000000000001",
       "short_sha": "0000001",
-      "subject": "Improve dashboard navigation",
+      "subject": "Refine dashboard layout",
       "author": "demo-user@example.com",
-      "ts": 1699996400,
+      "ts": 1792195200,
       "branch": "main",
-      "origin": "local",
+      "origin": "both",
       "kind": "commit",
-      "files": []
+      "files": [
+        {
+          "status": "A",
+          "path": "src/demo-0.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-1.ts"
+        },
+        {
+          "status": "R",
+          "path": "src/demo-2.ts"
+        },
+        {
+          "status": "M",
+          "path": "src/demo-3.ts"
+        },
+        {
+          "status": "A",
+          "path": "src/demo-4.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-5.ts"
+        },
+        {
+          "status": "R",
+          "path": "src/demo-6.ts"
+        },
+        {
+          "status": "M",
+          "path": "src/demo-7.ts"
+        },
+        {
+          "status": "A",
+          "path": "src/demo-8.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-9.ts"
+        },
+        {
+          "status": "R",
+          "path": "src/demo-10.ts"
+        }
+      ],
+      "url": "https://github.com/example/demo/commit/0000000000000000000000000000000000000001"
     },
     {
-      "repo": "devbox",
+      "repo": "demo-ui",
       "sha": "0000000000000000000000000000000000000002",
       "short_sha": "0000002",
-      "subject": "Add read-only metrics",
+      "subject": "Add collector checks",
       "author": "demo-user@example.com",
-      "ts": 1699992800,
+      "ts": 1792192800,
       "branch": "main",
       "origin": "local",
       "kind": "commit",
-      "files": []
+      "files": [
+        {
+          "status": "A",
+          "path": "src/demo-0.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-1.ts"
+        }
+      ]
     },
     {
-      "repo": "devbox",
+      "repo": "demo-worker",
       "sha": "0000000000000000000000000000000000000003",
       "short_sha": "0000003",
-      "subject": "Document collector setup",
+      "subject": "Update sample image",
       "author": "demo-user@example.com",
-      "ts": 1699989200,
+      "ts": 1792190400,
       "branch": "main",
-      "origin": "local",
+      "origin": "gh",
       "kind": "commit",
-      "files": []
+      "files": [
+        {
+          "status": "A",
+          "path": "src/demo-0.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-1.ts"
+        },
+        {
+          "status": "A",
+          "path": "screens/demo.png"
+        }
+      ],
+      "url": "https://github.com/example/demo/commit/0000000000000000000000000000000000000003"
     },
     {
       "repo": "devbox",
       "sha": "0000000000000000000000000000000000000004",
       "short_sha": "0000004",
-      "subject": "Update demo fixtures",
+      "subject": "Complete demo task",
       "author": "demo-user@example.com",
-      "ts": 1699985600,
+      "ts": 1792188000,
+      "branch": "main",
+      "origin": "both",
+      "kind": "complete",
+      "files": [
+        {
+          "status": "A",
+          "path": "src/demo-0.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-1.ts"
+        }
+      ],
+      "url": "https://github.com/example/demo/commit/0000000000000000000000000000000000000004"
+    },
+    {
+      "repo": "demo-ui",
+      "sha": "0000000000000000000000000000000000000005",
+      "short_sha": "0000005",
+      "subject": "Review scheduled checks",
+      "author": "demo-user@example.com",
+      "ts": 1792185600,
+      "branch": "main",
+      "origin": "local",
+      "kind": "watchdog",
+      "files": [
+        {
+          "status": "A",
+          "path": "src/demo-0.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-1.ts"
+        }
+      ]
+    },
+    {
+      "repo": "demo-worker",
+      "sha": "0000000000000000000000000000000000000006",
+      "short_sha": "0000006",
+      "subject": "Refine dashboard layout",
+      "author": "demo-user@example.com",
+      "ts": 1792108800,
+      "branch": "main",
+      "origin": "gh",
+      "kind": "commit",
+      "files": [
+        {
+          "status": "A",
+          "path": "src/demo-0.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-1.ts"
+        }
+      ],
+      "url": "https://github.com/example/demo/commit/0000000000000000000000000000000000000006",
+      "auto_publish": true
+    },
+    {
+      "repo": "devbox",
+      "sha": "0000000000000000000000000000000000000007",
+      "short_sha": "0000007",
+      "subject": "Add collector checks",
+      "author": "demo-user@example.com",
+      "ts": 1792106400,
+      "branch": "main",
+      "origin": "both",
+      "kind": "commit",
+      "files": [
+        {
+          "status": "A",
+          "path": "src/demo-0.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-1.ts"
+        }
+      ],
+      "url": "https://github.com/example/demo/commit/0000000000000000000000000000000000000007"
+    },
+    {
+      "repo": "demo-ui",
+      "sha": "0000000000000000000000000000000000000008",
+      "short_sha": "0000008",
+      "subject": "Update sample image",
+      "author": "demo-user@example.com",
+      "ts": 1792104000,
       "branch": "main",
       "origin": "local",
       "kind": "commit",
-      "files": []
+      "files": [
+        {
+          "status": "A",
+          "path": "src/demo-0.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-1.ts"
+        },
+        {
+          "status": "A",
+          "path": "screens/demo.png"
+        }
+      ]
+    },
+    {
+      "repo": "demo-worker",
+      "sha": "0000000000000000000000000000000000000009",
+      "short_sha": "0000009",
+      "subject": "Complete demo task",
+      "author": "demo-user@example.com",
+      "ts": 1792101600,
+      "branch": "main",
+      "origin": "gh",
+      "kind": "complete",
+      "files": [
+        {
+          "status": "A",
+          "path": "src/demo-0.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-1.ts"
+        }
+      ],
+      "url": "https://github.com/example/demo/commit/0000000000000000000000000000000000000009"
+    },
+    {
+      "repo": "devbox",
+      "sha": "000000000000000000000000000000000000000a",
+      "short_sha": "000000a",
+      "subject": "Review scheduled checks",
+      "author": "demo-user@example.com",
+      "ts": 1792099200,
+      "branch": "main",
+      "origin": "both",
+      "kind": "watchdog",
+      "files": [
+        {
+          "status": "A",
+          "path": "src/demo-0.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-1.ts"
+        }
+      ],
+      "url": "https://github.com/example/demo/commit/000000000000000000000000000000000000000a"
+    },
+    {
+      "repo": "demo-ui",
+      "sha": "000000000000000000000000000000000000000b",
+      "short_sha": "000000b",
+      "subject": "Refine dashboard layout",
+      "author": "demo-user@example.com",
+      "ts": 1792022400,
+      "branch": "main",
+      "origin": "local",
+      "kind": "commit",
+      "files": [
+        {
+          "status": "A",
+          "path": "src/demo-0.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-1.ts"
+        }
+      ],
+      "auto_publish": true
+    },
+    {
+      "repo": "demo-worker",
+      "sha": "000000000000000000000000000000000000000c",
+      "short_sha": "000000c",
+      "subject": "Add collector checks",
+      "author": "demo-user@example.com",
+      "ts": 1792020000,
+      "branch": "main",
+      "origin": "gh",
+      "kind": "commit",
+      "files": [
+        {
+          "status": "A",
+          "path": "src/demo-0.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-1.ts"
+        }
+      ],
+      "url": "https://github.com/example/demo/commit/000000000000000000000000000000000000000c"
+    },
+    {
+      "repo": "devbox",
+      "sha": "000000000000000000000000000000000000000d",
+      "short_sha": "000000d",
+      "subject": "Update sample image",
+      "author": "demo-user@example.com",
+      "ts": 1792017600,
+      "branch": "main",
+      "origin": "both",
+      "kind": "commit",
+      "files": [
+        {
+          "status": "A",
+          "path": "src/demo-0.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-1.ts"
+        },
+        {
+          "status": "A",
+          "path": "screens/demo.png"
+        }
+      ],
+      "url": "https://github.com/example/demo/commit/000000000000000000000000000000000000000d"
+    },
+    {
+      "repo": "demo-ui",
+      "sha": "000000000000000000000000000000000000000e",
+      "short_sha": "000000e",
+      "subject": "Complete demo task",
+      "author": "demo-user@example.com",
+      "ts": 1792015200,
+      "branch": "main",
+      "origin": "local",
+      "kind": "complete",
+      "files": [
+        {
+          "status": "A",
+          "path": "src/demo-0.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-1.ts"
+        }
+      ]
+    },
+    {
+      "repo": "demo-worker",
+      "sha": "000000000000000000000000000000000000000f",
+      "short_sha": "000000f",
+      "subject": "Review scheduled checks",
+      "author": "demo-user@example.com",
+      "ts": 1792012800,
+      "branch": "main",
+      "origin": "gh",
+      "kind": "watchdog",
+      "files": [
+        {
+          "status": "A",
+          "path": "src/demo-0.ts"
+        },
+        {
+          "status": "D",
+          "path": "src/demo-1.ts"
+        }
+      ],
+      "url": "https://github.com/example/demo/commit/000000000000000000000000000000000000000f"
     }
   ]
 }

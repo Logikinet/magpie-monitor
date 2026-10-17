@@ -2,16 +2,47 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import { CollectorClient, type RecordData } from '../../core/collector-client';
 import { ansiToHtml } from '../../core/ansi';
+import { fmtRelative } from '../../core/format';
 import { detectLocale, t } from '../../i18n';
 const text = (key: string) => t(`collector.${key}`);
 export const metric = (v: unknown, suffix = '') =>
   typeof v === 'number' && Number.isFinite(v) ? `${v.toFixed(1).replace(/\.0$/, '')}${suffix}` : '—';
 export const gigabytes = (v: unknown) =>
   typeof v === 'number' ? (v / 1073741824).toFixed(v / 1073741824 >= 100 ? 0 : 1) : '—';
-export const duration = (v: unknown) =>
-  typeof v === 'number'
-    ? `${Math.floor(v / 86400)}d ${Math.floor((v % 86400) / 3600)}h ${Math.floor((v % 3600) / 60)}m`
-    : '—';
+export const duration = (v: unknown) => {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return '—';
+  const locale = detectLocale(),
+    n = new Intl.NumberFormat(locale);
+  const units =
+    locale === 'zh' ? ['天', '时', '分'] : locale === 'ja' ? ['日', '時間', '分'] : ['d ', 'h ', 'm'];
+  return [Math.floor(v / 86400), Math.floor((v % 86400) / 3600), Math.floor((v % 3600) / 60)]
+    .map((x, i) => n.format(x) + units[i])
+    .join('');
+};
+export function repoColor(repo = '') {
+  return `hsl(${Array.from(repo).reduce((n, c) => (n * 31 + c.charCodeAt(0)) % 360, 0)} 58% 62%)`;
+}
+export function hasImage(e: RecordData) {
+  return (
+    !!e.image ||
+    (e.files ?? []).some((f: RecordData) => /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(f.path ?? ''))
+  );
+}
+export function activityMatches(e: RecordData, filter: string) {
+  if (filter === 'all') return true;
+  if (filter === 'img') return hasImage(e);
+  if (filter === 'done') return e.src === 'done' || e.kind === 'complete';
+  return e.kind === filter || e.origin === filter || e.src === filter;
+}
+export function isWebService(s: RecordData) {
+  return (
+    !!s.port &&
+    (s.web === true ||
+      s.http === true ||
+      ['http', 'https'].includes(s.scheme) ||
+      /^https?:\/\//.test(s.url ?? ''))
+  );
+}
 export function loopback(ip?: string) {
   return ip === '::1' || ip?.startsWith('127.');
 }
@@ -63,7 +94,10 @@ function Chips({
 function Empty() {
   return <p class="muted">{text('empty')}</p>;
 }
-export function useCollector(client: CollectorClient | undefined, revision: number) {
+export function useCollector(client: CollectorClient | undefined, revision: number, locked = false) {
+  const lock = useRef(locked);
+  lock.current = locked;
+  const [loading, setLoading] = useState(false);
   const [data, setData] = useState<RecordData>({}),
     [error, setError] = useState('');
   useEffect(() => {
@@ -87,6 +121,7 @@ export function useCollector(client: CollectorClient | undefined, revision: numb
     const refresh = async () => {
       if (busy || document.hidden) return;
       busy = true;
+      setLoading(true);
       const results = await Promise.allSettled(
         methods.map((name) =>
           name === 'services' ? client.services('all', controller.signal) : client[name](controller.signal),
@@ -103,17 +138,21 @@ export function useCollector(client: CollectorClient | undefined, revision: numb
         setError(results.some((r) => r.status === 'rejected') ? t('app.loadFailed') : '');
       }
       busy = false;
+      if (!controller.signal.aborted) setLoading(false);
+    };
+    const autoRefresh = () => {
+      if (!lock.current) void refresh();
     };
     void refresh();
-    const timer = setInterval(refresh, 10000);
-    document.addEventListener('visibilitychange', refresh);
+    const timer = setInterval(autoRefresh, 10000);
+    document.addEventListener('visibilitychange', autoRefresh);
     return () => {
       controller.abort();
       clearInterval(timer);
-      document.removeEventListener('visibilitychange', refresh);
+      document.removeEventListener('visibilitychange', autoRefresh);
     };
   }, [client, revision]);
-  return { data, error };
+  return { data, error, loading };
 }
 export function HostOverview({ data, navigate }: { data: RecordData; navigate: (s: string) => void }) {
   const sys = data.sys ?? {},
@@ -155,11 +194,18 @@ export function HostOverview({ data, navigate }: { data: RecordData; navigate: (
                 {text('viewAll')}
               </button>
             </header>
+            {id === 'activity' && (
+              <span class="badge">{t('collector.recent', { n: (data.activity?.events ?? []).length })}</span>
+            )}
             {id === 'activity' &&
               (data.activity?.events ?? []).slice(0, 4).map((e: RecordData) => (
                 <p>
-                  <b>{e.repo}</b> {e.subject}
-                  <small>{e.author}</small>
+                  <b style={{ color: repoColor(e.repo) }}>● {e.repo}</b>{' '}
+                  {hasImage(e) && <span aria-label={text('img')}>▧ </span>}
+                  {e.subject}
+                  <small>
+                    <span class="pii">{e.author}</span> · {fmtRelative(new Date(e.ts * 1000).toISOString())}
+                  </small>
                 </p>
               ))}
             {id === 'tmux' &&
@@ -177,9 +223,27 @@ export function HostOverview({ data, navigate }: { data: RecordData; navigate: (
                   {text('running')
                     .replace(
                       '{n}',
-                      String(services.filter((s: RecordData) => !s.paused && !s.svcctl_paused).length),
+                      String(
+                        services.filter(
+                          (s: RecordData) =>
+                            s.port &&
+                            !s.paused &&
+                            !s.svcctl_paused &&
+                            s.state !== 'failed' &&
+                            s.state !== 'inactive',
+                        ).length,
+                      ),
                     )
-                    .replace('{total}', String(services.filter((s: RecordData) => s.port).length))}
+                    .replace(
+                      '{total}',
+                      String(
+                        new Set(
+                          services
+                            .filter((s: RecordData) => s.port)
+                            .map((s: RecordData) => `${s.ip ?? ''}:${s.port}`),
+                        ).size,
+                      ),
+                    )}
                 </small>
                 <div class="service-tiles">
                   {portalServices(services).map((s) => (
@@ -202,7 +266,7 @@ export function HostOverview({ data, navigate }: { data: RecordData; navigate: (
 }
 export function HostChart({ points }: { points: RecordData[] }) {
   const samples = points.slice(-24),
-    colors = ['#38bdf8', '#4ade80', '#a78bfa', '#fbbf24'];
+    colors = ['var(--ch-cpu)', 'var(--ch-mem)', 'var(--ch-swap)', 'var(--ch-load)'];
   if (!samples.length) return <Empty />;
   const loadMax = Math.max(2, ...samples.map((p) => Number(p.load) || 0));
   return (
@@ -270,7 +334,12 @@ function RuntimeQuotas({ agents }: { agents: RecordData[] }) {
           <b>{a.name}</b> · {a.procs} {text('processes')}
           {a.quota.buckets.map((b: RecordData) => (
             <label>
-              {b.label} {metric(b.remaining_pct, '%')}
+              {b.label === 'primary'
+                ? '5h'
+                : ['secondary', 'Weekly'].includes(b.label)
+                  ? t('quota.week')
+                  : b.label}{' '}
+              {metric(b.remaining_pct, '%')}
               <meter min={0} max={100} low={15} high={50} optimum={100} value={b.remaining_pct} />
             </label>
           ))}
@@ -282,45 +351,92 @@ function RuntimeQuotas({ agents }: { agents: RecordData[] }) {
   );
 }
 export function ActivityTimeline({ data }: { data: RecordData }) {
-  const [filter, setFilter] = useState('all');
-  const events: RecordData[] = data.activity?.events ?? [];
+  const [filter, setFilter] = useState('all'),
+    [autoPublish, setAutoPublish] = useState(false);
+  const events: RecordData[] = [...(data.activity?.events ?? [])].sort((a, b) => b.ts - a.ts);
+  let published = false;
+  const visible = events.filter((e) => {
+    if (!e.auto_publish || autoPublish) return true;
+    if (published) return false;
+    published = true;
+    return true;
+  });
+  const dayKey = (date: Date) =>
+    new Intl.DateTimeFormat('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
   const days = new Map<string, RecordData[]>();
-  events
-    .filter((e) => filter === 'all' || e.kind === filter || e.origin === filter)
+  visible
+    .filter((e) => activityMatches(e, filter))
     .forEach((e) => {
-      const day = new Date(e.ts * 1000).toLocaleDateString(detectLocale());
+      const day = dayKey(new Date(e.ts * 1000));
       days.set(day, [...(days.get(day) ?? []), e]);
     });
   return (
     <>
       <h1>{text('timeline')}</h1>
-      <Chips
-        values={['all', 'local']}
-        selected={filter}
-        choose={setFilter}
-        count={(v) => events.filter((e) => v === 'all' || e.kind === v || e.origin === v).length}
-      />
-      {!events.length && <Empty />}
+      <div class="activity-toolbar">
+        <Chips
+          values={['all', 'commit', 'img', 'both', 'local', 'done', 'watchdog']}
+          selected={filter}
+          choose={setFilter}
+          count={(v) => visible.filter((e) => activityMatches(e, v)).length}
+        />
+        <label>
+          <input type="checkbox" checked={autoPublish} onChange={() => setAutoPublish(!autoPublish)} />
+          {text('autoPublish')}
+        </label>
+      </div>
+      {!days.size && <Empty />}
       {[...days].map(([day, rows]) => (
         <section class="activity-timeline">
           <h2>
-            {day} · {rows.length}
+            {day} ·{' '}
+            {day === dayKey(new Date())
+              ? text('today')
+              : new Intl.DateTimeFormat(detectLocale(), { weekday: 'long' }).format(
+                  new Date(rows[0].ts * 1000),
+                )}
+            {t('collector.changes', { n: rows.length })}
           </h2>
-          {rows.map((e) => (
-            <Panel>
-              <small>
-                {e.repo} · {e.branch} · {e.short_sha} · {text('local')}
-              </small>
-              <h3>{e.subject}</h3>
-              <p>
-                {e.author} · {new Date(e.ts * 1000).toLocaleTimeString(detectLocale())}
-              </p>
-              {e.files?.slice(0, 8).map((f: RecordData) => (
+          {rows.map((e, i) => (
+            <div class={`act-spine ${i === 0 ? 'first' : ''} ${i === rows.length - 1 ? 'last' : 'mid'}`}>
+              <span class="act-node" />
+              <Panel>
+                <div class="commit-meta">
+                  <span class="badge" style={{ color: repoColor(e.repo) }}>
+                    {e.repo}
+                  </span>{' '}
+                  <code>{e.short_sha ?? e.sha?.slice(0, 7)}</code> <span>{e.branch}</span>{' '}
+                  <span class="badge">{text(e.origin ?? 'local')}</span>{' '}
+                  {hasImage(e) && <span class="badge">▧ {text('img')}</span>}
+                </div>
+                <h3>{e.subject ?? e.title}</h3>
                 <p>
-                  {f.status} {f.path}
+                  <span class="pii">{e.author}</span> ·{' '}
+                  <time>
+                    {new Intl.DateTimeFormat(detectLocale(), { hour: '2-digit', minute: '2-digit' }).format(
+                      new Date(e.ts * 1000),
+                    )}
+                  </time>
                 </p>
-              ))}
-            </Panel>
+                {!!e.files?.length && (
+                  <div class="commit-files">
+                    {e.files.slice(0, 8).map((f: RecordData) => (
+                      <p>
+                        <b class={`file-${f.status}`}>{f.status}</b> {f.path}
+                      </p>
+                    ))}
+                    {e.files.length > 8 && (
+                      <small>{t('collector.moreFiles', { n: e.files.length - 8 })}</small>
+                    )}
+                  </div>
+                )}
+                {e.url && /^https:\/\/github\.com\//.test(e.url) && (
+                  <a href={e.url} target="_blank" rel="noopener noreferrer">
+                    {text('githubDiff')} ↗
+                  </a>
+                )}
+              </Panel>
+            </div>
           ))}
         </section>
       ))}
@@ -333,23 +449,25 @@ export function ServicesView({ data }: { data: RecordData }) {
     [actions, setActions] = useState(false);
   const rows: RecordData[] = data.services?.services ?? [];
   const matches = (s: RecordData, v: string) =>
-    v === 'all' ||
-    (v === 'web' ? [80, 443, 3000, 3426, 5173, 8000, 8080, 8787].includes(s.port) : s.scope === v);
+    v === 'all' || (v === 'web' ? isWebService(s) : s.scope === v);
   return (
     <>
       <h1>{text('svc')}</h1>
-      <Chips
-        values={['user', 'web', 'docker', 'system', 'all', 'tasks', 'tailscale']}
-        selected={scope}
-        choose={setScope}
-        count={(v) =>
-          v === 'tasks'
-            ? (data.tasks?.tasks ?? []).length
-            : v === 'tailscale'
-              ? (data.tailscale?.peers ?? []).length
-              : rows.filter((s) => matches(s, v)).length
-        }
-      />
+      <div class="service-filters">
+        <Chips
+          values={['user', 'web', 'docker', 'system', 'all']}
+          selected={scope}
+          choose={setScope}
+          count={(v) =>
+            v === 'tasks'
+              ? (data.tasks?.tasks ?? []).length
+              : v === 'tailscale'
+                ? (data.tailscale?.peers ?? []).length
+                : rows.filter((s) => matches(s, v)).length
+          }
+        />
+        <Chips values={['tasks', 'tailscale']} selected={scope} choose={setScope} />
+      </div>
       {data.hello?.readonly === false && (
         <label>
           <input
@@ -405,12 +523,18 @@ export function ServicesView({ data }: { data: RecordData }) {
             .map((s) => (
               <div class="service-row">
                 <div>
+                  <span
+                    class={`service-dot ${s.paused || s.svcctl_paused ? 'paused' : (s.state ?? 'unknown')}`}
+                    aria-label={text(
+                      s.paused ? 'paused' : s.state === 'running' ? 'runningState' : (s.state ?? 'unknown'),
+                    )}
+                  />{' '}
                   <b>{s.name}</b> <span class="badge">{s.type}</span>
                 </div>
                 <div>
                   {s.port ? (
                     <a
-                      href={`http://${loopback(s.ip) ? '127.0.0.1' : !s.ip || ['0.0.0.0', '::'].includes(s.ip) ? (data.sys?.hostname ?? location.hostname) : s.ip.includes(':') ? `[${s.ip}]` : s.ip}:${s.port}`}
+                      href={`${s.scheme === 'https' ? 'https' : 'http'}://${loopback(s.ip) ? '127.0.0.1' : !s.ip || ['0.0.0.0', '::'].includes(s.ip) ? (data.sys?.hostname ?? location.hostname) : s.ip.includes(':') ? `[${s.ip}]` : s.ip}:${s.port}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -501,6 +625,11 @@ export function TmuxView({ data, client }: { data: RecordData; client?: Collecto
   return (
     <>
       <h1>Tmux</h1>
+      {data.hello?.readonly === false && (
+        <button class="button" disabled title={text('unwired')}>
+          {text('newSession')}
+        </button>
+      )}
       <div class="collector-stats">
         {[
           ['sessions', summary.total],
@@ -511,7 +640,18 @@ export function TmuxView({ data, client }: { data: RecordData; client?: Collecto
         ].map(([k, v]) => (
           <Panel>
             <small>{text(String(k))}</small>
-            <strong>{v ?? '—'}</strong>
+            <strong
+              style={{
+                color: (
+                  { windows: '#38bdf8', panes: '#a78bfa', attached: '#4ade80', agent: '#fbbf24' } as Record<
+                    string,
+                    string
+                  >
+                )[String(k)],
+              }}
+            >
+              {v ?? '—'}
+            </strong>
           </Panel>
         ))}
       </div>
@@ -524,15 +664,24 @@ export function TmuxView({ data, client }: { data: RecordData; client?: Collecto
       {sessions
         .filter((s) => matches(s, filter))
         .map((s) => (
-          <Session session={s} open={setTarget} />
+          <Session session={s} open={setTarget} writable={data.hello?.readonly === false} />
         ))}
       {!sessions.length && <Empty />}
       {target && client && <TerminalSheet client={client} target={target} close={() => setTarget('')} />}
     </>
   );
 }
-function Session({ session: s, open }: { session: RecordData; open: (s: string) => void }) {
-  const [index, setIndex] = useState(0);
+function Session({
+  session: s,
+  open,
+  writable,
+}: {
+  session: RecordData;
+  open: (s: string) => void;
+  writable: boolean;
+}) {
+  const [index, setIndex] = useState(0),
+    [copied, setCopied] = useState(false);
   const windows = s.windows ?? [],
     panes = windows[index]?.panes ?? [];
   return (
@@ -541,6 +690,36 @@ function Session({ session: s, open }: { session: RecordData; open: (s: string) 
         <h2>{s.name}</h2>
         <span class="badge">{text(s.attached ? 'attached' : 'detached')}</span>
       </header>
+      <div class="row-actions">
+        <button class="button" onClick={() => open(panes[0]?.target ?? panes[0]?.pane)}>
+          {text('fullscreen')}
+        </button>
+        <button
+          class="button"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(
+                s.attach_cmd ?? `tmux attach-session -t '${String(s.name).replace(/'/g, "'\\''")}'`,
+              );
+              setCopied(true);
+            } catch {
+              setCopied(false);
+            }
+          }}
+        >
+          {text(copied ? 'copied' : 'copyAttach')}
+        </button>
+        {writable && (
+          <>
+            <button class="button" disabled title={text('unwired')}>
+              {text('wake')}
+            </button>
+            <button class="button" disabled title={text('unwired')}>
+              {text('kill')}
+            </button>
+          </>
+        )}
+      </div>
       <div class="collector-chips">
         {windows.map((w: RecordData, i: number) => (
           <button class="button" aria-pressed={index === i} onClick={() => setIndex(i)}>

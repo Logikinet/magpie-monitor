@@ -23,13 +23,18 @@
               "pane": "%1",
               "command": "codex",
               "preview": [
-                "devbox $ ready"
+                "devbox ~/demo-ui $ codex",
+                "> Review the sanitized dashboard fixtures",
+                "Reading src/dashboard.tsx",
+                "✓ Updated card spacing and labels",
+                "Waiting for the next demo task…"
               ],
               "active": true
             }
           ]
         }
-      ]
+      ],
+      "attach_cmd": "tmux attach-session -t devbox"
     }
   ],
   "panes": [
@@ -38,7 +43,11 @@
       "pane": "%1",
       "command": "codex",
       "preview": [
-        "devbox $ ready"
+        "devbox ~/demo-ui $ codex",
+        "> Review the sanitized dashboard fixtures",
+        "Reading src/dashboard.tsx",
+        "✓ Updated card spacing and labels",
+        "Waiting for the next demo task…"
       ],
       "active": true
     }

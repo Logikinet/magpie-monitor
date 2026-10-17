@@ -6,11 +6,30 @@
       "installed": true,
       "version": "demo",
       "procs": 1,
-      "proc_list": [],
+      "proc_list": [
+        {
+          "pid": 4101,
+          "cwd": "/home/demo/devbox",
+          "cpu_pct": 2.4,
+          "mem_mb": 128
+        }
+      ],
       "tasks": [],
       "meta": {
         "sessions_total": 2,
         "sessions_24h": 1
+      },
+      "quota": {
+        "buckets": [
+          {
+            "label": "5h",
+            "remaining_pct": 72
+          },
+          {
+            "label": "Weekly",
+            "remaining_pct": 38
+          }
+        ]
       }
     }
   ],
