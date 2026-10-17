@@ -39,6 +39,12 @@ Mock data (模拟数据) — generated on CI simulator, not a real server
 | --- | --- | --- | --- | --- |
 | <img src="docs/screenshots/mock-overview.png" width="200" alt="Mock data — 概览"> | <img src="docs/screenshots/mock-activity.png" width="200" alt="Mock data — 动态"> | <img src="docs/screenshots/mock-tmux.png" width="200" alt="Mock data — Tmux"> | <img src="docs/screenshots/mock-agent.png" width="200" alt="Mock data — Agent"> | <img src="docs/screenshots/mock-services.png" width="200" alt="Mock data — 服务"> |
 
+## 部署备注
+
+App 不内置任何 provider 列表：配额、路由、并发等全部按 magpie 网关返回的数据展示，因此 magpie 侧新增或调整 provider 无需改动 App。
+
+例如，可在 magpie 中把本机运行的 [oh-my-free-models](https://github.com/hakilee/oh-my-free-models) 代理（默认 `http://localhost:4567`）配置为路由组中的首选自定义 provider，并以 DeepSeek 官方 API 作为回退。该代理只应监听本机/私有网络；不要在 App 或仓库中保存其密钥，也不要使用来路不明的公共中转。
+
 ## 隐私与安全
 
 网关 key、runtime key、SSH 密码、私钥、私钥口令及主机指纹保存在 Keychain。应用只向用户配置的 magpie 主机及 SSH 主机发送连接请求，不会将这些信息发送到其他服务。HTTP 未加密，请仅在可信私有网络（例如 Tailscale）中使用；HTTPS 同样受支持。
@@ -89,6 +95,12 @@ Mock data (模拟数据) — generated on CI simulator, not a real server
 | Overview | Activity | Tmux | Agent | Services |
 | --- | --- | --- | --- | --- |
 | <img src="docs/screenshots/mock-overview.png" width="200" alt="Mock data — Overview"> | <img src="docs/screenshots/mock-activity.png" width="200" alt="Mock data — Activity"> | <img src="docs/screenshots/mock-tmux.png" width="200" alt="Mock data — Tmux"> | <img src="docs/screenshots/mock-agent.png" width="200" alt="Mock data — Agent"> | <img src="docs/screenshots/mock-services.png" width="200" alt="Mock data — Services"> |
+
+## Deployment notes
+
+The app has no built-in provider list: quotas, routes and concurrency are rendered from whatever the magpie gateway returns, so adding or changing providers in magpie needs no app change.
+
+For example, magpie can use a locally running [oh-my-free-models](https://github.com/hakilee/oh-my-free-models) proxy (default `http://localhost:4567`) as the first custom provider in a routing group, with the official DeepSeek API as fallback. Keep such a proxy bound to localhost / your private network; never store its keys in the app or this repo, and avoid untrusted public relays.
 
 ## Privacy and security
 
