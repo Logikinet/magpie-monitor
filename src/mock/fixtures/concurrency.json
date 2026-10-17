@@ -1,0 +1,41 @@
+{
+  "object": "concurrency",
+  "data": {
+    "anthropic#key-demo-1": {
+      "busy": 2,
+      "waiting": 1,
+      "limit": 4
+    },
+    "openai@demo-account-2": {
+      "busy": 1,
+      "waiting": 0,
+      "limit": 3
+    },
+    "google#key-demo-3": {
+      "busy": 1,
+      "waiting": 0,
+      "limit": 2
+    }
+  },
+  "requests": 4,
+  "waiting": 1,
+  "tools": 2,
+  "active": [
+    {
+      "session": "sess-demo-01",
+      "route": 4124
+    },
+    {
+      "session": "sess-demo-03",
+      "route": 4125
+    },
+    {
+      "session": "sess-demo-06",
+      "route": 4126
+    },
+    {
+      "session": "sess-demo-08",
+      "route": 4127
+    }
+  ]
+}

@@ -1,0 +1,633 @@
+{
+  "seq": 631,
+  "routes": [
+    {
+      "seq": 620,
+      "id": 4129,
+      "time": "2026-10-17T14:00:00Z",
+      "agent": "claude-code",
+      "session": "sess-demo-01",
+      "usage": [
+        {
+          "provider": "anthropic",
+          "model": "claude-sonnet-4",
+          "in": 1800,
+          "out": 420,
+          "cache_read": 450,
+          "cache_write": 90,
+          "reasoning": 210
+        }
+      ],
+      "kind": "chat",
+      "model": "claude-sonnet-4",
+      "effort": "high",
+      "provider": "anthropic",
+      "leadAccount": "demo-account-1",
+      "order": [
+        {
+          "id": "key-demo-1",
+          "provider": "anthropic",
+          "name": "Claude Team",
+          "icon": "generic",
+          "kind": "account",
+          "agent": "claude-code",
+          "plan": "Team",
+          "model": "claude-sonnet-4",
+          "routing": "weighted",
+          "fallback": false,
+          "used": 31,
+          "amount": 100,
+          "limit": 100,
+          "unit": "%",
+          "pace": 0.7,
+          "tokens": 12000,
+          "rank": 1,
+          "turn": true
+        }
+      ],
+      "done": true,
+      "status": 200,
+      "priced": true
+    },
+    {
+      "seq": 621,
+      "id": 4128,
+      "time": "2026-10-17T13:55:00Z",
+      "agent": "codex",
+      "session": "sess-demo-02",
+      "usage": [
+        {
+          "provider": "openai",
+          "model": "gpt-5-codex",
+          "in": 2150,
+          "out": 511,
+          "cache_read": 520,
+          "cache_write": 90,
+          "reasoning": 243
+        }
+      ],
+      "kind": "chat",
+      "model": "gpt-5-codex",
+      "effort": "medium",
+      "tier": "priority",
+      "provider": "openai",
+      "leadAccount": "demo-account-2",
+      "order": [
+        {
+          "id": "key-demo-2",
+          "provider": "openai",
+          "name": "OpenAI Plus",
+          "icon": "generic",
+          "kind": "account",
+          "agent": "codex",
+          "plan": "Team",
+          "model": "gpt-5-codex",
+          "routing": "weighted",
+          "fallback": false,
+          "used": 34,
+          "amount": 100,
+          "limit": 100,
+          "unit": "%",
+          "pace": 0.7,
+          "tokens": 12500,
+          "rank": 1,
+          "turn": true
+        }
+      ],
+      "done": true,
+      "status": 200,
+      "priced": true
+    },
+    {
+      "seq": 622,
+      "id": 4127,
+      "time": "2026-10-17T13:50:00Z",
+      "agent": "gemini-cli",
+      "session": "sess-demo-03",
+      "usage": [
+        {
+          "provider": "google",
+          "model": "gemini-2.5-pro",
+          "in": 2500,
+          "out": 602,
+          "cache_read": 590,
+          "cache_write": 90,
+          "reasoning": 276
+        }
+      ],
+      "kind": "chat",
+      "model": "gemini-2.5-pro",
+      "effort": "medium",
+      "provider": "google",
+      "leadAccount": "demo-account-3",
+      "subagent": {
+        "name": "reviewer",
+        "model": "gemini-2.5-pro",
+        "effort": "medium"
+      },
+      "order": [
+        {
+          "id": "key-demo-3",
+          "provider": "google",
+          "name": "Gemini Advanced",
+          "icon": "generic",
+          "kind": "account",
+          "agent": "gemini-cli",
+          "plan": "Team",
+          "model": "gemini-2.5-pro",
+          "routing": "weighted",
+          "fallback": false,
+          "used": 37,
+          "amount": 100,
+          "limit": 100,
+          "unit": "%",
+          "pace": 0.7,
+          "tokens": 13000,
+          "rank": 1,
+          "turn": true
+        }
+      ],
+      "done": true,
+      "status": 200,
+      "priced": true
+    },
+    {
+      "seq": 623,
+      "id": 4126,
+      "time": "2026-10-17T13:45:00Z",
+      "agent": "opencode",
+      "session": "sess-demo-04",
+      "usage": [
+        {
+          "provider": "openrouter",
+          "model": "qwen3-coder",
+          "in": 2850,
+          "out": 693,
+          "cache_read": 660,
+          "cache_write": 90,
+          "reasoning": 309
+        }
+      ],
+      "kind": "chat",
+      "model": "qwen3-coder",
+      "effort": "high",
+      "provider": "openrouter",
+      "group": {
+        "id": "coding-demo",
+        "name": "Coding pool",
+        "routing": "weighted",
+        "affinity": "session",
+        "members": [
+          "member-demo-a",
+          "member-demo-b"
+        ]
+      },
+      "rule": {
+        "name": "故障转移",
+        "reason": "首选线路繁忙"
+      },
+      "leadAccount": "demo-account-4",
+      "order": [
+        {
+          "id": "key-demo-4",
+          "provider": "openrouter",
+          "name": "OpenRouter Pool",
+          "icon": "generic",
+          "kind": "account",
+          "agent": "opencode",
+          "plan": "Team",
+          "model": "qwen3-coder",
+          "routing": "weighted",
+          "fallback": false,
+          "used": 40,
+          "amount": 100,
+          "limit": 100,
+          "unit": "%",
+          "pace": 0.7,
+          "tokens": 13500,
+          "rank": 1,
+          "turn": true
+        }
+      ],
+      "done": true,
+      "status": 200,
+      "priced": true
+    },
+    {
+      "seq": 624,
+      "id": 4125,
+      "time": "2026-10-17T13:40:00Z",
+      "agent": "claude-code",
+      "session": "sess-demo-05",
+      "parentSession": "sess-demo-05",
+      "usage": [
+        {
+          "provider": "anthropic",
+          "model": "claude-sonnet-4",
+          "in": 3200,
+          "out": 784,
+          "cache_read": 730,
+          "cache_write": 90,
+          "reasoning": 342
+        }
+      ],
+      "kind": "chat",
+      "model": "claude-sonnet-4",
+      "effort": "medium",
+      "provider": "anthropic",
+      "leadAccount": "demo-account-1",
+      "order": [
+        {
+          "id": "key-demo-1",
+          "provider": "anthropic",
+          "name": "Claude Team",
+          "icon": "generic",
+          "kind": "account",
+          "agent": "claude-code",
+          "plan": "Team",
+          "model": "claude-sonnet-4",
+          "routing": "weighted",
+          "fallback": false,
+          "used": 43,
+          "amount": 100,
+          "limit": 100,
+          "unit": "%",
+          "pace": 0.7,
+          "tokens": 14000,
+          "rank": 1,
+          "turn": true
+        }
+      ],
+      "done": true,
+      "status": 200,
+      "priced": true
+    },
+    {
+      "seq": 625,
+      "id": 4124,
+      "time": "2026-10-17T13:35:00Z",
+      "agent": "codex",
+      "session": "sess-demo-06",
+      "usage": [
+        {
+          "provider": "openai",
+          "model": "gpt-5-codex",
+          "in": 3550,
+          "out": 875,
+          "cache_read": 800,
+          "cache_write": 90,
+          "reasoning": 375
+        }
+      ],
+      "kind": "chat",
+      "model": "gpt-5-codex",
+      "effort": "medium",
+      "tier": "priority",
+      "provider": "openai",
+      "leadAccount": "demo-account-2",
+      "order": [
+        {
+          "id": "key-demo-2",
+          "provider": "openai",
+          "name": "OpenAI Plus",
+          "icon": "generic",
+          "kind": "account",
+          "agent": "codex",
+          "plan": "Team",
+          "model": "gpt-5-codex",
+          "routing": "weighted",
+          "fallback": false,
+          "used": 46,
+          "amount": 100,
+          "limit": 100,
+          "unit": "%",
+          "pace": 0.7,
+          "tokens": 14500,
+          "rank": 1,
+          "turn": true
+        }
+      ],
+      "done": true,
+      "status": 200,
+      "priced": true
+    },
+    {
+      "seq": 626,
+      "id": 4123,
+      "time": "2026-10-17T13:30:00Z",
+      "agent": "gemini-cli",
+      "session": "sess-demo-07",
+      "usage": [
+        {
+          "provider": "google",
+          "model": "gemini-2.5-pro",
+          "in": 3900,
+          "out": 966,
+          "cache_read": 870,
+          "cache_write": 90,
+          "reasoning": 408
+        }
+      ],
+      "kind": "chat",
+      "model": "gemini-2.5-pro",
+      "effort": "high",
+      "provider": "google",
+      "leadAccount": "demo-account-3",
+      "pinned": "demo-account-2",
+      "order": [
+        {
+          "id": "key-demo-3",
+          "provider": "google",
+          "name": "Gemini Advanced",
+          "icon": "generic",
+          "kind": "account",
+          "agent": "gemini-cli",
+          "plan": "Team",
+          "model": "gemini-2.5-pro",
+          "routing": "weighted",
+          "fallback": false,
+          "used": 49,
+          "amount": 100,
+          "limit": 100,
+          "unit": "%",
+          "pace": 0.7,
+          "tokens": 15000,
+          "rank": 1,
+          "turn": true
+        }
+      ],
+      "done": true,
+      "status": 200,
+      "priced": true
+    },
+    {
+      "seq": 627,
+      "id": 4122,
+      "time": "2026-10-17T13:25:00Z",
+      "agent": "opencode",
+      "session": "sess-demo-08",
+      "usage": [
+        {
+          "provider": "openrouter",
+          "model": "qwen3-coder",
+          "in": 4250,
+          "out": 1057,
+          "cache_read": 940,
+          "cache_write": 90,
+          "reasoning": 441
+        }
+      ],
+      "kind": "chat",
+      "model": "qwen3-coder",
+      "effort": "medium",
+      "provider": "openrouter",
+      "group": {
+        "id": "coding-demo",
+        "name": "Coding pool",
+        "routing": "weighted",
+        "affinity": "session",
+        "members": [
+          "member-demo-a",
+          "member-demo-b"
+        ]
+      },
+      "rule": {
+        "name": "故障转移",
+        "reason": "首选线路繁忙"
+      },
+      "leadAccount": "demo-account-4",
+      "order": [
+        {
+          "id": "key-demo-4",
+          "provider": "openrouter",
+          "name": "OpenRouter Pool",
+          "icon": "generic",
+          "kind": "account",
+          "agent": "opencode",
+          "plan": "Team",
+          "model": "qwen3-coder",
+          "routing": "weighted",
+          "fallback": false,
+          "used": 52,
+          "amount": 100,
+          "limit": 100,
+          "unit": "%",
+          "pace": 0.7,
+          "tokens": 15500,
+          "rank": 1,
+          "turn": true
+        }
+      ],
+      "done": true,
+      "status": 200,
+      "priced": true
+    },
+    {
+      "seq": 628,
+      "id": 4121,
+      "time": "2026-10-17T13:20:00Z",
+      "agent": "claude-code",
+      "session": "sess-demo-09",
+      "parentSession": "sess-demo-04",
+      "usage": [
+        {
+          "provider": "anthropic",
+          "model": "claude-sonnet-4",
+          "in": 4600,
+          "out": 1148,
+          "cache_read": 1010,
+          "cache_write": 90,
+          "reasoning": 474
+        }
+      ],
+      "kind": "chat",
+      "model": "claude-sonnet-4",
+      "effort": "medium",
+      "provider": "anthropic",
+      "leadAccount": "demo-account-1",
+      "subagent": {
+        "name": "reviewer",
+        "model": "claude-sonnet-4",
+        "effort": "medium"
+      },
+      "order": [
+        {
+          "id": "key-demo-1",
+          "provider": "anthropic",
+          "name": "Claude Team",
+          "icon": "generic",
+          "kind": "account",
+          "agent": "claude-code",
+          "plan": "Team",
+          "model": "claude-sonnet-4",
+          "routing": "weighted",
+          "fallback": false,
+          "used": 55,
+          "amount": 100,
+          "limit": 100,
+          "unit": "%",
+          "pace": 0.7,
+          "tokens": 16000,
+          "rank": 1,
+          "turn": true
+        }
+      ],
+      "done": true,
+      "status": 200,
+      "priced": true
+    },
+    {
+      "seq": 629,
+      "id": 4120,
+      "time": "2026-10-17T13:15:00Z",
+      "agent": "codex",
+      "session": "sess-demo-10",
+      "usage": [
+        {
+          "provider": "openai",
+          "model": "gpt-5-codex",
+          "in": 4950,
+          "out": 1239,
+          "cache_read": 1080,
+          "cache_write": 90,
+          "reasoning": 507
+        }
+      ],
+      "kind": "chat",
+      "model": "gpt-5-codex",
+      "effort": "high",
+      "tier": "priority",
+      "provider": "openai",
+      "leadAccount": "demo-account-2",
+      "order": [
+        {
+          "id": "key-demo-2",
+          "provider": "openai",
+          "name": "OpenAI Plus",
+          "icon": "generic",
+          "kind": "account",
+          "agent": "codex",
+          "plan": "Team",
+          "model": "gpt-5-codex",
+          "routing": "weighted",
+          "fallback": false,
+          "used": 58,
+          "amount": 100,
+          "limit": 100,
+          "unit": "%",
+          "pace": 0.7,
+          "tokens": 16500,
+          "rank": 1,
+          "turn": true
+        }
+      ],
+      "done": false,
+      "status": 502,
+      "error": "上游暂时不可用",
+      "priced": false
+    },
+    {
+      "seq": 630,
+      "id": 4119,
+      "time": "2026-10-17T13:10:00Z",
+      "agent": "gemini-cli",
+      "session": "sess-demo-11",
+      "usage": [
+        {
+          "provider": "google",
+          "model": "gemini-2.5-pro",
+          "in": 5300,
+          "out": 1330,
+          "cache_read": 1150,
+          "cache_write": 90,
+          "reasoning": 540
+        }
+      ],
+      "kind": "chat",
+      "model": "gemini-2.5-pro",
+      "effort": "medium",
+      "provider": "google",
+      "leadAccount": "demo-account-3",
+      "order": [
+        {
+          "id": "key-demo-3",
+          "provider": "google",
+          "name": "Gemini Advanced",
+          "icon": "generic",
+          "kind": "account",
+          "agent": "gemini-cli",
+          "plan": "Team",
+          "model": "gemini-2.5-pro",
+          "routing": "weighted",
+          "fallback": false,
+          "used": 61,
+          "amount": 100,
+          "limit": 100,
+          "unit": "%",
+          "pace": 0.7,
+          "tokens": 17000,
+          "rank": 1,
+          "turn": true
+        }
+      ],
+      "done": true,
+      "status": 200,
+      "priced": true
+    },
+    {
+      "seq": 631,
+      "id": 4118,
+      "time": "2026-10-17T13:05:00Z",
+      "agent": "opencode",
+      "session": "sess-demo-12",
+      "usage": [
+        {
+          "provider": "openrouter",
+          "model": "qwen3-coder",
+          "in": 5650,
+          "out": 1421,
+          "cache_read": 1220,
+          "cache_write": 90,
+          "reasoning": 573
+        }
+      ],
+      "kind": "chat",
+      "model": "qwen3-coder",
+      "effort": "medium",
+      "provider": "openrouter",
+      "leadAccount": "demo-account-4",
+      "order": [
+        {
+          "id": "key-demo-4",
+          "provider": "openrouter",
+          "name": "OpenRouter Pool",
+          "icon": "generic",
+          "kind": "account",
+          "agent": "opencode",
+          "plan": "Team",
+          "model": "qwen3-coder",
+          "routing": "weighted",
+          "fallback": false,
+          "used": 64,
+          "amount": 100,
+          "limit": 100,
+          "unit": "%",
+          "pace": 0.7,
+          "tokens": 17500,
+          "rank": 1,
+          "turn": true
+        }
+      ],
+      "done": true,
+      "status": 200,
+      "priced": true
+    }
+  ],
+  "totals": {
+    "requests": 186,
+    "rerouted": 14,
+    "errors": 3
+  },
+  "mine": true,
+  "now": "2026-10-17T14:00:00Z"
+}
