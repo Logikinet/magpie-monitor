@@ -51,7 +51,7 @@ magpie-ios/
 │   │   │   ├── Parsing/            # SSH 输出解析器（纯函数）
 │   │   │   └── Config/             # Profile 模型（不含 Keychain）
 │   │   └── Tests/MagpieKitTests/   # Linux 可运行
-│   └── SSHKit/                     # macOS/iOS only（依赖 Citadel/SwiftNIO-SSH）
+│   └── SSHKit/                     # iOS/macOS + Linux 可测（依赖 Citadel/SwiftNIO-SSH）
 │       ├── Package.swift
 │       └── Sources/SSHKit/
 │           ├── SSHConnection.swift # actor 封装
@@ -63,7 +63,7 @@ magpie-ios/
     └── architecture.md
 ```
 
-**包依赖原则**：`MagpieKit` 只依赖 Foundation（可选 URLSession），**绝不 import Citadel/SwiftNIO**。SSH 相关全部放 `SSHKit`，其平台限定为 iOS/macOS，因为 Citadel/SwiftNIO-SSH 在 Linux 上与 App 配置同构编译不可靠。
+**包依赖原则**：`MagpieKit` 只依赖 Foundation（可选 URLSession），**绝不 import Citadel/SwiftNIO**。SSH 相关全部放 `SSHKit`；App 使用 iOS/macOS 平台，包本身也可在 Linux 构建与测试。已验证 Citadel 0.12.1 与 SSHKit 测试可在 Swift 6.x Linux 环境运行。
 
 ## 3. 配置与服务器 Profile
 
@@ -175,7 +175,7 @@ loop:
 ### 动态 Tab 分页
 `/usage/requests?offset=&limit=` 返回 `offset/total`，列表滚动到底加载下一页；`bucket/series` 用于顶部趋势图（占位，见 dataviz 原则——数据驱动，不硬编码）。
 
-## 7. SSH 层（SSHKit，iOS/macOS only）
+## 7. SSH 层（SSHKit，iOS/macOS + Linux 可测）
 
 ### 连接 Actor
 ```
@@ -283,16 +283,18 @@ actor SSHConnection {
 
 `.github/workflows/ci.yml`：
 
-**macos job（构建 + IPA）**
-1. `brew install xcodegen`
-2. `xcodegen generate`
-3. `xcodebuild build -project magpie-ios.xcodeproj -scheme magpie-ios -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO`
-4. 组装 `Payload/magpie-ios.app` → `zip -r magpie-ios.ipa Payload`
-5. `actions/upload-artifact` 上传 `.ipa`。
+触发：push 到 `main`、pull_request、workflow_dispatch；权限仅 `contents: read`，同一 workflow/ref 的新运行取消旧运行。
 
-**Linux job（MagpieKit 测试）**
-- `swift test --package-path Packages/MagpieKit`（无 Citadel，纯 Foundation 可跑）。
-- 备注：`SSHKit` 不在 Linux 测（Citadel/SwiftNIO-SSH 平台限制），仅 macos CI 上做 SSHKit 集成测试（可选、需 mock SSH server）。
+**ios-build job（macos-15，构建 + IPA）**
+1. `maxim-lobanov/setup-xcode@v1` 选择 `latest-stable` Xcode。
+2. `brew install xcodegen`，然后 `xcodegen generate`；`project.yml` 显式声明 `magpie-ios` scheme。
+3. `xcodebuild -project magpie-ios.xcodeproj -scheme magpie-ios -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build`
+4. 创建 `Payload/`，复制 `build/Build/Products/Release-iphoneos/magpie-ios.app` 到其中，执行 `zip -qry magpie-ios.ipa Payload`。
+5. `actions/upload-artifact@v4` 上传 `magpie-ios.ipa`，artifact 名为 `magpie-ios-ipa`。
+
+**linux-test job（ubuntu-latest，官方 swift:6.0 容器）**
+- `swift test --package-path Packages/MagpieKit`（纯 Foundation）。
+- `swift test --package-path Packages/SSHKit`（Citadel 0.12.1 已验证支持 Swift 6.x Linux 构建与测试；无需连接真实主机）。
 
 无签名配置；用户自行签名（轻松签/LCSign）。
 
@@ -357,7 +359,7 @@ actor SSHConnection {
 ## 18. 风险
 - **长轮询超时**：URLSession 超时必须 >25s（35s），否则 trace 空转误判。
 - **runtime key 轮换**：magpie 重启后 web key 变化，需可靠重认证，否则 Agent Tab 静默失效。
-- **Citadel Linux 兼容**：已通过拆分 SSHKit 规避，代价是 SSH 逻辑无法在 Linux 单测，靠解析器纯函数 + macos 集成测试覆盖。
+- **Citadel Linux 兼容**：Citadel 0.12.1 与 SSHKit 已验证可在 Swift 6.x Linux 构建与测试；CI 同时测试 MagpieKit 和 SSHKit，后续依赖升级需保持兼容。真实 SSH 连接与 iOS 终端桥接仍需集成/真机验证。
 - **SSH 输出格式漂移**：`ss`/`docker ps`/`systemctl` 跨发行版/版本输出不同，解析器要容忍列数变化与缺失字段。
 - **ATS 与 http**：全局放开 http，靠 UI 徽章提醒用户；建议在 Tailscale 内使用或改用 https。
 - **TOFU 误报**：主机重装/重建容器导致指纹变化属正常，需清晰的重置 UI，避免用户误以为被攻击。
@@ -372,6 +374,6 @@ actor SSHConnection {
 7. 提交脱敏 Mock Fixture JSON（无真实主机/密钥/个人信息）。
 8. 403 时提示开启 magpie “Share on local network”；错误文案为中文（UI 中文，README 中英双语）。
 9. Mock 数据模式全程显示 “Mock data” 徽章，用于无服务器截图。
-10. CI：macOS job 构建**未签名** IPA（`CODE_SIGNING_ALLOWED=NO`，`Payload/` zip → `magpie-ios.ipa` artifact）；Linux job `swift test` MagpieKit。无签名配置。
+10. CI：macOS job 构建**未签名** IPA（`CODE_SIGNING_ALLOWED=NO`，`Payload/` zip → `magpie-ios.ipa` artifact）；Linux job `swift test` MagpieKit 和 SSHKit（Citadel 0.12.1 已验证可在 Swift 6.x Linux 测试）。无签名配置。
 11. 仓库将公开（Logikinet/magpie-ios）：MIT LICENSE，并在 README/NOTICE 中致谢 magpie、SwiftTerm、Citadel 及其许可证。
 12. README 中英双语：功能、配置（Tailscale、magpie 设置、轻松签/LCSign 签名）、截图占位（日后 CI/模拟器 Mock 生成，标注 mock）。
