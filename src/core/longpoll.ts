@@ -10,6 +10,7 @@ export interface VisibilitySource {
 export function createTraceLoop(options: {
     fetchTrace: (after: number, wait: number, signal: AbortSignal, timeoutMs: number) => Promise<TraceEnvelope>;
     onRoutes: (routes: Route[]) => void;
+    onEnvelope?: (envelope: TraceEnvelope) => void;
     onState?: (state: TraceState) => void;
     sleep?: (ms: number, signal?: AbortSignal) => Promise<void>;
     random?: () => number;
@@ -27,6 +28,7 @@ export function createTraceLoop(options: {
             const env = await options.fetchTrace(after, 1, signal, 35000);
             if (!active())
                 break;
+            options.onEnvelope?.(env);
             after = Math.max(after, env.seq);
             failures = 0;
             if (env.routes.length)
