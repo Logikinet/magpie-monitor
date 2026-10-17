@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Port: Equatable {
+public struct ListeningPort: Equatable {
     public let address: String
     public let port: Int
     public let processName: String?
@@ -23,7 +23,7 @@ public struct TmuxSession: Equatable {
 }
 
 public enum SSHOutputParser {
-    public static func parsePorts(_ output: String) -> [Port] {
+    public static func parsePorts(_ output: String) -> [ListeningPort] {
         output.split(whereSeparator: \.isNewline).compactMap { raw in
             let line = String(raw).trimmingCharacters(in: .whitespaces)
             guard !line.isEmpty else { return nil }
@@ -37,7 +37,7 @@ public enum SSHOutputParser {
                 if let slash = text.lastIndex(of: "/") { return String(text[text.index(after: slash)...].split(separator: ",").first ?? "") }
                 return nil
             }
-            return Port(address: address, port: port, processName: process)
+            return ListeningPort(address: address, port: port, processName: process)
         }
     }
 

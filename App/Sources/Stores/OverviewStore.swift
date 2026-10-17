@@ -20,7 +20,7 @@ final class OverviewStore {
     private(set) var version: String?
     private(set) var gatewayError: String?
     private(set) var limit: [String: JSONValue]?
-    private(set) var ports: [Port] = []
+    private(set) var ports: [ListeningPort] = []
     private(set) var portsError: String?
     private(set) var containers: [Container] = []
     private(set) var containersError: String?

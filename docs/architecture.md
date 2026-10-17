@@ -199,7 +199,7 @@ actor SSHConnection {
 - 服务启停命令（服务 Tab，带确认弹窗）：
   - docker：`docker start <name>` / `docker stop <name>`
   - systemd：`systemctl start <unit>` / `systemctl stop <unit>`（stop 前可先 `systemctl is-active` 展示当前态）
-- 所有命令输出经 MagpieKit 纯函数解析器（`ss` 行 → `Port`、`docker ps` → `Container`、`systemctl` → `Unit`、`ps` → `Process`），**解析器无 Citadel 依赖，Linux 可测**。
+- 所有命令输出经 MagpieKit 纯函数解析器（`ss` 行 → `ListeningPort`、`docker ps` → `Container`、`systemctl` → `Unit`、`ps` → `Process`），**解析器无 Citadel 依赖，Linux 可测**。
 
 ### PTY（Tmux Tab）
 - `tmux attach -t <session>` 或 `tmux new -s magpie`（无会话时）。
