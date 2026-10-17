@@ -560,7 +560,7 @@ export default function App() {
             <>
               <div class="page-heading">
                 <div>
-                  <p class="eyebrow">REQUEST LEDGER</p>
+                  <p class="eyebrow">{new URLSearchParams(location.search).get('lang') === 'en' ? 'REQUEST LEDGER' : '请求记录'}</p>
                   <h1>动态</h1>
                   <p>请求趋势与路由记录</p>
                 </div>
@@ -614,7 +614,7 @@ export default function App() {
             <>
               <div class="page-heading">
                 <div>
-                  <p class="eyebrow">LIVE ROUTING</p>
+                  <p class="eyebrow">{new URLSearchParams(location.search).get('lang') === 'en' ? 'LIVE ROUTING' : '实时路由'}</p>
                   <h1>Agent</h1>
                   <p>路由、用量与运行环境</p>
                 </div>
@@ -667,7 +667,7 @@ export default function App() {
             <>
               <div class="page-heading">
                 <div>
-                  <p class="eyebrow">PROVIDER LIMITS</p>
+                  <p class="eyebrow">{new URLSearchParams(location.search).get('lang') === 'en' ? 'PROVIDER LIMITS' : '服务商与配额'}</p>
                   <h1>配额</h1>
                   <p>各服务商的使用窗口与重置时间</p>
                 </div>
@@ -701,7 +701,7 @@ export default function App() {
             <>
               <div class="page-heading">
                 <div>
-                  <p class="eyebrow">PREFERENCES</p>
+                  <p class="eyebrow">{new URLSearchParams(location.search).get('lang') === 'en' ? 'PREFERENCES' : '偏好设置'}</p>
                   <h1>设置</h1>
                   <p>连接 Profile、密钥与外观</p>
                 </div>

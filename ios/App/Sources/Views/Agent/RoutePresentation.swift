@@ -12,6 +12,10 @@ enum RoutePresentation {
         }
     }
     static func milliseconds(_ value: Int?) -> String { value.map { "\($0.formatted()) ms" } ?? "—" }
+    static func elapsed(_ start: Date?, now: Date = .now) -> String {
+        guard let start else { return "—" }
+        return "\(max(0, Int(now.timeIntervalSince(start))).formatted()) 秒"
+    }
     static func failed(_ route: Route) -> Bool {
         route.error?.isEmpty == false || (route.status?.value ?? 0) >= 400 || (route.tries?.elements ?? []).contains { ($0.status?.value ?? 0) >= 400 }
     }

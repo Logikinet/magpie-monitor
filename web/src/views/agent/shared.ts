@@ -10,6 +10,10 @@ export const clock = (s?: string) =>
   s && Number.isFinite(Date.parse(s))
     ? new Date(s).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })
     : '—';
+export const elapsedSeconds = (s?: string) => {
+  const start = s ? Date.parse(s) : NaN;
+  return Number.isFinite(start) ? Math.max(0, Math.floor((Date.now() - start) / 1000)) : null;
+};
 const text = {
   zh: { smart: '智能分配', order: '依序尝试', rotate: '轮流分配', usage: '按用量分配' },
   en: { smart: 'Smart selection', order: 'Try in order', rotate: 'Round robin', usage: 'Usage based' },

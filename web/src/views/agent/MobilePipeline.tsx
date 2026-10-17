@@ -1,14 +1,19 @@
 import type { Route } from '../../core/decode';
 import { newestRoutes, outputSpeed, matchSeat } from '../../core/routing-model';
-import { clock, strategy, value, word, type Lang } from './shared';
+import { clock, elapsedSeconds, strategy, value, word, type Lang } from './shared';
 const text = {
-  zh: { recent: '最近请求', responding: '回答中', hit: '命中', input: '输入', output: '输出' },
+  zh: { recent: '最近请求', responding: '回答中', hit: '命中', input: '输入', output: '输出', duration: '耗时', elapsed: '已用', first: '首字', speed: '速度', status: '状态' },
   en: {
     recent: 'Recent requests',
     responding: 'Responding',
     hit: 'Served by',
     input: 'Input',
     output: 'Output',
+    duration: 'Duration',
+    elapsed: 'Elapsed',
+    first: 'First text',
+    speed: 'Speed',
+    status: 'Status',
   },
 };
 export function MobilePipeline({
@@ -37,6 +42,7 @@ export function MobilePipeline({
           !tr.again &&
           !tr.replan,
       );
+  const selectedTry = route.done === false ? route.tries?.at(-1) : winner;
   return (
     <section class="rt-pipeline-m">
       <div class="rt-recent" aria-label={t.recent}>
@@ -64,18 +70,16 @@ export function MobilePipeline({
         </div>
       </div>
       <p>
-        {t.hit}:{' '}
-        <span class="pii">{(winner && matchSeat(route.order, winner)?.who) ?? winner?.id ?? '—'}</span> ·{' '}
-        {route.done === false ? t.responding : value(route.status)} · {value(route.ms, ' ms')} · TTFT{' '}
-        {value(route.ttft, ' ms')} · {value(outputSpeed(route), ' tok/s')} · {t.input}{' '}
-        {Array.isArray(route.usage) && route.usage.length
-          ? value(
-              (route.usage as { in?: number }[]).every((u) => u.in !== undefined)
-                ? (route.usage as { in: number }[]).reduce((n, u) => n + u.in, 0)
-                : undefined,
-            )
-          : '—'}{' '}
-        · {t.output} {value(route.out)}
+        {t.hit}: <span class="pii">{(selectedTry && matchSeat(route.order, selectedTry)?.who) ?? selectedTry?.id ?? '—'}</span>
+        {route.done === false
+          ? ` · ${t.status} ${t.responding} · ${t.elapsed} ${value(elapsedSeconds(route.time), 's')}`
+          : ` · ${t.status} ${value(route.status)} · ${t.duration} ${value(route.ms, ' ms')}`}
+        {route.ttft !== undefined && <> · {t.first} {value(route.ttft, ' ms')}</>}
+        {route.done !== false && outputSpeed(route) !== null && <> · {t.speed} {value(outputSpeed(route), ' tok/s')}</>}
+        {route.done !== false && <>
+          {Array.isArray(route.usage) && route.usage.length && (route.usage as { in?: number }[]).every((u) => u.in !== undefined) && <> · {t.input} {(route.usage as { in: number }[]).reduce((n, u) => n + u.in, 0).toLocaleString()}</>}
+          {route.out !== undefined && <> · {t.output} {value(route.out)}</>}
+        </>}
       </p>
     </section>
   );

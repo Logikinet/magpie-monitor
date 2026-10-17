@@ -9,6 +9,14 @@ const text = {
     empty: '没有决策记录',
     stream: '输出',
     total: '总计',
+    magpie: '网关',
+    network: '网络',
+    vendor: '服务商',
+    dns: 'DNS',
+    tcp: 'TCP',
+    tls: 'TLS',
+    send: '发送',
+    ttft: '首字时间',
   },
   en: {
     title: 'Request decisions',
@@ -17,6 +25,14 @@ const text = {
     empty: 'No decision records',
     stream: 'Stream',
     total: 'Total',
+    magpie: 'Gateway',
+    network: 'Network',
+    vendor: 'Provider',
+    dns: 'DNS',
+    tcp: 'TCP',
+    tls: 'TLS',
+    send: 'Send',
+    ttft: 'TTFT',
   },
 };
 export function RoutingLog({
@@ -85,14 +101,14 @@ export function RoutingLog({
       </div>
       <dl class="rt-timings">
         {Object.entries({
-          magpie: b.magpie,
-          net: b.network,
-          vendor: b.vendor,
-          DNS: b.dns,
-          TCP: b.tcp,
-          TLS: b.tls,
-          send: b.send,
-          TTFT: b.ttft,
+          [t.magpie]: b.magpie,
+          [t.network]: b.network,
+          [t.vendor]: b.vendor,
+          [t.dns]: b.dns,
+          [t.tcp]: b.tcp,
+          [t.tls]: b.tls,
+          [t.send]: b.send,
+          [t.ttft]: b.ttft,
           [t.stream]: b.stream,
         }).map(([k, v]) => (
           <div>

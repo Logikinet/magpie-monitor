@@ -163,7 +163,7 @@ export function latencyBreakdown(route: Route) {
   const tries = route.tries ?? [];
   const start = time(route.time),
     firstStart = time(tries[0]?.start);
-  const magpie = start !== null && firstStart !== null && firstStart >= start ? firstStart - start : null;
+  const magpie = start !== null && firstStart !== null && firstStart > start ? firstStart - start : null;
   const last = tries.at(-1),
     net = last?.net;
   // No percentages or default timings: network phases only exist when measured.

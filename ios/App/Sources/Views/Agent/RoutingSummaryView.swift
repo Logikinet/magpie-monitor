@@ -12,16 +12,21 @@ struct RoutingSummaryView: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text([route.provider ?? "—", route.served ?? route.model ?? "—"].joined(separator: " · ")).font(.headline.monospaced())
+            Text("服务商：\(route.provider ?? "—") · 模型：\(route.served ?? route.model ?? "—")").font(.headline.monospaced())
             if route.done == false {
-                Label("回答中", systemImage: "ellipsis.bubble").foregroundStyle(DS.Palette.green)
+                let start = route.tries?.elements.first?.start?.date
+                Label("回答中 · 已用 \(RoutePresentation.elapsed(start))", systemImage: "ellipsis.bubble")
+                    .foregroundStyle(DS.Palette.green)
             } else if let status = route.status?.value {
                 Label("HTTP \(status)", systemImage: status >= 400 ? "exclamationmark.triangle" : "checkmark.circle")
                     .foregroundStyle(status >= 400 ? DS.Palette.red : DS.Palette.green)
             } else { Text("状态：—") }
-            Text("耗时 \(RoutePresentation.milliseconds(route.ms?.value)) · 首 token \(RoutePresentation.milliseconds(route.ttft?.value))")
-            Text("输入 \(route.tokens?.value.formatted() ?? "—") · 输出 \(route.out?.value.formatted() ?? "—") token")
-            Text("输出速度 \(speed)")
+            if route.done != false {
+                Text("耗时：\(RoutePresentation.milliseconds(route.ms?.value)) · Token：\(route.tokens?.value.formatted() ?? "—")")
+            }
+            if let ttft = route.ttft?.value { Text("首字：\(RoutePresentation.milliseconds(ttft))") }
+            if route.done != false, let output = route.out?.value { Text("输出 Token：\(output.formatted())") }
+            if route.done != false, speed != "—" { Text("速度：\(speed)") }
         }.font(.caption.monospaced()).accessibilityElement(children: .combine)
     }
 }
