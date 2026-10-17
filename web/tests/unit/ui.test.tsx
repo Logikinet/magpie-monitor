@@ -59,7 +59,7 @@ describe('routing UI', () => {
     render(<RoutingView routes={[{ seq: 1, order: [] }]} />, root);
     expect(root.querySelector('.rt-stats')?.textContent).toBe('请求 —迂回 —错误 —');
     expect(root.querySelector('.rt-stats')?.textContent).not.toMatch(/186|14|3/);
-    expect(root.querySelector('.rt-timings')?.textContent).toContain('DNS—');
+    expect(root.querySelector('.rt-timings')?.textContent).not.toMatch(/DNS|TCP|TLS|发送/);
   });
   it('filters by account and selects the latest failed request', async () => {
     await act(() => render(<RoutingView routes={trace.routes} totals={trace.totals} />, root));

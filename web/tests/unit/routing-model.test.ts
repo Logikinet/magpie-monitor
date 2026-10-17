@@ -144,7 +144,7 @@ it('derives measured timings and proportional context cells', () => {
         start: '2026-10-17T00:00:00.010Z',
         done: true,
         ms: 990,
-        net: { dns: 1, connect: 2, tls: 3, send: 4 },
+        net: { own: 10, before: 0, pool: 0, dns: 1, connect: 2, tls: 3, send: 4, wait: 100, head: 120 },
       },
     ],
     prompt: {
@@ -156,7 +156,7 @@ it('derives measured timings and proportional context cells', () => {
       ],
     },
   });
-  expect(latencyBreakdown(r)).toMatchObject({ magpie: 10, network: 10, vendor: 990, stream: 800 });
+  expect(latencyBreakdown(r)).toMatchObject({ magpie: 10, network: 10, vendor: 970, stream: 800 });
   expect(footSummary(r).tokensPerSecond).toBe(100);
   const cells = contextCells(r.prompt)!;
   expect(cells).toHaveLength(400);

@@ -141,15 +141,18 @@ describe('providers', () => {
   it('derives plans, sign-in, masked key and free statuses from data', () => {
     render(<ProvidersTable providers={decodeProviders(providers).providers} />, root);
     expect([...root.querySelectorAll('.mp-pill')].map((p) => p.textContent)).toEqual([
-      'Demo standard',
+      'Standard plan',
       'Signed in',
-      'demo…0000',
+      'sk-••••••••••••••••••••••••abcd',
+      'Free',
+      ...Array(4).fill('sk-••••••••••••••••••••••••ef01'),
+      'Free',
       'Free',
     ]);
-    expect(root.querySelectorAll('.mp-off')).toHaveLength(1);
+    expect(root.querySelectorAll('.mp-off')).toHaveLength(2);
     expect(root.textContent).toContain('Signed in as demo-user@example.com');
     expect(root.textContent).toContain('https://example.ts.net · 2 models');
-    expect(root.querySelector('.mp-mono')?.textContent).toBe('demo…0000');
+    expect(root.querySelector('.mp-mono')?.textContent).toBe('sk-••••••••••••••••••••••••abcd');
     expect(root.querySelectorAll('.mp-agent-icon')).toHaveLength(12);
     expect(root.textContent).not.toContain('SuperGrok');
   });
@@ -168,6 +171,6 @@ describe('providers', () => {
     await click('Refresh');
     await flush();
     expect(root.querySelector('[role=alert]')).toBeNull();
-    expect(root.querySelectorAll('.mp-provider')).toHaveLength(4);
+    expect(root.querySelectorAll('.mp-provider')).toHaveLength(10);
   });
 });

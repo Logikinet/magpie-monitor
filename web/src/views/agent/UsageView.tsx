@@ -179,7 +179,7 @@ function Account({ account: q, used }: { account: Data; used: boolean }) {
       )}
       {q.error && (
         <p class="mp-error" role="alert">
-          {q.error}
+          {q.error === 'quota.unavailable' ? translate('quota.unavailable') : q.error}
         </p>
       )}
     </div>

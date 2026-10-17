@@ -4,7 +4,6 @@ import { dirname, resolve } from 'node:path';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const webPath = resolve(root, 'web/src/mock/fixtures/trace.json');
-const iosPath = resolve(root, 'ios/Packages/MagpieKit/Sources/MagpieKit/MockData/trace.json');
 const trace = JSON.parse(await readFile(webPath, 'utf8'));
 const providers = [
   ['demo-claude', 'claude-sonnet'],
@@ -26,7 +25,7 @@ trace.routes = trace.routes.map((route, i) => {
   const ttft = 180 + ((i * 173) % 2_321);
   const output = 90 + ((i * 137) % 2_100);
   const input = 700 + ((i * 311) % 8_400);
-  const cacheRead = i % 3 === 0 ? 0 : (i * 83) % 1_700;
+  const cacheRead = isLive ? 1280 : i % 3 === 0 ? 0 : (i * 83) % 1_700;
   const reasoning = i % 4 === 0 ? (i * 19) % 220 : 0;
   const seat = route.order.find((s) => s.provider === provider && s.model === model) ?? route.order[0];
   const start = date((i - trace.routes.length + 1) * 90_000);
@@ -34,7 +33,7 @@ trace.routes = trace.routes.map((route, i) => {
   const promptTokens = input + cacheRead;
   const parts = partKinds.map((kind, partIndex) => {
     const tokens = Math.floor(promptTokens * [0.12, 0.08, 0.24, 0.16, 0.4][partIndex]);
-    return { kind, tokens, items: [{ name: `Demo ${kind}`, tokens, tag: 'sample' }] };
+    return { kind, tokens, items: [{ name: ['系统提示', '工具定义', 'src/app.ts', '构建结果', '开发会话'][partIndex], tokens }] };
   });
   const tries = isLive
     ? [{ id: seat.id, model, effort: 'medium', start: tryStart, done: false, ttft, firstText: ttft + 20, served: model }]
@@ -45,6 +44,16 @@ trace.routes = trace.routes.map((route, i) => {
         ]
       : [{ id: seat.id, model, effort: 'medium', start: tryStart, done: true, status: failedRoute ? 502 : 200, ms: elapsed, ttft, firstText: ttft + 20, flow: Math.max(0, elapsed - ttft), served: model, net: { dns: 8, connect: 12, tls: 15, send: 5 } }]);
 
+  for (const tr of tries) {
+    if (tr.status && tr.status >= 400) continue;
+    const measured = tr.ms ?? ttft;
+    tr.net = { own: 10 + i % 9, before: 0, pool: 0, dns: 2 + i % 5, connect: 8 + i % 7, tls: 12 + i % 11, send: 3 + i % 4, wait: 90 + i % 40, head: 0 };
+    tr.net.head = tr.net.own + tr.net.dns + tr.net.connect + tr.net.tls + tr.net.send + tr.net.wait;
+    if (!tr.done) tr.ms = measured;
+  }
+  for (const candidate of route.order) {
+    if (candidate.known) candidate.renews = [date(3 * 86400000 + (i % 5) * 86400000)];
+  }
   route.time = start;
   route.provider = provider;
   route.model = `group/${model}`;
@@ -74,4 +83,3 @@ trace.now = date(0);
 trace.totals = { requests: 40, rerouted: trace.routes.filter((r) => r.tries.length > 1).length, errors: 1 };
 const output = `${JSON.stringify(trace, null, 2)}\n`;
 await writeFile(webPath, output);
-await writeFile(iosPath, output);

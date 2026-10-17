@@ -25,17 +25,31 @@ export function RequestList({
   clear: () => void;
   lang: Lang;
 }) {
-  const text = { title: t('route.requests', {}, lang), live: t('route.followLive', {}, lang), today: t('route.today', { count: todayRoutes.length }, lang), clear: t('route.clearFilter', {}, lang), empty: t('route.noMatch', {}, lang) };
+  const text = {
+    title: t('route.requests', {}, lang),
+    live: t('route.followLive', {}, lang),
+    today: t('route.today', { count: todayRoutes.length }, lang),
+    clear: t('route.clearFilter', {}, lang),
+    empty: t('route.noMatch', {}, lang),
+  };
   const [showToday, setShowToday] = useState(false);
   const filtered = requestsForAccount(showToday ? todayRoutes : routes, account);
   return (
     <section class="rt-panel" id="rt-requests" tabIndex={-1}>
       <header>
         <h2>{text.title}</h2>
-        <button aria-pressed={!pinned && !showToday} onClick={() => { setShowToday(false); live(); }}>
+        <button
+          aria-pressed={!pinned && !showToday}
+          onClick={() => {
+            setShowToday(false);
+            live();
+          }}
+        >
           {text.live}
         </button>
-        <button aria-pressed={showToday} onClick={() => setShowToday(true)}>{text.today}</button>
+        <button aria-pressed={showToday} onClick={() => setShowToday(true)}>
+          {text.today}
+        </button>
       </header>
       {account && (
         <button class="rt-filter" onClick={clear}>
@@ -60,7 +74,8 @@ export function RequestList({
                 </small>
               </span>
               <small>
-                {formatDuration(r.ms)} · {value(r.tokens, ' tk')} · {r.priced ? value(r.cost, ' USD') : '—'}
+                {formatDuration(r.ms)} · {value(r.tokens, ' tk')} ·{' '}
+                {r.priced ? value(r.cost, ' USD') : t('usage.unpriced', {}, lang)}
               </small>
             </button>
           </li>

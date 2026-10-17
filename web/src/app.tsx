@@ -5,8 +5,8 @@ import {
   ActivityTimeline,
   ServicesView,
   TmuxView,
-  RuntimesView,
 } from './views/collector/CollectorViews';
+import { RuntimesView } from './views/agent/RuntimesView';
 import { UsageView } from './views/agent/UsageView';
 import { ProvidersView } from './views/agent/ProvidersView';
 import { fmtCost, fmtDate, fmtRelative, fmtNumber, fmtTokens } from './core/format';
@@ -758,7 +758,7 @@ export default function App() {
                       )[agentTab],
                     )}
                   </p>
-                  <h1>Agent</h1>
+                  <h1>{t('agent.title')}</h1>
                   <p>{t('agent.subtitle')}</p>
                 </div>
               </div>
@@ -807,7 +807,7 @@ export default function App() {
               {agentTab === 'providers' && <ProvidersView client={web} revision={agentRevision} />}
               {agentTab === 'runtimes' &&
                 (collector ? (
-                  <RuntimesView data={collectorData} client={collector} />
+                  <RuntimesView data={collectorData} client={collector} web={web} revision={agentRevision} />
                 ) : (
                   <p>{t('collector.unconfigured')}</p>
                 ))}

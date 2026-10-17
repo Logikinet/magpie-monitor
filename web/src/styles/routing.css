@@ -650,3 +650,19 @@
 .rt-steps .aside {
   color: var(--muted);
 }
+
+.agent-subnav { flex-wrap: wrap; width: auto; overflow: visible; }
+.agent-subnav button { flex: 0 0 auto; }
+/* Answered wires use magpie's success green; trying wires retain the agent hue (MIT upstream routing behavior). */
+.rt-wires path.live.answered { stroke: #30d158; stroke-dasharray: none; animation: none; }
+
+.runtime-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+.runtime-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.runtime-kpis strong { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+.runtime-view { display: grid; gap: 16px; }
+.runtime-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.runtime-heading h3 { margin: 0; }
+.runtime-process { overflow-wrap: anywhere; font-family: monospace; }
+.runtime-warning { padding: 12px; border: 1px solid #e0a84c; border-radius: 10px; color: var(--color-text-primary); background: #e0a84c15; }
+
+.rt-wires path.live.finished { stroke-dasharray: none; animation: none; }

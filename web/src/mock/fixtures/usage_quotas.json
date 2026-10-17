@@ -179,7 +179,7 @@
         "resetsAt": "2026-10-17T15:00:00Z"
       }
     ],
-    "error": "Demo quota service is temporarily unavailable."
+    "error": "quota.unavailable"
   },
   {
     "provider": "openrouter",

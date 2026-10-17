@@ -41,3 +41,5 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Web Agent latency categories in `web/src/core/routing-model.ts` follow `timeParts` in yetone/magpie `internal/gui/assets/plugins/routing/client.js` (MIT). Completed wires stop animating as in the upstream routing plugin; the success-green color is a local design choice.

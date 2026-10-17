@@ -2,21 +2,21 @@
   "providers": [
     {
       "id": "demo-claude",
-      "name": "Demo Claude",
+      "name": "Claude",
       "ready": true,
       "off": false,
       "routing": "usage",
       "affinity": "session",
       "key": {
         "set": true,
-        "masked": "demo\u20260000",
+        "masked": "sk-••••••••••••••••••••••••abcd",
         "optional": false
       },
       "keyList": [
         {
           "id": "fake-key-demo-claude",
           "name": "Demo key",
-          "masked": "demo\u20260000",
+          "masked": "sk-••••••••••••••••••••••••abcd",
           "active": true,
           "on": true
         }
@@ -59,27 +59,27 @@
       "icon": "bot",
       "account": {
         "user": "demo-user@example.com",
-        "plan": "Demo standard"
+        "plan": "standard"
       },
       "active_models_count": 2
     },
     {
       "id": "demo-codex",
-      "name": "Demo Codex",
+      "name": "Codex",
       "ready": true,
       "off": true,
       "routing": "usage",
       "affinity": "session",
       "key": {
         "set": true,
-        "masked": "demo\u20260000",
+        "masked": "sk-••••••••••••••••••••••••abcd",
         "optional": false
       },
       "keyList": [
         {
           "id": "fake-key-demo-codex",
           "name": "Demo key",
-          "masked": "demo\u20260000",
+          "masked": "sk-••••••••••••••••••••••••abcd",
           "active": true,
           "on": true
         }
@@ -124,21 +124,21 @@
     },
     {
       "id": "demo-gemini",
-      "name": "Demo Gemini",
+      "name": "Gemini",
       "ready": true,
       "off": false,
       "routing": "usage",
       "affinity": "session",
       "key": {
         "set": true,
-        "masked": "demo\u20260000",
+        "masked": "sk-••••••••••••••••••••••••abcd",
         "optional": false
       },
       "keyList": [
         {
           "id": "fake-key-demo-gemini",
           "name": "Demo key",
-          "masked": "demo\u20260000",
+          "masked": "sk-••••••••••••••••••••••••abcd",
           "active": true,
           "on": true
         }
@@ -181,14 +181,142 @@
     },
     {
       "id": "fake-provider-free",
-      "name": "Demo Community",
+      "name": "Community",
       "host": "https://example.ts.net",
-      "models": [],
+      "models": [
+        {
+          "id": "community-chat",
+          "exposed": true,
+          "context": 32000
+        }
+      ],
       "agents": [],
       "ready": true,
       "key": {
-        "set": false
-      }
+        "set": false,
+        "masked": "sk-••••••••••••••••••••••••abcd"
+      },
+      "active_models_count": 1
+    },
+    {
+      "id": "fake-provider-0",
+      "name": "OpenRouter",
+      "ready": true,
+      "off": false,
+      "host": "https://example.ts.net",
+      "key": {
+        "set": true,
+        "masked": "sk-••••••••••••••••••••••••ef01"
+      },
+      "models": [
+        {
+          "id": "sample-model-0",
+          "exposed": true,
+          "context": 64000
+        }
+      ],
+      "active_models_count": 1,
+      "agents": []
+    },
+    {
+      "id": "fake-provider-1",
+      "name": "DeepSeek",
+      "ready": true,
+      "off": false,
+      "host": "https://example.ts.net",
+      "key": {
+        "set": true,
+        "masked": "sk-••••••••••••••••••••••••ef01"
+      },
+      "models": [
+        {
+          "id": "sample-model-1",
+          "exposed": true,
+          "context": 64000
+        }
+      ],
+      "active_models_count": 1,
+      "agents": []
+    },
+    {
+      "id": "fake-provider-2",
+      "name": "Kiro",
+      "ready": true,
+      "off": false,
+      "host": "https://example.ts.net",
+      "key": {
+        "set": true,
+        "masked": "sk-••••••••••••••••••••••••ef01"
+      },
+      "models": [
+        {
+          "id": "sample-model-2",
+          "exposed": true,
+          "context": 64000
+        }
+      ],
+      "active_models_count": 1,
+      "agents": []
+    },
+    {
+      "id": "fake-provider-3",
+      "name": "Local gateway",
+      "ready": false,
+      "off": true,
+      "host": "https://example.ts.net",
+      "key": {
+        "set": true,
+        "masked": "sk-••••••••••••••••••••••••ef01"
+      },
+      "models": [
+        {
+          "id": "sample-model-3",
+          "exposed": true,
+          "context": 64000
+        }
+      ],
+      "active_models_count": 1,
+      "agents": []
+    },
+    {
+      "id": "fake-provider-4",
+      "name": "Team gateway",
+      "ready": true,
+      "off": false,
+      "host": "https://example.ts.net",
+      "key": {
+        "set": false,
+        "masked": null
+      },
+      "models": [
+        {
+          "id": "sample-model-4",
+          "exposed": true,
+          "context": 64000
+        }
+      ],
+      "active_models_count": 1,
+      "agents": []
+    },
+    {
+      "id": "fake-provider-5",
+      "name": "Community gateway",
+      "ready": true,
+      "off": false,
+      "host": "https://example.ts.net",
+      "key": {
+        "set": false,
+        "masked": null
+      },
+      "models": [
+        {
+          "id": "sample-model-5",
+          "exposed": true,
+          "context": 64000
+        }
+      ],
+      "active_models_count": 1,
+      "agents": []
     }
   ]
 }

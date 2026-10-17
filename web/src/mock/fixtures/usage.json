@@ -219,7 +219,7 @@
       "input": 60000,
       "output": 6000,
       "cost": 1.2,
-      "decode_ms": 20000,
+      "decode_ms": 12000,
       "decode_out": 1800,
       "timed": 60,
       "ttft_ms": 48000
@@ -233,7 +233,7 @@
       "input": 45000,
       "output": 4500,
       "cost": 0.9,
-      "decode_ms": 20000,
+      "decode_ms": 19300,
       "decode_out": 1800,
       "timed": 45,
       "ttft_ms": 36000
@@ -247,7 +247,7 @@
       "input": 30000,
       "output": 3000,
       "cost": 0.6,
-      "decode_ms": 20000,
+      "decode_ms": 26600,
       "decode_out": 1800,
       "timed": 30,
       "ttft_ms": 24000

@@ -163,7 +163,7 @@ export function latencyBreakdown(route: Route) {
   const tries = route.tries ?? [];
   const start = time(route.time),
     firstStart = time(tries[0]?.start);
-  const magpie = start !== null && firstStart !== null && firstStart > start ? firstStart - start : null;
+  const lead = start !== null && firstStart !== null && firstStart > start ? firstStart - start : null;
   const last = tries.at(-1),
     net = last?.net;
   // No percentages or default timings: network phases only exist when measured.
@@ -171,14 +171,22 @@ export function latencyBreakdown(route: Route) {
     tcp = number(net?.connect),
     tls = number(net?.tls),
     send = number(net?.send);
-  const network = [dns, tcp, tls, send].every((v) => v !== null) ? dns! + tcp! + tls! + send! : null;
+  // Timing categories follow upstream timeParts (MIT): provider ms includes network time.
+  const sum = (values: (number | null)[]) =>
+    values.some((v) => v !== null) ? values.reduce<number>((n, v) => n + (v ?? 0), 0) : null;
+  const magpie = net ? sum([number(last?.queued), number(net.own)]) : lead;
+  const network = net ? sum([number(net.before), number(net.pool), dns, tcp, tls, send]) : null;
+  const vendor =
+    net && number(net.wait) !== null && number(net.head) !== null && number(last?.ms) !== null
+      ? net.wait! + Math.max(0, last!.ms! - net.head!)
+      : null;
   return {
     total,
     ttft,
     firstText,
     magpie,
     network,
-    vendor: number(last?.ms),
+    vendor,
     dns,
     tcp,
     tls,

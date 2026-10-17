@@ -1,3 +1,4 @@
+import { t as translate } from '../../i18n';
 import { Icon } from '../../ui/icons';
 import { useEffect, useState } from 'preact/hooks';
 import type { WebClient } from '../../core/web-client';
@@ -12,7 +13,9 @@ export function ProvidersTable({ providers }: { providers: Provider[] }) {
       {!providers.length && <p>{t.empty}</p>}
       {providers.map((p) => {
         const account = p.account,
-          status = account?.plan ?? (account ? t.signedIn : p.key?.set ? (p.key.masked ?? '—') : t.free);
+          status =
+            (account?.plan === 'standard' ? translate('provider.standard') : account?.plan) ??
+            (account ? t.signedIn : p.key?.set ? (p.key.masked ?? '—') : t.free);
         return (
           <article class={`mp-provider ${p.off ? 'mp-off' : ''}`}>
             <span class="mp-provider-icon" aria-hidden="true">
@@ -46,7 +49,9 @@ export function ProvidersTable({ providers }: { providers: Provider[] }) {
                       title={String(a.name ?? a.id)}
                       aria-label={String(a.name ?? a.id)}
                     >
-                      {String(a.name ?? a.id ?? '?').slice(0, 1).toUpperCase()}
+                      {String(a.name ?? a.id ?? '?')
+                        .slice(0, 1)
+                        .toUpperCase()}
                     </span>
                   </span>
                 ))}

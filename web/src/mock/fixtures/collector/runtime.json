@@ -2,12 +2,47 @@
   "id": "codex",
   "name": "Codex",
   "installed": true,
-  "version": "demo",
-  "procs": 1,
-  "proc_list": [],
-  "tasks": [],
+  "version": "1.0.0",
+  "procs": 2,
+  "proc_list": [
+    {
+      "pid": 4100,
+      "cwd": "/srv/devbox/sample-project",
+      "cpu_pct": 1.2,
+      "mem_mb": 128
+    },
+    {
+      "pid": 4101,
+      "cwd": "/srv/devbox/sample-project",
+      "cpu_pct": 1.9,
+      "mem_mb": 144
+    }
+  ],
+  "tasks": [
+    {
+      "id": "fake-task-0",
+      "name": "src/app.ts",
+      "kind": "codex",
+      "status": "running",
+      "cwd": "/srv/devbox/sample-project",
+      "updated_at": "2026-10-17T08:00:00Z"
+    }
+  ],
+  "task_count": 1,
   "meta": {
-    "sessions_total": 2,
-    "sessions_24h": 1
+    "sessions_total": 12,
+    "sessions_24h": 5
+  },
+  "quota": {
+    "buckets": [
+      {
+        "label": "5h",
+        "remaining_pct": 72
+      },
+      {
+        "label": "7d",
+        "remaining_pct": 38
+      }
+    ]
   }
 }

@@ -4,20 +4,36 @@
       "id": "codex",
       "name": "Codex",
       "installed": true,
-      "version": "demo",
-      "procs": 1,
+      "version": "1.0.0",
+      "procs": 2,
       "proc_list": [
         {
-          "pid": 4101,
-          "cwd": "/home/demo/devbox",
-          "cpu_pct": 2.4,
+          "pid": 4100,
+          "cwd": "/srv/devbox/sample-project",
+          "cpu_pct": 1.2,
           "mem_mb": 128
+        },
+        {
+          "pid": 4101,
+          "cwd": "/srv/devbox/sample-project",
+          "cpu_pct": 1.9,
+          "mem_mb": 144
         }
       ],
-      "tasks": [],
+      "tasks": [
+        {
+          "id": "fake-task-0",
+          "name": "src/app.ts",
+          "kind": "codex",
+          "status": "running",
+          "cwd": "/srv/devbox/sample-project",
+          "updated_at": "2026-10-17T08:00:00Z"
+        }
+      ],
+      "task_count": 1,
       "meta": {
-        "sessions_total": 2,
-        "sessions_24h": 1
+        "sessions_total": 12,
+        "sessions_24h": 5
       },
       "quota": {
         "buckets": [
@@ -26,14 +42,188 @@
             "remaining_pct": 72
           },
           {
-            "label": "Weekly",
+            "label": "7d",
             "remaining_pct": 38
           }
         ]
       }
+    },
+    {
+      "id": "claude",
+      "name": "Claude",
+      "installed": true,
+      "version": "1.1.0",
+      "procs": 1,
+      "proc_list": [
+        {
+          "pid": 4110,
+          "cwd": "/srv/devbox/sample-project",
+          "cpu_pct": 2.2,
+          "mem_mb": 160
+        }
+      ],
+      "tasks": [
+        {
+          "id": "fake-task-1",
+          "name": "src/app.ts",
+          "kind": "session",
+          "status": "running",
+          "cwd": "/srv/devbox/sample-project",
+          "updated_at": "2026-10-17T07:00:00Z"
+        }
+      ],
+      "task_count": 1,
+      "meta": {
+        "sessions_total": 11,
+        "sessions_24h": 4
+      },
+      "quota": {
+        "buckets": [
+          {
+            "label": "5h",
+            "remaining_pct": 12
+          },
+          {
+            "label": "7d",
+            "remaining_pct": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": "gemini",
+      "name": "Gemini",
+      "installed": true,
+      "version": "1.2.0",
+      "procs": 0,
+      "proc_list": [],
+      "tasks": [
+        {
+          "id": "fake-task-2",
+          "name": "src/app.ts",
+          "kind": "file",
+          "status": "completed",
+          "cwd": "/srv/devbox/sample-project",
+          "updated_at": "2026-10-17T06:00:00Z"
+        }
+      ],
+      "task_count": 1,
+      "meta": {
+        "sessions_total": 10,
+        "sessions_24h": 3
+      },
+      "quota": {
+        "buckets": [
+          {
+            "label": "5h",
+            "remaining_pct": 46
+          },
+          {
+            "label": "7d",
+            "remaining_pct": 62
+          }
+        ]
+      }
+    },
+    {
+      "id": "opencode",
+      "name": "OpenCode",
+      "installed": true,
+      "version": "1.3.0",
+      "procs": 1,
+      "proc_list": [
+        {
+          "pid": 4130,
+          "cwd": "/srv/devbox/sample-project",
+          "cpu_pct": 4.2,
+          "mem_mb": 224
+        }
+      ],
+      "tasks": [
+        {
+          "id": "fake-task-3",
+          "name": "src/app.ts",
+          "kind": "process",
+          "status": "running",
+          "cwd": "/srv/devbox/sample-project",
+          "updated_at": "2026-10-17T05:00:00Z"
+        }
+      ],
+      "task_count": 1,
+      "meta": {
+        "sessions_total": 9,
+        "sessions_24h": 2
+      },
+      "quota": {
+        "buckets": [
+          {
+            "label": "5h",
+            "remaining_pct": 85
+          },
+          {
+            "label": "7d",
+            "remaining_pct": 90
+          }
+        ]
+      }
+    },
+    {
+      "id": "goose",
+      "name": "Goose",
+      "installed": true,
+      "version": "1.4.0",
+      "procs": 0,
+      "proc_list": [],
+      "tasks": [],
+      "task_count": 0,
+      "meta": {
+        "sessions_total": 8,
+        "sessions_24h": 1
+      },
+      "quota": {
+        "buckets": []
+      }
+    },
+    {
+      "id": "aider",
+      "name": "Aider",
+      "installed": false,
+      "version": null,
+      "procs": 0,
+      "proc_list": [],
+      "tasks": [],
+      "task_count": 0,
+      "meta": {
+        "sessions_total": 7,
+        "sessions_24h": 0
+      },
+      "quota": {
+        "buckets": []
+      }
+    },
+    {
+      "id": "crush",
+      "name": "Crush",
+      "installed": false,
+      "version": null,
+      "procs": 0,
+      "proc_list": [],
+      "tasks": [],
+      "task_count": 0,
+      "meta": {
+        "sessions_total": 6,
+        "sessions_24h": 0
+      },
+      "quota": {
+        "buckets": []
+      }
     }
   ],
-  "total_installed": 1,
-  "total_running": 1,
-  "env_tools": []
+  "total_installed": 5,
+  "total_running": 4,
+  "env_tools": {
+    "node": "22.14.0",
+    "python": "3.12.9",
+    "git": "2.48.1"
+  }
 }

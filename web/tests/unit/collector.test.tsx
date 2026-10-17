@@ -309,3 +309,37 @@ it('ends collector home at portals and locks auto refresh after 500ms', async ()
     vi.useRealTimers();
   }
 });
+
+it('renders runtime status, low quota and persists runtime filters', async () => {
+  localStorage.setItem('mm-lang', 'zh');
+  localStorage.removeItem('svc-rtf');
+  const d = await data();
+  await act(() =>
+    render(
+      <RuntimesView
+        data={d}
+        gateways={[
+          { id: 'fake-gateway', name: 'Gateway', key: { set: true }, models: [{ id: 'sample-chat' }] },
+        ]}
+      />,
+      root,
+    ),
+  );
+  expect(root.querySelectorAll('.runtime-kpis strong')).toHaveLength(5);
+  expect(root.querySelector('[role=status]')?.textContent).toContain('12%');
+  expect(root.querySelectorAll('.runtime-grid')[0].children).toHaveLength(7);
+  expect(root.textContent).toContain('PID 4100');
+  expect(root.textContent).toContain('sample-chat');
+  expect(root.textContent).toContain('node 22.14.0');
+  const none = [...root.querySelectorAll<HTMLButtonElement>('nav button')].find(
+    (b) => b.textContent === '未安装',
+  )!;
+  await act(() => none.click());
+  expect(localStorage.getItem('svc-rtf')).toBe('none');
+  expect(root.querySelectorAll('.runtime-grid')[0].children).toHaveLength(2);
+  await act(() => render(null, root));
+  await act(() => render(<RuntimesView data={d} />, root));
+  expect(root.querySelectorAll('.runtime-grid')[0].children).toHaveLength(2);
+  localStorage.removeItem('svc-rtf');
+  localStorage.removeItem('mm-lang');
+});

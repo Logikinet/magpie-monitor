@@ -109,7 +109,7 @@ it('decodes bare quota arrays, structured holds and vendor history', () => {
 it('serves new web endpoints through the mock transport, including one route by id', async () => {
   const web = new WebClient(new MockTransport());
   expect((await web.groups()).groups).toHaveLength(1);
-  expect((await web.providers()).providers).toHaveLength(4);
+  expect((await web.providers()).providers).toHaveLength(10);
   expect((await web.usage('today')).calls).toBeDefined();
   expect((await web.usageQuotas()).data).toHaveLength(4);
   expect(await web.route(4039, '2026-10-17')).toMatchObject({ id: '4039', seq: 640, done: false });

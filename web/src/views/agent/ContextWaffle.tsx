@@ -6,7 +6,20 @@ import { t as translate } from '../../i18n';
 export function ContextWaffle({ route, lang }: { route: Route; lang: Lang }) {
   const [filter, setFilter] = useState('all'),
     [all, setAll] = useState(false),
-    t = { title: translate('route.context', {}, lang), cache: translate('route.promptCache', {}, lang), all: translate('route.all', {}, lang), show: translate('route.showAll', {}, lang), free: translate('route.free', {}, lang), system: translate('route.system', {}, lang), tools: translate('route.tools', {}, lang), files: translate('route.files', {}, lang), results: translate('route.results', {}, lang), chat: translate('route.chat', {}, lang), empty: translate('route.noContext', {}, lang), turns: translate('route.turns', {}, lang) },
+    t = {
+      title: translate('route.context', {}, lang),
+      cache: translate('route.promptCache', {}, lang),
+      all: translate('route.all', {}, lang),
+      show: translate('route.showAll', {}, lang),
+      free: translate('route.free', {}, lang),
+      system: translate('route.system', {}, lang),
+      tools: translate('route.tools', {}, lang),
+      files: translate('route.files', {}, lang),
+      results: translate('route.results', {}, lang),
+      chat: translate('route.chat', {}, lang),
+      empty: translate('route.noContext', {}, lang),
+      turns: translate('route.turns', {}, lang),
+    },
     cells = contextCells(route.prompt);
   const parts = (route.prompt?.parts ?? [])
     .flatMap((p) => p.items.map((item) => ({ ...item, kind: p.kind })))
@@ -57,7 +70,10 @@ export function ContextWaffle({ route, lang }: { route: Route; lang: Lang }) {
         {(all ? parts : parts.slice(0, 10)).map((p) => (
           <li>
             <span>
-              {word(p.name)} {p.tag}
+              {['系统提示', '工具定义', '构建结果', '开发会话'].includes(p.name ?? '')
+                ? translate(`context.${p.kind}`, {}, lang)
+                : word(p.name)}{' '}
+              {p.tag}
             </span>
             <code>{value(p.tokens, ' tk')}</code>
           </li>

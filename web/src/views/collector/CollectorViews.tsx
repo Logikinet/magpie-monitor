@@ -555,40 +555,162 @@ export function ServicesView({ data }: { data: RecordData }) {
     </>
   );
 }
-export function RuntimesView({ data, client }: { data: RecordData; client?: CollectorClient }) {
+export function RuntimesView({
+  data,
+  client,
+  gateways = [],
+}: {
+  data: RecordData;
+  client?: CollectorClient;
+  gateways?: RecordData[];
+}) {
+  const filters = ['all', 'run', 'tasks', 'quota', 'none'];
+  const [filter, setFilter] = useState(() => {
+    const saved = localStorage.getItem('svc-rtf') ?? 'all';
+    return filters.includes(saved) ? saved : 'all';
+  });
   const [detail, setDetail] = useState<RecordData>(),
     [error, setError] = useState('');
   useEffect(() => {
     setDetail(undefined);
   }, [client]);
+  const tr = (key: string, params = {}) => t(`runtime.${key}`, params);
+  const agents: RecordData[] = data.runtimes?.agents ?? [];
+  const tasks = (a: RecordData): RecordData[] => a.tasks ?? [];
+  const active = (a: RecordData) =>
+    tasks(a).filter((x) => !['done', 'completed', 'failed'].includes(x.status ?? x.state)).length;
+  const buckets = (a: RecordData): RecordData[] => a.quota?.buckets ?? [];
+  const low: RecordData[] = agents.flatMap((a) =>
+    buckets(a)
+      .filter((b) => typeof b.remaining_pct === 'number' && b.remaining_pct < 15)
+      .map((b) => ({ ...b, agent: a.name })),
+  );
+  const rank = (a: RecordData) => [
+    Number(!!a.installed),
+    Number(a.procs > 0 || active(a) > 0),
+    active(a),
+    a.procs ?? 0,
+    (a.meta?.tasks_30d ?? 0) + (a.meta?.sessions_24h ?? 0),
+    Math.max(0, ...tasks(a).map((x) => Date.parse(x.updated_at ?? x.time) || 0)),
+  ];
+  const sorted = [...agents]
+    .sort((a, b) => {
+      const aa = rank(a),
+        bb = rank(b);
+      for (let i = 0; i < aa.length; i++) if (aa[i] !== bb[i]) return bb[i] - aa[i];
+      return String(a.name).localeCompare(String(b.name));
+    })
+    .filter(
+      (a) =>
+        filter === 'all' ||
+        (filter === 'run'
+          ? a.procs > 0
+          : filter === 'tasks'
+            ? tasks(a).length > 0
+            : filter === 'quota'
+              ? buckets(a).length > 0
+              : !a.installed),
+    );
   return (
-    <>
-      <h2>{text('agent')}</h2>
-      <p>
-        {text('installed')} {metric(data.runtimes?.total_installed)} · {text('processes')}{' '}
-        {metric(data.runtimes?.total_running)}
-      </p>
-      {(data.runtimes?.agents ?? []).map((a: RecordData) => (
-        <Panel>
+    <div class="runtime-view">
+      <div class="runtime-kpis">
+        {[
+          ['installed', `${agents.filter((a) => a.installed).length}/${agents.length}`],
+          ['processes', agents.reduce((n, a) => n + (a.procs ?? 0), 0)],
+          ['tasks', agents.reduce((n, a) => n + tasks(a).length, 0)],
+          ['gateways', gateways.length],
+          ['alerts', low.length],
+        ].map(([key, count]) => (
+          <Panel>
+            <span>{tr(String(key))}</span>
+            <strong
+              style={{
+                color:
+                  key === 'alerts'
+                    ? low.length
+                      ? 'var(--c-red)'
+                      : 'var(--c-green)'
+                    : (
+                        {
+                          installed: 'var(--text-title)',
+                          processes: 'var(--c-green)',
+                          tasks: 'var(--c-blue)',
+                          gateways: 'var(--c-violet)',
+                        } as Record<string, string>
+                      )[String(key)],
+              }}
+            >
+              {count}
+            </strong>
+          </Panel>
+        ))}
+      </div>
+      {low.length > 0 && (
+        <p class="runtime-warning" role="status">
+          {tr('low')}: {low.map((b) => `${b.agent} · ${b.label} ${metric(b.remaining_pct, '%')}`).join(' / ')}
+        </p>
+      )}
+      <nav class="collector-chips" aria-label={t('agent.tabRuntimes')}>
+        {filters.map((f) => (
           <button
-            class="text-button"
+            class="button"
+            aria-pressed={filter === f}
             onClick={() => {
-              setError('');
-              void client
-                ?.runtime(a.id)
-                .then(setDetail)
-                .catch(() => setError(t('app.loadFailed')));
+              setFilter(f);
+              localStorage.setItem('svc-rtf', f);
             }}
           >
-            {a.name}
+            {tr(f)}
           </button>
-          <p>
-            {a.version ?? '—'} · {text('installed')} {String(a.installed)} · {metric(a.procs)}{' '}
-            {text('processes')}
-          </p>
-          <RuntimeQuotas agents={[a]} />
-        </Panel>
-      ))}
+        ))}
+      </nav>
+      <div class="runtime-grid">
+        {sorted.map((a) => (
+          <Panel>
+            <header class="runtime-heading">
+              <span class="dot" style={{ background: a.procs > 0 ? 'var(--c-green)' : 'var(--text-dim)' }} />
+              <h3>{a.name}</h3>
+              <span class="mp-pill">
+                {!a.installed ? tr('none') : a.procs > 0 ? tr('running', { count: a.procs }) : tr('idle')}
+              </span>
+            </header>
+            <p class="muted">{a.version ?? '—'}</p>
+            {(a.proc_list ?? []).map((p: RecordData) => (
+              <p class="runtime-process">
+                PID {p.pid} · {p.cwd ?? '—'} · {metric(p.cpu_pct, '%')} · {metric(p.mem_mb, ' MB')}
+              </p>
+            ))}
+            {tasks(a).length > 0 && (
+              <>
+                <h4>{tr('tasks')}</h4>
+                <ul>
+                  {tasks(a).map((task) => (
+                    <li>
+                      {task.name ?? task.title ?? task.id} · {task.kind} · {task.cwd ?? task.path ?? '—'}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {buckets(a).length > 0 && <RuntimeQuotas agents={[a]} />}
+            {client && (
+              <button
+                class="text-button"
+                onClick={() => {
+                  setError('');
+                  void client
+                    .runtime(a.id)
+                    .then(setDetail)
+                    .catch(() => setError(t('app.loadFailed')));
+                }}
+              >
+                {t('route.usageDetails')}
+              </button>
+            )}
+          </Panel>
+        ))}
+      </div>
+      {!sorted.length && <Empty />}
       {error && <p role="alert">{error}</p>}
       {detail && (
         <Panel>
@@ -596,14 +718,47 @@ export function RuntimesView({ data, client }: { data: RecordData; client?: Coll
           <p>
             {detail.bin ?? '—'} · {detail.version ?? '—'}
           </p>
-          {detail.proc_list?.map((p: RecordData) => (
-            <p>
-              {p.pid} · {metric(p.cpu_pct, '%')} · {metric(p.mem_mb, ' M')}
-            </p>
-          ))}
+          <button class="button" onClick={() => setDetail(undefined)}>
+            {text('close')}
+          </button>
         </Panel>
       )}
-    </>
+      <Panel>
+        <h2>{tr('gateways')}</h2>
+        <div class="runtime-grid">
+          {gateways.map((p) => (
+            <article>
+              <h3>
+                <span
+                  class="dot"
+                  style={{ background: p.key?.set || p.account ? 'var(--c-green)' : 'var(--text-dim)' }}
+                />{' '}
+                {p.name ?? p.id}
+              </h3>
+              <p>
+                {p.key?.set || p.account ? tr('keyReady') : tr('keyMissing')} · {p.host ?? '—'}
+              </p>
+              <div class="collector-chips">
+                {(p.models ?? []).map((m: RecordData) => (
+                  <code>{m.id}</code>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+        {!gateways.length && <Empty />}
+      </Panel>
+      <Panel>
+        <h2>{tr('environment')}</h2>
+        <div class="collector-chips">
+          {Object.entries(data.runtimes?.env_tools ?? {}).map(([name, version]) => (
+            <span class="mp-pill">
+              {name} {String(version)}
+            </span>
+          ))}
+        </div>
+      </Panel>
+    </div>
   );
 }
 export function TmuxView({ data, client }: { data: RecordData; client?: CollectorClient }) {

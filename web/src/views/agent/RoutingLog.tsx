@@ -14,7 +14,22 @@ export function RoutingLog({
   refresh: () => void;
   usage: () => void;
 }) {
-  const t = { title: translate('route.decisions', {}, lang), details: translate('route.usageDetails', {}, lang), refresh: translate('app.refresh', {}, lang), empty: translate('route.noDecisions', {}, lang), stream: translate('route.stream', {}, lang), total: translate('route.total', {}, lang), magpie: translate('route.gateway', {}, lang), network: translate('route.network', {}, lang), vendor: translate('route.vendor', {}, lang), dns: 'DNS', tcp: 'TCP', tls: 'TLS', send: translate('route.send', {}, lang), ttft: translate('route.ttft', {}, lang) },
+  const t = {
+      title: translate('route.decisions', {}, lang),
+      details: translate('route.usageDetails', {}, lang),
+      refresh: translate('app.refresh', {}, lang),
+      empty: translate('route.noDecisions', {}, lang),
+      stream: translate('route.stream', {}, lang),
+      total: translate('route.total', {}, lang),
+      magpie: translate('route.gateway', {}, lang),
+      network: translate('route.network', {}, lang),
+      vendor: translate('route.vendor', {}, lang),
+      dns: 'DNS',
+      tcp: 'TCP',
+      tls: 'TLS',
+      send: translate('route.send', {}, lang),
+      ttft: translate('route.ttft', {}, lang),
+    },
     b = latencyBreakdown(route),
     segments = [b.magpie, b.network, b.vendor],
     sum = segments.reduce<number>((n, v) => n + (v ?? 0), 0);
@@ -81,12 +96,14 @@ export function RoutingLog({
           [t.send]: b.send,
           [t.ttft]: b.ttft,
           [t.stream]: b.stream,
-        }).map(([k, v]) => (
-          <div>
-            <dt>{k}</dt>
-            <dd>{formatDuration(v)}</dd>
-          </div>
-        ))}
+        })
+          .filter(([, v]) => v !== null)
+          .map(([k, v]) => (
+            <div>
+              <dt>{k}</dt>
+              <dd>{formatDuration(v)}</dd>
+            </div>
+          ))}
       </dl>
     </section>
   );

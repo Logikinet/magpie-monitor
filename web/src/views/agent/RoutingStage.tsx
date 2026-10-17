@@ -26,7 +26,19 @@ export function RoutingStage({
   const [hover, setHover] = useState('');
   const groups = groupSeats(route, now),
     agents = recentAgents(routes),
-    t = { accounts: translate('route.accounts', {}, lang), available: translate('route.available', {}, lang), fallback: translate('route.fallback', {}, lang), trying: translate('route.trying', {}, lang), answered: translate('route.answered', {}, lang), resting: translate('route.resting', {}, lang), remaining: translate('route.remaining', {}, lang), credits: translate('route.credits', {}, lang), 'single-key': translate('route.singleKey', {}, lang), ready: translate('route.ready', {}, lang), reset: translate('route.reset', {}, lang) };
+    t = {
+      accounts: translate('route.accounts', {}, lang),
+      available: translate('route.available', {}, lang),
+      fallback: translate('route.fallback', {}, lang),
+      trying: translate('route.trying', {}, lang),
+      answered: translate('route.answered', {}, lang),
+      resting: translate('route.resting', {}, lang),
+      remaining: translate('route.remaining', {}, lang),
+      credits: translate('route.credits', {}, lang),
+      'single-key': translate('route.singleKey', {}, lang),
+      ready: translate('route.ready', {}, lang),
+      reset: translate('route.reset', {}, lang),
+    };
   useEffect(() => {
     const el = box.current;
     if (!el) return;
@@ -46,6 +58,7 @@ export function RoutingStage({
             key: `agent-${node.dataset.agent}`,
             d: agentToHub(rect(node), h),
             live: node.dataset.agent === route.agent,
+            state: route.done ? 'finished' : undefined,
           }),
         );
         el.querySelectorAll<HTMLElement>('[data-seat]').forEach((node) => {
@@ -86,7 +99,7 @@ export function RoutingStage({
           <path
             key={p.key}
             d={p.d}
-            class={`${p.live ? 'live' : ''} ${hover === p.key ? 'lit' : ''} ${p.state === 'rest' ? 'rest' : ''}`}
+            class={`${p.live ? 'live' : ''} ${hover === p.key ? 'lit' : ''} ${p.state === 'rest' ? 'rest' : ''} ${p.state === 'answered' ? 'answered' : p.state === 'finished' ? 'finished' : ''}`}
           />
         ))}
       </svg>
@@ -149,12 +162,12 @@ export function RoutingStage({
                       </span>
                       <em>
                         {status.kind === 'remaining'
-                          ? `${t.remaining} ${value(status.params.percent, '%')}`
+                          ? `${t.remaining} ${value(status.params.percent, '%')}${typeof status.params.resetInMs === 'number' ? ' · ' + translate('route.resetDays', { days: Math.ceil(status.params.resetInMs / 86400000) }, lang) : ''}`
                           : status.kind === 'credits'
                             ? `${t.credits} ${value(status.params.amount)} ${status.params.unit ?? ''}`
                             : t[status.kind]}
                       </em>
-                      {typeof status.params.resetInMs === 'number' && (
+                      {status.kind !== 'remaining' && typeof status.params.resetInMs === 'number' && (
                         <small class="rt-renew">
                           {t.reset} · {fmtDate(now + status.params.resetInMs)}
                         </small>
