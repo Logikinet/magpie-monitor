@@ -51,7 +51,7 @@ App 不内置任何 provider 列表：配额、路由、并发等全部按 magpi
 
 ## 许可证与致谢
 
-本项目采用 MIT License，详见 [LICENSE](LICENSE)。第三方软件与许可证见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+本项目采用 MIT License，详见 [LICENSE](../LICENSE)。第三方软件与许可证见 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md)。
 
 ---
 
@@ -108,4 +108,4 @@ Gateway keys, runtime keys, SSH passwords, private keys, key passphrases, and pi
 
 ## License and credits
 
-This project is licensed under the MIT License; see [LICENSE](LICENSE). Third-party software and license details are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+This project is licensed under the MIT License; see [LICENSE](../LICENSE). Third-party software and license details are in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).

@@ -2,7 +2,7 @@
 
 ## 中文
 
-magpie-web 是 yetone/magpie LLM 网关的 Web 监控伴侣，与 iOS 应用 [Logikinet/magpie-ios](https://github.com/Logikinet/magpie-ios) 配套。它提供只读的网关状态、请求活动、Agent 路由与配额面板。
+magpie-web 是 yetone/magpie LLM 网关的 Web 监控伴侣，与 iOS 应用 [Logikinet/magpie-monitor](https://github.com/Logikinet/magpie-monitor) 配套。它提供只读的网关状态、请求活动、Agent 路由与配额面板。
 
 ### 功能
 
@@ -71,7 +71,7 @@ MIT。感谢 [yetone/magpie](https://github.com/yetone/magpie)、Preact 与 Vite
 
 ## English
 
-magpie-web is a web monitoring companion for the yetone/magpie LLM gateway, alongside the iOS app [Logikinet/magpie-ios](https://github.com/Logikinet/magpie-ios). It provides read-only gateway status, request activity, Agent routing, and quota views.
+magpie-web is a web monitoring companion for the yetone/magpie LLM gateway, alongside the iOS app [Logikinet/magpie-monitor](https://github.com/Logikinet/magpie-monitor). It provides read-only gateway status, request activity, Agent routing, and quota views.
 
 ### Features
 

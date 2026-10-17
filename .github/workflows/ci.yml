@@ -14,17 +14,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      ios: ${{ steps.filter.outputs.ios }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          # Use local git diff so PRs need only contents: read.
+          token: ''
+          filters: |
+            ios:
+              - 'ios/**'
+              - '.github/workflows/ci.yml'
+            web:
+              - 'web/**'
+              - '.github/workflows/ci.yml'
+
   linux-test:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.ios == 'true'
     runs-on: ubuntu-latest
     container: swift:6.0
     steps:
       - uses: actions/checkout@v5
       - name: Test MagpieKit
-        run: swift test --package-path Packages/MagpieKit
+        run: swift test --package-path ios/Packages/MagpieKit
       - name: Test SSHKit
-        run: swift test --package-path Packages/SSHKit
+        run: swift test --package-path ios/Packages/SSHKit
 
   ios-build:
+    defaults:
+      run:
+        working-directory: ios
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.ios == 'true'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v5
@@ -60,11 +87,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: magpie-ios-ipa
-          path: magpie-ios.ipa
+          path: ios/magpie-ios.ipa
           if-no-files-found: error
 
   screenshots:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    needs: changes
+    defaults:
+      run:
+        working-directory: ios
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.ios == 'true')
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v5
@@ -85,7 +116,7 @@ jobs:
           -scheme magpie-ios
           -configuration Release
           -destination 'generic/platform=iOS Simulator'
-          -derivedDataPath "$GITHUB_WORKSPACE/build"
+          -derivedDataPath "$GITHUB_WORKSPACE/ios/build"
           CODE_SIGNING_ALLOWED=NO
           build
       - name: Capture mock screenshots
@@ -131,5 +162,46 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mock-screenshots
-          path: docs/screenshots
+          path: ios/docs/screenshots
+          if-no-files-found: error
+
+  web:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+  web-screenshots:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.web == 'true')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run screenshots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-mock-screenshots
+          path: web/docs/screenshots
           if-no-files-found: error

@@ -1,6 +1,6 @@
 # magpie-web 架构设计
 
-> 面向 yetone/magpie LLM 网关的 Web 远程监控面板，是已完成的 Logikinet/magpie-ios 的网页版伴侣。
+> 面向 yetone/magpie LLM 网关的 Web 远程监控面板，是已完成的 Logikinet/magpie-monitor 的网页版伴侣。
 > 本文为设计文档，不含实现代码。所有 API 事实以 `docs/magpie-api-notes.md` 为准（已对照 yetone/magpie 源码 @ e085d6e，2026-10-17 核对）。
 > 仓库后续可能公开：全文不出现真实主机名、IP、密钥、个人信息或私有链接，示例一律使用 `magpie.example.com` 等占位符。
 

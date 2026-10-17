@@ -23,8 +23,10 @@
 
 ## 2. 模块布局（目录树）
 
+以下目录位于 monorepo 的 `ios/`；本节之后的 App、Packages、docs 和构建命令路径均相对于 `ios/`。共享 CI 位于仓库根目录 `.github/workflows/ci.yml`，Web 客户端位于 `web/`。
+
 ```
-magpie-ios/
+ios/
 ├── project.yml                     # XcodeGen 配置（app target + 本地包引用）
 ├── App/
 │   ├── Sources/
@@ -57,7 +59,6 @@ magpie-ios/
 │           ├── SSHConnection.swift # actor 封装
 │           ├── SSHCommandRunner.swift
 │           └── SSHPTYChannel.swift # tmux attach 用
-├── .github/workflows/ci.yml
 └── docs/
     ├── magpie-api-notes.md
     └── architecture.md
@@ -375,7 +376,7 @@ actor SSHConnection {
 8. 403 时提示开启 magpie “Share on local network”；错误文案为中文（UI 中文，README 中英双语）。
 9. Mock 数据模式全程显示 “Mock data” 徽章，用于无服务器截图。
 10. CI：macOS job 构建**未签名** IPA（`CODE_SIGNING_ALLOWED=NO`，`Payload/` zip → `magpie-ios.ipa` artifact）；Linux job `swift test` MagpieKit 和 SSHKit（Citadel 0.12.1 已验证可在 Swift 6.x Linux 测试）。无签名配置。
-11. 仓库将公开（Logikinet/magpie-ios）：MIT LICENSE，并在 README/NOTICE 中致谢 magpie、SwiftTerm、Citadel 及其许可证。
+11. 仓库将公开（Logikinet/magpie-monitor）：MIT LICENSE，并在 README/NOTICE 中致谢 magpie、SwiftTerm、Citadel 及其许可证。
 12. README 中英双语：功能、配置（Tailscale、magpie 设置、轻松签/LCSign 签名）、截图占位（日后 CI/模拟器 Mock 生成，标注 mock）。
 
 ### 实现差异（收尾核对）
