@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import MagpieKit
+import SSHKit
 
 @MainActor @Observable
 final class AppState {
@@ -43,6 +44,31 @@ final class AppState {
         return WebClient(baseURL: url, runtimeKey: key, transport: makeTransport(), port: profile.webPort) {
             try? await provider.get(account: account)
         }
+    }
+
+    func makeOverviewSSHRunner() async throws -> any SSHRunning {
+        if isMockMode { return MockSSHRunner() }
+        guard let profile = currentProfile else { throw MagpieError.sshFailed("请先选择服务器配置。") }
+        let read: (SecretField) -> String? = { [secretStore] field in
+            try? secretStore.read(account: field.account(profileID: profile.id))
+        }
+        let auth: SSHConfig.Authentication
+        switch profile.sshAuthKind {
+        case .privateKey:
+            guard let key = read(.sshPrivateKey), !key.isEmpty else { throw MagpieError.sshAuthFailed }
+            auth = .privateKey(pem: key, passphrase: read(.sshPassphrase))
+        case .password:
+            guard let password = read(.sshPassword), !password.isEmpty else { throw MagpieError.sshAuthFailed }
+            auth = .password(password)
+        }
+        let connection = SSHConnection()
+        let pin = read(.hostKey)
+        let fingerprint = try await connection.connect(
+            config: SSHConfig(host: profile.sshHost, port: profile.sshPort, user: profile.sshUser, auth: auth),
+            pinnedFingerprint: pin
+        )
+        if pin == nil { try? await secretStore.set(fingerprint, account: SecretField.hostKey.account(profileID: profile.id)) }
+        return connection
     }
 
     private func makeTransport() -> any HTTPTransport {
