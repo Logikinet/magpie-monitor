@@ -2,32 +2,29 @@ import SwiftUI
 
 @main
 struct MagpieApp: App {
+    @State private var appState = AppState()
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some Scene {
         WindowGroup {
             TabView {
-                PlaceholderTab(title: "概览", symbol: "gauge")
-                    .tabItem { Label("概览", systemImage: "gauge") }
-                PlaceholderTab(title: "动态", symbol: "list.bullet.rectangle")
-                    .tabItem { Label("动态", systemImage: "list.bullet.rectangle") }
-                PlaceholderTab(title: "Tmux", symbol: "terminal")
-                    .tabItem { Label("Tmux", systemImage: "terminal") }
-                PlaceholderTab(title: "Agent", symbol: "point.3.connected.trianglepath.dotted")
-                    .tabItem { Label("Agent", systemImage: "point.3.connected.trianglepath.dotted") }
-                PlaceholderTab(title: "服务", symbol: "server.rack")
-                    .tabItem { Label("服务", systemImage: "server.rack") }
+                tab(OverviewView(), title: "概览", symbol: "gauge")
+                tab(ActivityView(), title: "动态", symbol: "list.bullet.rectangle")
+                tab(TmuxView(), title: "Tmux", symbol: "terminal")
+                tab(AgentView(), title: "Agent", symbol: "point.3.connected.trianglepath.dotted")
+                tab(ServicesView(), title: "服务", symbol: "server.rack")
             }
+            .environment(appState)
+            .onChange(of: scenePhase) { _, phase in appState.isActive = phase == .active }
         }
     }
-}
-
-private struct PlaceholderTab: View {
-    let title: String
-    let symbol: String
-
-    var body: some View {
+    private func tab<V: View>(_ view: V, title: String, symbol: String) -> some View {
         NavigationStack {
-            ContentUnavailableView(title, systemImage: symbol)
+            view
                 .navigationTitle(title)
+                .navigationBarTitleDisplayMode(.large)
+                .profileToolbar()
         }
+        .tabItem { Label(title, systemImage: symbol) }
     }
 }

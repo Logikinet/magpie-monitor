@@ -1,5 +1,6 @@
 name: magpie-ios
 options:
+  bundleIdPrefix: io.github.logikinet
   deploymentTarget:
     iOS: "17.0"
 packages:
@@ -9,12 +10,18 @@ packages:
     path: Packages/SSHKit
   SwiftTerm:
     url: https://github.com/migueldeicaza/SwiftTerm
-    from: 1.2.0
+    minorVersion: 1.20.0
 targets:
   magpie-ios:
     type: application
     platform: iOS
     deploymentTarget: "17.0"
+    settings:
+      base:
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        TARGETED_DEVICE_FAMILY: "1,2"
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.logikinet.magpie-ios
     sources:
       - App/Sources
       - App/Resources
@@ -37,3 +44,16 @@ targets:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+          - UIInterfaceOrientationPortraitUpsideDown
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+schemes:
+  magpie-ios:
+    build:
+      targets:
+        magpie-ios: all
+    run:
+      config: Debug
