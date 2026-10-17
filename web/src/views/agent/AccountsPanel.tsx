@@ -1,3 +1,4 @@
+import { fmtDate } from '../../core/format';
 import type { Route } from '../../core/decode';
 import { value, word, type Lang } from './shared';
 const text = {
@@ -23,7 +24,7 @@ export function AccountsPanel({ route, lang }: { route: Route; lang: Lang }) {
                   {t.remaining} {value(s.known && s.used !== undefined ? 100 - s.used : undefined, '%')}
                 </span>
                 <small>
-                  {s.plan} · {t.renew} {s.renews[0] ? new Date(s.renews[0]).toLocaleString() : '—'}
+                  {s.plan} · {t.renew} {s.renews[0] ? fmtDate(s.renews[0]) : '—'}
                 </small>
                 {s.known && s.used !== undefined && (
                   <div class="rt-bar">

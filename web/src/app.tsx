@@ -1,3 +1,6 @@
+import { UsageView } from './views/agent/UsageView';
+import { ProvidersView } from './views/agent/ProvidersView';
+import { fmtCost, fmtDate, fmtRelative, fmtNumber, fmtTokens } from './core/format';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import { GatewayClient } from './core/gateway-client';
@@ -28,39 +31,10 @@ const nav: { id: Tab; label: string; icon: string }[] = [
   { id: 'agent', label: 'Agent', icon: 'bot' },
   { id: 'settings', label: '设置', icon: 'settings' },
 ];
-const fmt = (n?: number, digits = 0) =>
-  n === undefined ? '—' : n.toLocaleString('zh-CN', { maximumFractionDigits: digits });
-const money = (n?: number) =>
-  n === undefined
-    ? '—'
-    : new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(
-        n,
-      );
-const dateTime = (s?: string) => {
-  if (!s) return '—';
-  const d = new Date(s);
-  return Number.isNaN(d.getTime())
-    ? s
-    : new Intl.DateTimeFormat('zh-CN', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }).format(d);
-};
-const relTime = (s?: string) => {
-  if (!s) return '未知';
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return s;
-  const sec = Math.max(0, Math.round((d.getTime() - Date.now()) / 1000));
-  if (sec >= 48 * 3600) return `${Math.floor(sec / 86400)} 天后`;
-  if (sec >= 3600) {
-    const h = Math.floor(sec / 3600),
-      m = Math.floor((sec % 3600) / 60);
-    return `${h} 小时${m ? ` ${m} 分钟` : ''}后`;
-  }
-  return new Intl.RelativeTimeFormat('zh-CN', { numeric: 'auto' }).format(Math.round(sec / 60), 'minute');
-};
+const fmt = fmtNumber;
+const money = fmtCost;
+const dateTime = fmtDate;
+const relTime = fmtRelative;
 
 function Status({
   kind,
@@ -157,7 +131,7 @@ export function QuotaCard({ provider, window, usage }: { provider: string; windo
         <span style={{ width: `${pct}%` }} />
       </div>
       <div class="quota-foot">
-        <span title={window.resetsAt ? new Date(window.resetsAt).toLocaleString('zh-CN') : undefined}>
+        <span title={window.resetsAt ? fmtDate(window.resetsAt) : undefined}>
           重置于 {relTime(window.resetsAt)}
         </span>
         <Status kind={danger}>{danger === 'ok' ? '正常' : danger === 'warn' ? '注意' : '已用尽'}</Status>
@@ -181,6 +155,7 @@ export default function App() {
   const [agentTab, setAgentTab] = useState<AgentTab>(() => readPage().atab);
   const [routingGroups, setRoutingGroups] = useState<ReturnType<typeof decodeGroups>['groups']>([]);
   const [traceVersion, setTraceVersion] = useState(0);
+  const [agentRevision, setAgentRevision] = useState(0);
   const [theme, setTheme] = useState(
     () => params.get('theme') ?? localStorage.getItem('magpie.theme') ?? 'system',
   );
@@ -188,7 +163,6 @@ export default function App() {
   const [usage, setUsage] = useState<any>();
   const [ledger, setLedger] = useState<any>();
   const [quotas, setQuotas] = useState<any[]>([]);
-  const [quotaCards, setQuotaCards] = useState<any[]>([]);
   const [concurrency, setConcurrency] = useState<any>();
   const [hello, setHello] = useState<any>();
   const [limitInfo, setLimitInfo] = useState<any>();
@@ -234,7 +208,6 @@ export default function App() {
         gateway.usage(period),
         gateway.requests({ period, offset: 0, limit: 20 }),
         gateway.quotas(),
-        gateway.quotaCards(),
         gateway.concurrency(),
         profile.mode === 'direct' ? Promise.resolve(undefined) : gateway.hello(),
         gateway.limit(),
@@ -247,10 +220,9 @@ export default function App() {
         setOffset(results[1].value.rows.length);
       }
       if (results[2].status === 'fulfilled') setQuotas(results[2].value.data);
-      if (results[3].status === 'fulfilled') setQuotaCards(results[3].value.data);
-      if (results[4].status === 'fulfilled') setConcurrency(results[4].value);
-      if (results[5].status === 'fulfilled') setHello(results[5].value);
-      if (results[6].status === 'fulfilled') setLimitInfo(results[6].value);
+      if (results[3].status === 'fulfilled') setConcurrency(results[3].value);
+      if (results[4].status === 'fulfilled') setHello(results[4].value);
+      if (results[5].status === 'fulfilled') setLimitInfo(results[5].value);
       setLastUpdated(new Date().toISOString());
       setLoading(false);
       if (failed)
@@ -443,7 +415,13 @@ export default function App() {
               打开 magpie web
             </a>
           )}
-          <button class="button button-quiet refresh-button" onClick={() => void refresh()}>
+          <button
+            class="button button-quiet refresh-button"
+            onClick={() => {
+              void refresh();
+              setAgentRevision((v) => v + 1);
+            }}
+          >
             <Icon name="refresh" />
             <span>刷新</span>
           </button>
@@ -521,7 +499,7 @@ export default function App() {
                     <Metric
                       icon="gauge"
                       label="今日 token"
-                      value={usage?.tokens === undefined ? '—' : formatTokens(usage.tokens)}
+                      value={usage?.tokens === undefined ? '—' : fmtTokens(usage.tokens)}
                       hint="输入 + 输出"
                     />
                     <Metric label="今日费用" value={money(usage?.cost)} />
@@ -560,7 +538,11 @@ export default function App() {
             <>
               <div class="page-heading">
                 <div>
-                  <p class="eyebrow">{new URLSearchParams(location.search).get('lang') === 'en' ? 'REQUEST LEDGER' : '请求记录'}</p>
+                  <p class="eyebrow">
+                    {new URLSearchParams(location.search).get('lang') === 'en'
+                      ? 'REQUEST LEDGER'
+                      : '请求记录'}
+                  </p>
                   <h1>动态</h1>
                   <p>请求趋势与路由记录</p>
                 </div>
@@ -614,7 +596,9 @@ export default function App() {
             <>
               <div class="page-heading">
                 <div>
-                  <p class="eyebrow">{new URLSearchParams(location.search).get('lang') === 'en' ? 'LIVE ROUTING' : '实时路由'}</p>
+                  <p class="eyebrow">
+                    {new URLSearchParams(location.search).get('lang') === 'en' ? 'LIVE ROUTING' : '实时路由'}
+                  </p>
                   <h1>Agent</h1>
                   <p>路由、用量与运行环境</p>
                 </div>
@@ -660,48 +644,20 @@ export default function App() {
               {routeError && agentTab === 'routing' && (
                 <ErrorBox message={routeError} retry={() => setTraceVersion((v) => v + 1)} />
               )}
-              {(agentTab === 'providers' || agentTab === 'runtimes') && <AgentPlaceholder />}
+              {agentTab === 'providers' && <ProvidersView client={web} revision={agentRevision} />}
+              {agentTab === 'runtimes' && <AgentPlaceholder />}
             </>
           )}
           {tab === 'agent' && agentTab === 'usage' && (
-            <>
-              <div class="page-heading">
-                <div>
-                  <p class="eyebrow">{new URLSearchParams(location.search).get('lang') === 'en' ? 'PROVIDER LIMITS' : '服务商与配额'}</p>
-                  <h1>配额</h1>
-                  <p>各服务商的使用窗口与重置时间</p>
-                </div>
-              </div>
-              {error && <ErrorBox message={error} retry={() => void refresh()} />}
-              {loading && !quotas.length ? (
-                <Skeletons />
-              ) : (
-                <>
-                  <Section title="使用窗口" action={<span class="muted">{allWindows.length} 个窗口</span>} />
-                  <div class="grid quota-grid">
-                    {allWindows.map((x) => (
-                      <QuotaCard provider={x.provider} window={x.window} usage={usage} />
-                    ))}
-                  </div>
-                  <Section title="配额卡片" action={<span class="muted">{quotaCards.length} 项</span>} />
-                  {quotaCards.length ? (
-                    <div class="grid generic-quota-grid">
-                      {quotaCards.map((card: any) => (
-                        <GenericQuota card={card} />
-                      ))}
-                    </div>
-                  ) : (
-                    <Empty text="当前没有额外的配额卡片" />
-                  )}
-                </>
-              )}
-            </>
+            <UsageView client={web} consoleUrl={profile.webGuiUrl} revision={agentRevision} />
           )}
           {tab === 'settings' && (
             <>
               <div class="page-heading">
                 <div>
-                  <p class="eyebrow">{new URLSearchParams(location.search).get('lang') === 'en' ? 'PREFERENCES' : '偏好设置'}</p>
+                  <p class="eyebrow">
+                    {new URLSearchParams(location.search).get('lang') === 'en' ? 'PREFERENCES' : '偏好设置'}
+                  </p>
                   <h1>设置</h1>
                   <p>连接 Profile、密钥与外观</p>
                 </div>
@@ -971,7 +927,7 @@ function TrendChart({ series }: { series: any[] }) {
   );
 }
 function compactNumber(n: number) {
-  return Intl.NumberFormat('zh-CN', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
+  return fmtTokens(n);
 }
 function Ledger({ rows }: { rows: Row[] }) {
   if (!rows.length) return <Empty text="此时间段暂无请求记录" />;
@@ -1052,68 +1008,6 @@ function LedgerRow({ row, mobile = false }: { row: Row; mobile?: boolean }) {
       </td>
     </tr>
   );
-}
-function GenericQuota({ card }: { card: Record<string, any> }) {
-  return (
-    <Card class="generic-card">
-      <div class="generic-head">
-        <div>
-          <h3>{card.name ?? card.title ?? card.provider ?? '配额'}</h3>
-          <p>{[card.provider, card.plan ?? card.kind].filter(Boolean).join(' · ')}</p>
-        </div>
-      </div>
-      {(card.windows ?? []).map((w: any) => {
-        const pct = Math.round(
-            Number(w.used ?? (Number(w.limit) > 0 ? (Number(w.amount) / Number(w.limit)) * 100 : 0)),
-          ),
-          level = pct >= 100 ? 'error' : pct >= 80 ? 'warn' : 'ok',
-          windowName = /^(5-hour|5h)$/i.test(w.name)
-            ? '5 小时'
-            : /^(weekly|week)$/i.test(w.name)
-              ? '每周'
-              : w.name;
-        return (
-          <div class={`generic-window quota-${level}`}>
-            <div class="generic-window-head">
-              <span>{windowName}</span>
-              {pct > 0 && <strong>{pct}%</strong>}
-            </div>
-            <div class="progress">
-              <span style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
-            </div>
-            {/^(token|tokens)$/i.test(w.unit ?? '') && (
-              <small>已消耗 {formatTokens(Number(w.amount ?? w.used ?? 0))} token</small>
-            )}
-          </div>
-        );
-      })}
-      {(card.balance || card.balanceSplit?.length) && (
-        <div class="balance-rows">
-          {card.balance && (
-            <div>
-              <span>余额</span>
-              <strong>{formatAmount(card.balance)}</strong>
-            </div>
-          )}
-          {(card.balanceSplit ?? []).map((b: any) => (
-            <div>
-              <span>{b.name}</span>
-              <strong>{formatAmount(b.balance ?? b.amount)}</strong>
-            </div>
-          ))}
-        </div>
-      )}
-      {card.asOf && <small class="as-of">更新于 {dateTime(card.asOf)}</small>}
-    </Card>
-  );
-}
-function formatAmount(v: any) {
-  if (typeof v === 'number') return money(v);
-  if (typeof v === 'string' && /^\$?-?[\d,.]+$/.test(v)) {
-    const n = Number(v.replace(/[$,]/g, ''));
-    return money(n);
-  }
-  return String(v);
 }
 function KeyValueCard({ title, subtitle, value }: { title: string; subtitle: string; value: any }) {
   if (!value || typeof value !== 'object') return null;

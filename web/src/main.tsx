@@ -6,3 +6,5 @@ import './styles/base.css';
 render(<App />, document.getElementById('app')!);
 
 import './styles/routing.css';
+
+import './styles/usage.css';

@@ -1,8 +1,8 @@
 {
   "bucket": "hour",
-  "period": "day",
+  "period": "today",
   "since": "2026-10-17T00:00:00Z",
-  "calls": 30,
+  "calls": 135,
   "errors": 2,
   "retried": 5,
   "loops": 0,
@@ -18,7 +18,7 @@
     {
       "label": "15:00",
       "time": "2026-10-16T15:00:00Z",
-      "calls": 3,
+      "calls": 0,
       "cost": 0.04,
       "tokens": 2500,
       "by": {}
@@ -211,24 +211,129 @@
   "callerKeys": [],
   "models": [
     {
-      "provider": "anthropic",
-      "input": 31000,
-      "output": 11000
+      "id": "fake-model-0",
+      "name": "demo-sonnet",
+      "model": "demo-sonnet",
+      "provider": "antigravity",
+      "calls": 60,
+      "input": 60000,
+      "output": 6000,
+      "cost": 1.2,
+      "decode_ms": 20000,
+      "decode_out": 1800,
+      "timed": 60,
+      "ttft_ms": 48000
     },
     {
-      "provider": "openai",
-      "input": 47000,
-      "output": 21000
+      "id": "fake-model-1",
+      "name": "demo-code",
+      "model": "demo-code",
+      "provider": "codex",
+      "calls": 45,
+      "input": 45000,
+      "output": 4500,
+      "cost": 0.9,
+      "decode_ms": 20000,
+      "decode_out": 1800,
+      "timed": 45,
+      "ttft_ms": 36000
     },
     {
-      "provider": "google",
-      "input": 62000,
-      "output": 29000
-    },
-    {
+      "id": "fake-model-2",
+      "name": "demo-chat",
+      "model": "demo-chat",
       "provider": "openrouter",
-      "input": 19000,
-      "output": 8000
+      "calls": 30,
+      "input": 30000,
+      "output": 3000,
+      "cost": 0.6,
+      "decode_ms": 20000,
+      "decode_out": 1800,
+      "timed": 30,
+      "ttft_ms": 24000
+    },
+    {
+      "id": "fake-model-4",
+      "name": "demo-small",
+      "model": "demo-small",
+      "provider": "deepseek",
+      "calls": 0,
+      "input": 0,
+      "output": 0,
+      "cost": 0
+    }
+  ],
+  "timed": 24,
+  "ttft_ms": 19200,
+  "decode_ms": 60000,
+  "decode_out": 36210,
+  "decode_n": 24,
+  "fetched_at": 1792224000,
+  "agents": [
+    {
+      "id": "fake-agent-0",
+      "name": "Claude",
+      "calls": 60,
+      "input": 60000,
+      "output": 6000,
+      "cost": 1.2,
+      "errors": 0
+    },
+    {
+      "id": "fake-agent-1",
+      "name": "Codex",
+      "calls": 45,
+      "input": 45000,
+      "output": 4500,
+      "cost": 0.9,
+      "errors": 0
+    },
+    {
+      "id": "fake-agent-2",
+      "name": "Gemini",
+      "calls": 30,
+      "input": 30000,
+      "output": 3000,
+      "cost": 0.6,
+      "errors": 0
+    }
+  ],
+  "accounts": [
+    {
+      "id": "fake-account-0",
+      "name": "demo-user@example.com",
+      "provider": "codex",
+      "calls": 45,
+      "input": 45000,
+      "output": 4500,
+      "reasoning": 900,
+      "cache_read": 9000,
+      "cost": 0.9,
+      "errors": 0
+    },
+    {
+      "id": "fake-account-1",
+      "name": "demo-user@example.com",
+      "provider": "antigravity",
+      "calls": 60,
+      "input": 60000,
+      "output": 6000,
+      "reasoning": 1200,
+      "cache_read": 12000,
+      "cost": 1.2,
+      "errors": 1
+    },
+    {
+      "id": "fake-account-2",
+      "name": "demo-user@example.com",
+      "provider": "openrouter",
+      "calls": 30,
+      "input": 30000,
+      "output": 3000,
+      "reasoning": 600,
+      "cache_read": 6000,
+      "cost": 0.6,
+      "errors": 2
     }
   ]
 }

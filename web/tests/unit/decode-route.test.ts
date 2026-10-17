@@ -35,7 +35,11 @@ it('decodes the complete sanitized route contract without supplying missing metr
   expect(newest.done).toBe(false);
   expect(newest.agent).toBeTruthy();
   expect(newest.provider).toBeTruthy();
-  expect(newest.tries?.[0]).toMatchObject({ done: false, start: expect.any(String), served: expect.any(String) });
+  expect(newest.tries?.[0]).toMatchObject({
+    done: false,
+    start: expect.any(String),
+    served: expect.any(String),
+  });
   expect(newest.prompt?.parts).toHaveLength(5);
   expect(newest.ttft).toBeGreaterThan(0);
   expect(newest.ms).toBeUndefined();
@@ -99,15 +103,15 @@ it('decodes bare quota arrays, structured holds and vendor history', () => {
     resets: { count: 2 },
     daily: { days: [{ used: 12 }] },
     checkin: { outcome: 'ok' },
-    balanceTrend: { perDay: 2, points: [{ amount: 25 }] },
+    balanceTrend: { perDay: 2, points: quotas[0].balanceTrend!.points },
   });
 });
 it('serves new web endpoints through the mock transport, including one route by id', async () => {
   const web = new WebClient(new MockTransport());
   expect((await web.groups()).groups).toHaveLength(1);
-  expect((await web.providers()).providers).toHaveLength(3);
+  expect((await web.providers()).providers).toHaveLength(4);
   expect((await web.usage('today')).calls).toBeDefined();
-  expect((await web.usageQuotas()).data).toHaveLength(1);
+  expect((await web.usageQuotas()).data).toHaveLength(4);
   expect(await web.route(4039, '2026-10-17')).toMatchObject({ id: '4039', seq: 640, done: false });
   await expect(web.route(9999, '2026-10-17')).rejects.toMatchObject({ kind: 'badStatus', status: 404 });
 });

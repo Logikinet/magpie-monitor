@@ -1,3 +1,4 @@
+import { fmtDate } from '../../core/format';
 // Stage layout and wire behavior adapted from yetone/magpie routing plugin (MIT), @7660399.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Route } from '../../core/decode';
@@ -182,7 +183,7 @@ export function RoutingStage({
                       </em>
                       {typeof status.params.resetInMs === 'number' && (
                         <small class="rt-renew">
-                          {t.reset} · {new Date(now + status.params.resetInMs).toLocaleString()}
+                          {t.reset} · {fmtDate(now + status.params.resetInMs)}
                         </small>
                       )}
                       {s.known && s.used !== undefined && (

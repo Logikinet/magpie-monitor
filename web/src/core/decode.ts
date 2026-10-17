@@ -73,7 +73,7 @@ function required(v: unknown, key: string) {
   return value;
 }
 const totals =
-  'calls errors input output cost tokens cache_read cache_write retried loops reasoning unpriced';
+  'calls errors input output cost tokens cache_read cache_write retried loops reasoning unpriced timed ttft_ms decode_ms decode_out decode_n fetched_at';
 export interface Hello {
   name?: string;
   version?: string;
@@ -97,7 +97,7 @@ export interface ModelUsage {
   cost?: number;
 }
 export const decodeModelUsage = (v: unknown): ModelUsage => ({
-  ...fields(v, 'model', 'input output cost'),
+  ...fields(v, 'id name sub icon model', totals),
   provider: required(v, 'provider'),
 });
 export type SeriesPoint = ReturnType<typeof decodeSeriesPoint>;
@@ -123,6 +123,9 @@ export function decodeUsageSummary(v: unknown): UsageSummary {
   return {
     ...fields(v, 'bucket period since', totals),
     models: models.items,
+    agents: lossyArray((v: unknown) => fields(v, 'id name sub icon provider', totals))(r.agents).items,
+    accounts: lossyArray((v: unknown) => fields(v, 'id name sub icon provider account', totals))(r.accounts)
+      .items,
     series: series.items,
     bad: models.bad + series.bad,
   };
@@ -380,8 +383,8 @@ export function decodeProviders(v: unknown) {
     return {
       ...fields(
         v,
-        'id name icon kind base routing affinity fetched listError',
-        'exposed maxConcurrency pluginConcurrency queueLimit queueWait maxRPM priceRate',
+        'id name icon kind base host routing affinity fetched listError',
+        'active_models_count exposed maxConcurrency pluginConcurrency queueLimit queueWait maxRPM priceRate',
         'ready off unlisted noModels sponsored',
       ),
       key: optional(r.key, (v) => fields(v, 'masked', '', 'set optional')),
@@ -393,7 +396,7 @@ export function decodeProviders(v: unknown) {
       )(r.models).items,
       agents: lossyArray((v: unknown) => fields(v, 'id name icon model group', '', 'current'))(r.agents)
         .items,
-      account: optional(r.account, (v) => fields(v, 'agent agentName agentIcon builtin')),
+      account: optional(r.account, (v) => fields(v, 'user plan agent agentName agentIcon builtin')),
       chosen: strings(r.chosen),
       fallback: strings(r.fallback),
     };

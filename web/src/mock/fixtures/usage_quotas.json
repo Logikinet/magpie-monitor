@@ -1,12 +1,12 @@
 [
   {
-    "provider": "demo-codex",
-    "name": "Demo Codex",
+    "provider": "codex",
+    "name": "Codex",
     "user": "demo-user@example.com",
     "kind": "subscription",
     "windows": [
       {
-        "name": "5-hour",
+        "name": "5 hours",
         "used": 35,
         "remaining": 65,
         "runsOut": 7200,
@@ -22,6 +22,16 @@
             "calls": 10,
             "tokens": 7000
           }
+        }
+      },
+      {
+        "name": "7 days",
+        "used": 87,
+        "resetsAt": "2026-10-22T12:00:00Z",
+        "holds": {
+          "since": "2026-10-15T12:00:00Z",
+          "tokens": 240000,
+          "cost": 3.5
         }
       }
     ],
@@ -47,12 +57,157 @@
     "balanceTrend": {
       "points": [
         {
+          "at": "2026-10-13T08:00:00Z",
+          "amount": 45
+        },
+        {
+          "at": "2026-10-14T08:00:00Z",
+          "amount": 40
+        },
+        {
+          "at": "2026-10-15T08:00:00Z",
+          "amount": 35
+        },
+        {
+          "at": "2026-10-16T08:00:00Z",
+          "amount": 30
+        },
+        {
           "at": "2026-10-17T08:00:00Z",
           "amount": 25
         }
       ],
       "perDay": 2,
       "runsOut": "2026-10-29T08:00:00Z"
+    },
+    "plan": "Demo standard",
+    "balance": 25
+  },
+  {
+    "provider": "codex",
+    "name": "Codex",
+    "user": "demo-user@example.com",
+    "kind": "subscription",
+    "windows": [
+      {
+        "name": "5 hours",
+        "used": 72,
+        "remaining": 65,
+        "runsOut": 7200,
+        "runsOutAt": "2026-10-17T10:00:00Z",
+        "resetsAt": "2026-10-17T12:00:00Z",
+        "holds": {
+          "tokens": 20000,
+          "used": 35,
+          "priced": true,
+          "cost": 0.04,
+          "since": "2026-10-17T07:00:00Z",
+          "routed": {
+            "calls": 10,
+            "tokens": 7000
+          }
+        }
+      },
+      {
+        "name": "7 days",
+        "used": 87,
+        "resetsAt": "2026-10-22T12:00:00Z",
+        "holds": {
+          "since": "2026-10-15T12:00:00Z",
+          "tokens": 240000,
+          "cost": 3.5
+        }
+      }
+    ],
+    "resets": {
+      "count": 2,
+      "until": "2026-11-01T00:00:00Z"
+    },
+    "daily": {
+      "since": "2026-10-16",
+      "days": [
+        {
+          "day": "2026-10-16",
+          "used": 12
+        }
+      ]
+    },
+    "checkin": {
+      "day": "2026-10-17",
+      "at": "2026-10-17T08:00:00Z",
+      "outcome": "ok",
+      "credit": 5
+    },
+    "balanceTrend": {
+      "points": [
+        {
+          "at": "2026-10-13T08:00:00Z",
+          "amount": 45
+        },
+        {
+          "at": "2026-10-14T08:00:00Z",
+          "amount": 40
+        },
+        {
+          "at": "2026-10-15T08:00:00Z",
+          "amount": 35
+        },
+        {
+          "at": "2026-10-16T08:00:00Z",
+          "amount": 30
+        },
+        {
+          "at": "2026-10-17T08:00:00Z",
+          "amount": 25
+        }
+      ],
+      "perDay": 2,
+      "runsOut": "2026-10-29T08:00:00Z"
+    },
+    "plan": "Demo backup",
+    "balance": 12
+  },
+  {
+    "provider": "antigravity",
+    "name": "Antigravity",
+    "user": "demo-user@example.com",
+    "plan": "Demo trial",
+    "windows": [
+      {
+        "name": "5 hours",
+        "used": 20,
+        "resetsAt": "2026-10-17T15:00:00Z"
+      }
+    ],
+    "error": "Demo quota service is temporarily unavailable."
+  },
+  {
+    "provider": "openrouter",
+    "name": "OpenRouter",
+    "user": "demo-user@example.com",
+    "balance": 10,
+    "windows": [
+      {
+        "name": "Credits",
+        "used": 50,
+        "amount": 10,
+        "limit": 20,
+        "unit": "USD"
+      }
+    ],
+    "balanceTrend": {
+      "points": [
+        {
+          "at": "2026-10-16T00:00:00Z",
+          "amount": 15
+        },
+        {
+          "at": "2026-10-17T00:00:00Z",
+          "amount": 10
+        }
+      ],
+      "perDay": 5,
+      "runsOut": "2026-10-19T00:00:00Z"
     }
   }
 ]
