@@ -1,0 +1,71 @@
+import { beforeEach, it, expect } from 'vitest';
+import { createKeyStore } from '../../src/state/keys';
+import {
+  defaultProfile,
+  loadProfiles,
+  saveProfiles,
+  exportProfiles,
+  importProfiles,
+} from '../../src/state/profiles';
+beforeEach(() => {
+  localStorage.clear();
+  sessionStorage.clear();
+});
+it('starts with demo profile and persists validated profiles only', () => {
+  expect(loadProfiles()).toEqual([defaultProfile]);
+  saveProfiles([
+    {
+      id: 'live',
+      name: '实例',
+      mode: 'live',
+      refreshSec: 20,
+      webPort: 3426,
+      webGuiUrl: 'https://magpie.example.com',
+    },
+  ]);
+  expect(loadProfiles()[0].id).toBe('live');
+  localStorage.setItem('magpie.profiles', 'broken');
+  expect(loadProfiles()).toEqual([defaultProfile]);
+});
+it('stores keys per profile in session by default, moves only after opt-in, clears both stores', () => {
+  const store = createKeyStore();
+  store.setKeys('a', { gatewayKey: 'gateway-demo', webKey: 'web-demo' });
+  store.setKeys('b', { gatewayKey: 'other-demo' });
+  expect(localStorage.length).toBe(0);
+  expect(store.getKeys('a').webKey).toBe('web-demo');
+  store.rememberKeys('a', true);
+  expect(store.isRemembered('a')).toBe(true);
+  expect(sessionStorage.getItem('magpie.keys.a')).toBeNull();
+  expect(store.getKeys('a').gatewayKey).toBe('gateway-demo');
+  store.rememberKeys('a', false);
+  expect(localStorage.length).toBe(0);
+  store.clearKeys('a');
+  expect(store.getKeys('a').gatewayKey).toBeUndefined();
+  expect(store.getKeys('b').gatewayKey).toBe('other-demo');
+  localStorage.setItem('unrelated', 'keep');
+  store.clearKeys();
+  expect(sessionStorage.length).toBe(0);
+  expect(localStorage.getItem('unrelated')).toBe('keep');
+});
+it('export and import discard injected key fields and reject invalid profiles', () => {
+  const dirty = {
+    ...defaultProfile,
+    gatewayKey: 'hidden-demo',
+    webKey: 'hidden-demo',
+    keys: { secret: 'hidden-demo' },
+  };
+  expect(exportProfiles([dirty])).not.toContain('hidden-demo');
+  expect(importProfiles(JSON.stringify([dirty]))).toEqual([defaultProfile]);
+  for (const value of [
+    {},
+    [{}],
+    [{ ...defaultProfile, mode: 'invalid' }],
+    [{ ...defaultProfile, refreshSec: 1 }],
+    [{ ...defaultProfile, webPort: 65536 }],
+    [{ ...defaultProfile, webGuiUrl: 'javascript:alert(1)' }],
+    [{ ...defaultProfile, gatewayUrl: 'https://magpie.example.com?k=demo' }],
+    [{ ...defaultProfile, mode: 'direct' }],
+    [defaultProfile, defaultProfile],
+  ])
+    expect(() => importProfiles(JSON.stringify(value))).toThrow();
+});

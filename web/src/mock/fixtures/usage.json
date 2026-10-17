@@ -1,0 +1,234 @@
+{
+  "bucket": "hour",
+  "period": "day",
+  "since": "2026-10-17T00:00:00Z",
+  "calls": 30,
+  "errors": 2,
+  "retried": 5,
+  "loops": 0,
+  "input": 138420,
+  "output": 36210,
+  "cache_read": 42820,
+  "cache_write": 7940,
+  "reasoning": 11200,
+  "cost": 5.84,
+  "unpriced": 1,
+  "tokens": 175830,
+  "series": [
+    {
+      "label": "15:00",
+      "time": "2026-10-16T15:00:00Z",
+      "calls": 3,
+      "cost": 0.04,
+      "tokens": 2500,
+      "by": {}
+    },
+    {
+      "label": "16:00",
+      "time": "2026-10-16T16:00:00Z",
+      "calls": 4,
+      "cost": 0.17,
+      "tokens": 3327,
+      "by": {}
+    },
+    {
+      "label": "17:00",
+      "time": "2026-10-16T17:00:00Z",
+      "calls": 5,
+      "cost": 0.3,
+      "tokens": 4154,
+      "by": {}
+    },
+    {
+      "label": "18:00",
+      "time": "2026-10-16T18:00:00Z",
+      "calls": 6,
+      "cost": 0.12,
+      "tokens": 4981,
+      "by": {}
+    },
+    {
+      "label": "19:00",
+      "time": "2026-10-16T19:00:00Z",
+      "calls": 7,
+      "cost": 0.25,
+      "tokens": 5808,
+      "by": {}
+    },
+    {
+      "label": "20:00",
+      "time": "2026-10-16T20:00:00Z",
+      "calls": 8,
+      "cost": 0.07,
+      "tokens": 6635,
+      "by": {}
+    },
+    {
+      "label": "21:00",
+      "time": "2026-10-16T21:00:00Z",
+      "calls": 9,
+      "cost": 0.2,
+      "tokens": 7462,
+      "by": {}
+    },
+    {
+      "label": "22:00",
+      "time": "2026-10-16T22:00:00Z",
+      "calls": 3,
+      "cost": 0.33,
+      "tokens": 8289,
+      "by": {}
+    },
+    {
+      "label": "23:00",
+      "time": "2026-10-16T23:00:00Z",
+      "calls": 4,
+      "cost": 0.15,
+      "tokens": 9116,
+      "by": {}
+    },
+    {
+      "label": "00:00",
+      "time": "2026-10-17T00:00:00Z",
+      "calls": 5,
+      "cost": 0.28,
+      "tokens": 9943,
+      "by": {}
+    },
+    {
+      "label": "01:00",
+      "time": "2026-10-17T01:00:00Z",
+      "calls": 6,
+      "cost": 0.1,
+      "tokens": 10770,
+      "by": {}
+    },
+    {
+      "label": "02:00",
+      "time": "2026-10-17T02:00:00Z",
+      "calls": 7,
+      "cost": 0.23,
+      "tokens": 11597,
+      "by": {}
+    },
+    {
+      "label": "03:00",
+      "time": "2026-10-17T03:00:00Z",
+      "calls": 8,
+      "cost": 0.05,
+      "tokens": 12424,
+      "by": {}
+    },
+    {
+      "label": "04:00",
+      "time": "2026-10-17T04:00:00Z",
+      "calls": 9,
+      "cost": 0.18,
+      "tokens": 13251,
+      "by": {}
+    },
+    {
+      "label": "05:00",
+      "time": "2026-10-17T05:00:00Z",
+      "calls": 3,
+      "cost": 0.31,
+      "tokens": 14078,
+      "by": {}
+    },
+    {
+      "label": "06:00",
+      "time": "2026-10-17T06:00:00Z",
+      "calls": 4,
+      "cost": 0.13,
+      "tokens": 14905,
+      "by": {}
+    },
+    {
+      "label": "07:00",
+      "time": "2026-10-17T07:00:00Z",
+      "calls": 5,
+      "cost": 0.26,
+      "tokens": 15732,
+      "by": {}
+    },
+    {
+      "label": "08:00",
+      "time": "2026-10-17T08:00:00Z",
+      "calls": 6,
+      "cost": 0.08,
+      "tokens": 16559,
+      "by": {}
+    },
+    {
+      "label": "09:00",
+      "time": "2026-10-17T09:00:00Z",
+      "calls": 7,
+      "cost": 0.21,
+      "tokens": 17386,
+      "by": {}
+    },
+    {
+      "label": "10:00",
+      "time": "2026-10-17T10:00:00Z",
+      "calls": 8,
+      "cost": 0.34,
+      "tokens": 18213,
+      "by": {}
+    },
+    {
+      "label": "11:00",
+      "time": "2026-10-17T11:00:00Z",
+      "calls": 9,
+      "cost": 0.16,
+      "tokens": 19040,
+      "by": {}
+    },
+    {
+      "label": "12:00",
+      "time": "2026-10-17T12:00:00Z",
+      "calls": 3,
+      "cost": 0.29,
+      "tokens": 19867,
+      "by": {}
+    },
+    {
+      "label": "13:00",
+      "time": "2026-10-17T13:00:00Z",
+      "calls": 4,
+      "cost": 0.11,
+      "tokens": 2694,
+      "by": {}
+    },
+    {
+      "label": "14:00",
+      "time": "2026-10-17T14:00:00Z",
+      "calls": 5,
+      "cost": 0.24,
+      "tokens": 3521,
+      "by": {}
+    }
+  ],
+  "callerKeys": [],
+  "models": [
+    {
+      "provider": "anthropic",
+      "input": 31000,
+      "output": 11000
+    },
+    {
+      "provider": "openai",
+      "input": 47000,
+      "output": 21000
+    },
+    {
+      "provider": "google",
+      "input": 62000,
+      "output": 29000
+    },
+    {
+      "provider": "openrouter",
+      "input": 19000,
+      "output": 8000
+    }
+  ]
+}

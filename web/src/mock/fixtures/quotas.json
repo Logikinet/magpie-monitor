@@ -1,0 +1,158 @@
+{
+  "object": "list",
+  "data": [
+    {
+      "provider": "anthropic",
+      "name": "Claude Team",
+      "kind": "subscription",
+      "plan": "Team",
+      "user": "demo-user-1@example.ts.net",
+      "windows": [
+        {
+          "name": "5-hour",
+          "used": 48,
+          "remaining": 52,
+          "resetsAt": "2026-10-17T16:00:00Z",
+          "display": "48 / 100",
+          "amount": 42000,
+          "limit": 120000,
+          "unit": "tokens",
+          "pool": "account"
+        },
+        {
+          "name": "weekly",
+          "used": 52,
+          "remaining": 48,
+          "resetsAt": "2026-10-20T00:00:00Z",
+          "display": "52 / 100",
+          "amount": 294000,
+          "limit": 500000,
+          "unit": "tokens",
+          "pool": "account"
+        }
+      ],
+      "balance": "",
+      "balanceSplit": [],
+      "asOf": "2026-10-17T14:00:00Z",
+      "readDeferred": false,
+      "until": "2026-11-17T00:00:00Z"
+    },
+    {
+      "provider": "openai",
+      "name": "OpenAI Plus",
+      "kind": "subscription",
+      "plan": "Plus",
+      "user": "demo-user-2@example.ts.net",
+      "windows": [
+        {
+          "name": "5-hour",
+          "used": 73,
+          "remaining": 27,
+          "resetsAt": "2026-10-17T16:00:00Z",
+          "display": "73 / 100",
+          "limit": 120000,
+          "pool": "account"
+        },
+        {
+          "name": "weekly",
+          "used": 27,
+          "remaining": 73,
+          "resetsAt": "2026-10-20T00:00:00Z",
+          "display": "27 / 100",
+          "amount": 476000,
+          "limit": 500000,
+          "unit": "tokens",
+          "pool": "account"
+        }
+      ],
+      "balance": "",
+      "balanceSplit": [],
+      "asOf": "2026-10-17T14:00:00Z",
+      "readDeferred": false,
+      "until": "2026-11-17T00:00:00Z"
+    },
+    {
+      "provider": "google",
+      "name": "Gemini Advanced",
+      "kind": "subscription",
+      "plan": "Advanced",
+      "user": "demo-user-3@example.ts.net",
+      "windows": [
+        {
+          "name": "5-hour",
+          "used": 94,
+          "remaining": 6,
+          "resetsAt": "2026-10-17T16:00:00Z",
+          "display": "94 / 100",
+          "amount": 91000,
+          "limit": 120000,
+          "unit": "tokens",
+          "pool": "account"
+        },
+        {
+          "name": "weekly",
+          "used": 6,
+          "remaining": 94,
+          "resetsAt": "2026-10-20T00:00:00Z",
+          "display": "6 / 100",
+          "amount": 637000,
+          "limit": 500000,
+          "unit": "tokens",
+          "pool": "account"
+        }
+      ],
+      "balance": "",
+      "balanceSplit": [],
+      "asOf": "2026-10-17T14:00:00Z",
+      "readDeferred": false,
+      "until": "2026-11-17T00:00:00Z"
+    },
+    {
+      "provider": "openrouter",
+      "name": "OpenRouter Pool",
+      "kind": "subscription",
+      "plan": "Pro",
+      "user": "demo-user-4@example.ts.net",
+      "windows": [
+        {
+          "name": "5-hour",
+          "used": 29,
+          "remaining": 71,
+          "resetsAt": "2026-10-17T16:00:00Z",
+          "display": "29 / 100",
+          "amount": 27000,
+          "limit": 120000,
+          "unit": "tokens",
+          "pool": "account"
+        },
+        {
+          "name": "weekly",
+          "used": 71,
+          "remaining": 29,
+          "resetsAt": "2026-10-20T00:00:00Z",
+          "display": "71 / 100",
+          "amount": 189000,
+          "limit": 500000,
+          "unit": "tokens",
+          "pool": "account"
+        }
+      ],
+      "balance": "$18.40",
+      "balanceSplit": [
+        {
+          "name": "赠余额",
+          "balance": "$12.00",
+          "amount": 12
+        },
+        {
+          "name": "充值",
+          "balance": "$6.40",
+          "amount": 6.4
+        }
+      ],
+      "asOf": "2026-10-17T14:00:00Z",
+      "readDeferred": false,
+      "until": "2026-11-17T00:00:00Z"
+    }
+  ]
+}

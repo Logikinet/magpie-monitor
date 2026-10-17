@@ -1,0 +1,9 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+.wrangler/
+.dev.vars
+.env*
+docs/design-notes.md
+coverage/
