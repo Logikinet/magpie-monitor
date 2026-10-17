@@ -21,10 +21,10 @@ public enum MagpieError: Error, Equatable, Sendable {
             switch error.code {
             case .timedOut: return .timeout
             case .cancelled: return .cancelled
-            default: return .network(error.localizedDescription)
+            default: return .network("network request failed")
             }
         }
-        return .network(error.localizedDescription)
+        return .network("network request failed")
     }
 
     public var localizedChinese: String {

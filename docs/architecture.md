@@ -377,3 +377,11 @@ actor SSHConnection {
 10. CI：macOS job 构建**未签名** IPA（`CODE_SIGNING_ALLOWED=NO`，`Payload/` zip → `magpie-ios.ipa` artifact）；Linux job `swift test` MagpieKit 和 SSHKit（Citadel 0.12.1 已验证可在 Swift 6.x Linux 测试）。无签名配置。
 11. 仓库将公开（Logikinet/magpie-ios）：MIT LICENSE，并在 README/NOTICE 中致谢 magpie、SwiftTerm、Citadel 及其许可证。
 12. README 中英双语：功能、配置（Tailscale、magpie 设置、轻松签/LCSign 签名）、截图占位（日后 CI/模拟器 Mock 生成，标注 mock）。
+
+### 实现差异（收尾核对）
+- App 已实现五个标签页（概览、动态、Tmux、Agent、服务）；设置入口与 Profile 编辑由工具栏呈现。
+- runtime key 由 App 直接构造 `Cookie: magpie_web_<port>=<key>` 请求头，并在认证重试失败时通过统一中文错误提示建议固定 `MAGPIE_WEB_KEY`。
+- HTTP 与 HTTPS 均由 Profile 校验和 URLSession 传输支持；HTTP 风险通过 Profile 的“不安全”徽章提示。
+- 错误消息集中通过 `MagpieError.localizedChinese` 与 App 的 `ErrorMessages` 映射；传输层不保留任意底层错误描述，SSH 错误映射不附带上游错误文本。目前代码没有密钥日志输出。
+- CI 包含 MagpieKit、SSHKit Linux 测试与 macOS 未签名 IPA artifact；本地沙箱未运行 SwiftPM 测试。
+- App 中提供第三方许可证页面，项目根目录提供 MIT `LICENSE`、`THIRD_PARTY_NOTICES.md` 与中英 README。

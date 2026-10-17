@@ -47,6 +47,13 @@ final class NetworkingTests: XCTestCase {
         XCTAssertEqual(MagpieError.map(URLError(.timedOut)), .timeout)
         XCTAssertEqual(MagpieError.map(URLError(.cancelled)), .cancelled)
         if case .network = MagpieError.map(URLError(.notConnectedToInternet)) {} else { XCTFail() }
+        XCTAssertEqual(MagpieError.map(NSError(domain: "test", code: 1,
+                                                userInfo: [NSLocalizedDescriptionKey: "Authorization: secret-value"])),
+                       .network("network request failed"))
+        XCTAssertTrue(MagpieError.unauthorized.localizedChinese.contains("MAGPIE_WEB_KEY"))
+        XCTAssertTrue(MagpieError.forbidden.localizedChinese.contains("Share on local network"))
+        XCTAssertTrue(MagpieError.sshAuthFailed.localizedChinese.contains("SSH"))
+        XCTAssertTrue(MagpieError.sshHostKeyChanged.localizedChinese.contains("指纹"))
         XCTAssertEqual(Redactor.redact(""), "••••")
         XCTAssertEqual(Redactor.redact("a"), "••••a")
         XCTAssertEqual(Redactor.redact("abcd"), "••••cd")

@@ -171,7 +171,6 @@ final class ServicesStore {
     private static func sudoKey(profileID: UUID) -> String { "services.useSudo.\(profileID.uuidString)" }
 
     private func message(for error: Error) -> String {
-        if let error = error as? MagpieError { return error.localizedChinese }
-        return "服务操作失败，请检查 SSH 连接和权限后重试。"
+        ErrorMessages.chinese(for: error)
     }
 }

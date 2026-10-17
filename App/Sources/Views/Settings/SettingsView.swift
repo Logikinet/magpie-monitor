@@ -16,6 +16,9 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                if let error = appState.persistenceError {
+                    Section { Text(error).foregroundStyle(.red).font(.footnote) }
+                }
                 Section("服务器") {
                     ForEach(appState.profiles) { profile in
                         HStack {
@@ -42,7 +45,7 @@ struct SettingsView: View {
                 Section("SSH 主机指纹") {
                     if appState.profiles.isEmpty { Text("添加服务器后可管理指纹。").foregroundStyle(.secondary) }
                     ForEach(appState.profiles) { profile in
-                        HStack { VStack(alignment: .leading) { Text(profile.name); Text(fingerprints[profile.id] ?? "未记录指纹").font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(2) }; Spacer(); Button("清除指纹", role: .destructive) { Task { try? await appState.secretStore.delete(account: SecretField.hostKey.account(profileID: profile.id)); fingerprints[profile.id] = nil } } }
+                        HStack { VStack(alignment: .leading) { Text(profile.name); Text(fingerprints[profile.id] ?? "未记录指纹").font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(2) }; Spacer(); Button("清除指纹", role: .destructive) { Task { do { try await appState.secretStore.delete(account: SecretField.hostKey.account(profileID: profile.id)); fingerprints[profile.id] = nil } catch { alertMessage = ErrorMessages.chinese(for: error) } } } }
                     }
                 }
                 Section("连接应用") {
@@ -65,11 +68,12 @@ struct SettingsView: View {
     }
     private func loadFingerprints() async {
         for profile in appState.profiles {
-            fingerprints[profile.id] = try? await appState.secretStore.get(account: SecretField.hostKey.account(profileID: profile.id))
+            do { fingerprints[profile.id] = try await appState.secretStore.get(account: SecretField.hostKey.account(profileID: profile.id)) }
+            catch { alertMessage = ErrorMessages.chinese(for: error) }
         }
     }
     private func refreshBinding(_ profile: ProfileConfig) -> Binding<TimeInterval> { Binding(get: { appState.currentProfile?.refreshInterval ?? 20 }, set: { var updated = profile; updated.refreshInterval = $0; appState.saveProfile(updated) }) }
-    private func persist(_ profile: ProfileConfig, _ secrets: [SecretField: String]) { appState.saveProfile(profile); Task { for (field, value) in secrets { try? await appState.secretStore.set(value, account: field.account(profileID: profile.id)) } } }
+    private func persist(_ profile: ProfileConfig, _ secrets: [SecretField: String]) { appState.saveProfile(profile); Task { do { for (field, value) in secrets { try await appState.secretStore.set(value, account: field.account(profileID: profile.id)) } } catch { alertMessage = ErrorMessages.chinese(for: error) } } }
     private func openApp(scheme: String, label: String) { guard let url = URL(string: scheme), UIApplication.shared.canOpenURL(url) else { alertMessage = "未检测到\(label)，请先安装后再试。"; return }; openURL(url) }
 }
 

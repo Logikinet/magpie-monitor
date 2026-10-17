@@ -105,7 +105,6 @@ final class OverviewStore {
     }
 
     private func message(for error: Error) -> String {
-        if let error = error as? MagpieError { return error.localizedChinese }
-        return "读取失败，请检查连接后重试。"
+        ErrorMessages.chinese(for: error)
     }
 }

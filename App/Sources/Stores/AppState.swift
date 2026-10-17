@@ -26,7 +26,7 @@ final class AppState {
 
     func select(_ id: UUID) { guard profiles.contains(where: { $0.id == id }) else { return }; selectedID = id; save() }
     func saveProfile(_ profile: ProfileConfig) { if let index = profiles.firstIndex(where: { $0.id == profile.id }) { profiles[index] = profile } else { profiles.append(profile) }; if selectedID == nil { selectedID = profile.id }; save() }
-    func deleteProfile(_ id: UUID) { profiles.removeAll { $0.id == id }; if selectedID == id { selectedID = profiles.first?.id }; save(); Task { for field in SecretField.allCases { try? await secretStore.delete(account: field.account(profileID: id)) } } }
+    func deleteProfile(_ id: UUID) { profiles.removeAll { $0.id == id }; if selectedID == id { selectedID = profiles.first?.id }; save(); Task { do { for field in SecretField.allCases { try await secretStore.delete(account: field.account(profileID: id)) } } catch { persistenceError = ErrorMessages.chinese(for: error) } } }
 
     func makeGatewayClient() -> GatewayClient? {
         guard let profile = currentProfile, let url = URL(string: profile.gatewayURL) else { return nil }
@@ -67,7 +67,10 @@ final class AppState {
             config: SSHConfig(host: profile.sshHost, port: profile.sshPort, user: profile.sshUser, auth: auth),
             pinnedFingerprint: pin
         )
-        if pin == nil { try? await secretStore.set(fingerprint, account: SecretField.hostKey.account(profileID: profile.id)) }
+        if pin == nil {
+            do { try await secretStore.set(fingerprint, account: SecretField.hostKey.account(profileID: profile.id)) }
+            catch { persistenceError = ErrorMessages.chinese(for: error) }
+        }
         return connection
     }
 
