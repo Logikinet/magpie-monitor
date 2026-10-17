@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="feather" x1="360" y1="740" x2="650" y2="440" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1F4E8C"/>
+      <stop offset="0.55" stop-color="#278F98"/>
+      <stop offset="1" stop-color="#2FA37C"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="#E9EFED"/>
+  <g transform="translate(-112 -104) scale(1.18)">
+  <!-- Long, tapered tail anchors the diagonal silhouette. -->
+  <path d="M470 532 596 610 224 820 188 812Z" fill="url(#feather)"/>
+  <!-- Head, beak, back and breast form one uninterrupted silhouette. -->
+  <path d="M372 573C372 484 421 420 520 395L559 317C578 277 611 256 651 256 713 256 754 303 754 359L838 395 750 411C742 450 731 475 720 504 707 544 701 594 667 634 629 680 575 704 513 704 431 704 372 653 372 573Z" fill="#182127"/>
+  <path d="M671 443C715 476 710 558 671 610 635 659 582 680 524 670 475 661 449 637 440 609 526 617 606 549 671 443Z" fill="#FAFCFB"/>
+  <path d="M614 419C651 418 681 443 681 475 681 536 594 605 453 635L416 640C434 544 507 426 614 419Z" fill="url(#feather)"/>
+  <path d="M466 505C488 469 517 441 548 429 571 420 594 416 614 419 562 439 520 474 490 522Z" fill="#FAFCFB"/>
+  <circle cx="695" cy="341" r="13" fill="#FAFCFB"/>
+  <!-- A quiet terminal prompt, constructed entirely from geometry. -->
+  <path d="m557 479 29 25-29 25m48 0h33" fill="none" stroke="#FAFCFB" stroke-width="21" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
