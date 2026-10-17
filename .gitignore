@@ -6,3 +6,4 @@ playwright-report/
 .dev.vars
 .env*
 docs/design-notes.md
+coverage/
