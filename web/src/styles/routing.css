@@ -144,6 +144,10 @@
   position: relative;
   z-index: 1;
 }
+.rt-accts [data-state='idle'],
+.rt-accts [data-state='rest'] {
+  opacity: 0.6;
+}
 .rt-srcs {
   display: grid;
   gap: 12px;
@@ -602,6 +606,14 @@
   }
   .rt-steps li {
     flex-direction: column;
+  }
+  .rt-timings {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 10px;
+  }
+  .rt-timings > div {
+    min-width: 0;
   }
   .rt-panel,
   .rt,

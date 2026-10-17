@@ -597,7 +597,12 @@ export default function App() {
               <div class="page-heading">
                 <div>
                   <p class="eyebrow">
-                    {new URLSearchParams(location.search).get('lang') === 'en' ? 'LIVE ROUTING' : '实时路由'}
+                    {({
+                      routing: { zh: '实时路由', en: 'ROUTING' },
+                      usage: { zh: '用量与配额', en: 'USAGE & QUOTAS' },
+                      providers: { zh: '服务商', en: 'PROVIDERS' },
+                      runtimes: { zh: '运行时', en: 'RUNTIMES' },
+                    } as const)[agentTab][new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'zh']}
                   </p>
                   <h1>Agent</h1>
                   <p>路由、用量与运行环境</p>
@@ -639,6 +644,7 @@ export default function App() {
                   state={profile.mode === 'direct' ? undefined : traceState}
                   refresh={() => setTraceVersion((v) => v + 1)}
                   usage={() => chooseAgentTab('usage')}
+                  client={web}
                 />
               )}
               {routeError && agentTab === 'routing' && (

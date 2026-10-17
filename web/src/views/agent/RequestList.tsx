@@ -1,18 +1,21 @@
 import type { Route } from '../../core/decode';
+import { useState } from 'preact/hooks';
 import { formatDuration } from '../../core/format';
 import { agentHue, requestsForAccount } from '../../core/routing-model';
 import { clock, value, word, type Lang } from './shared';
 const text = {
-  zh: { title: '请求记录', live: '跟随实时', clear: '清除账号筛选', empty: '没有匹配的请求' },
+  zh: { title: '请求记录', live: '实时', today: (n: number) => `今天 ${n}`, clear: '清除账号筛选', empty: '没有匹配的请求' },
   en: {
     title: 'Requests',
     live: 'Follow live',
+    today: (n: number) => `Today ${n}`,
     clear: 'Clear account filter',
     empty: 'No matching requests',
   },
 };
 export function RequestList({
   routes,
+  todayRoutes,
   selected,
   pinned,
   pick,
@@ -22,6 +25,7 @@ export function RequestList({
   lang,
 }: {
   routes: Route[];
+  todayRoutes: Route[];
   selected: number;
   pinned: boolean;
   pick: (seq: number) => void;
@@ -30,15 +34,17 @@ export function RequestList({
   clear: () => void;
   lang: Lang;
 }) {
-  const t = text[lang],
-    filtered = requestsForAccount(routes, account);
+  const t = text[lang];
+  const [showToday, setShowToday] = useState(false);
+  const filtered = requestsForAccount(showToday ? todayRoutes : routes, account);
   return (
     <section class="rt-panel" id="rt-requests" tabIndex={-1}>
       <header>
         <h2>{t.title}</h2>
-        <button aria-pressed={!pinned} onClick={live}>
+        <button aria-pressed={!pinned && !showToday} onClick={() => { setShowToday(false); live(); }}>
           {t.live}
         </button>
+        <button aria-pressed={showToday} onClick={() => setShowToday(true)}>{t.today(todayRoutes.length)}</button>
       </header>
       {account && (
         <button class="rt-filter" onClick={clear}>

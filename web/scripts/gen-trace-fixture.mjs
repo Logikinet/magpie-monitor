@@ -30,19 +30,20 @@ trace.routes = trace.routes.map((route, i) => {
   const reasoning = i % 4 === 0 ? (i * 19) % 220 : 0;
   const seat = route.order.find((s) => s.provider === provider && s.model === model) ?? route.order[0];
   const start = date((i - trace.routes.length + 1) * 90_000);
+  const tryStart = date((i - trace.routes.length + 1) * 90_000 + 30);
   const promptTokens = input + cacheRead;
   const parts = partKinds.map((kind, partIndex) => {
     const tokens = Math.floor(promptTokens * [0.12, 0.08, 0.24, 0.16, 0.4][partIndex]);
     return { kind, tokens, items: [{ name: `Demo ${kind}`, tokens, tag: 'sample' }] };
   });
   const tries = isLive
-    ? [{ id: seat.id, model, effort: 'medium', start, done: false, ttft, firstText: ttft + 20, served: model }]
+    ? [{ id: seat.id, model, effort: 'medium', start: tryStart, done: false, ttft, firstText: ttft + 20, served: model }]
     : (i % 5 === 0
       ? [
           { id: route.tries?.[0]?.id ?? seat.id, model, effort: 'medium', start, done: true, status: 429, ms: 120 + (i % 180) },
-          { id: seat.id, model, effort: 'medium', start: date((i - trace.routes.length + 1) * 90_000 + 130), done: true, status: failedRoute ? 502 : 200, ms: elapsed, ttft, firstText: ttft + 20, flow: Math.max(0, elapsed - ttft), served: model },
+          { id: seat.id, model, effort: 'medium', start: date((i - trace.routes.length + 1) * 90_000 + 130), done: true, status: failedRoute ? 502 : 200, ms: elapsed, ttft, firstText: ttft + 20, flow: Math.max(0, elapsed - ttft), served: model, net: { dns: 8, connect: 12, tls: 15, send: 5 } },
         ]
-      : [{ id: seat.id, model, effort: 'medium', start, done: true, status: failedRoute ? 502 : 200, ms: elapsed, ttft, firstText: ttft + 20, flow: Math.max(0, elapsed - ttft), served: model }]);
+      : [{ id: seat.id, model, effort: 'medium', start: tryStart, done: true, status: failedRoute ? 502 : 200, ms: elapsed, ttft, firstText: ttft + 20, flow: Math.max(0, elapsed - ttft), served: model, net: { dns: 8, connect: 12, tls: 15, send: 5 } }]);
 
   route.time = start;
   route.provider = provider;

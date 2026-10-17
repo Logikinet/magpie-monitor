@@ -340,7 +340,13 @@
           "ttft": 180,
           "firstText": 200,
           "flow": 420,
-          "served": "claude-sonnet"
+          "served": "claude-sonnet",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -761,14 +767,20 @@
           "id": "demo-codex-account-0",
           "model": "gpt-code",
           "effort": "medium",
-          "start": "2026-10-17T07:03:00.000Z",
+          "start": "2026-10-17T07:03:00.030Z",
           "done": true,
           "status": 200,
           "ms": 1577,
           "ttft": 353,
           "firstText": 373,
           "flow": 1224,
-          "served": "gpt-code"
+          "served": "gpt-code",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -1190,14 +1202,20 @@
           "id": "demo-gemini-account-0",
           "model": "gemini-pro",
           "effort": "medium",
-          "start": "2026-10-17T07:04:30.000Z",
+          "start": "2026-10-17T07:04:30.030Z",
           "done": true,
           "status": 200,
           "ms": 2554,
           "ttft": 526,
           "firstText": 546,
           "flow": 2028,
-          "served": "gemini-pro"
+          "served": "gemini-pro",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -1619,14 +1637,20 @@
           "id": "demo-claude-account-0",
           "model": "claude-opus",
           "effort": "medium",
-          "start": "2026-10-17T07:06:00.000Z",
+          "start": "2026-10-17T07:06:00.030Z",
           "done": true,
           "status": 200,
           "ms": 3531,
           "ttft": 699,
           "firstText": 719,
           "flow": 2832,
-          "served": "claude-opus"
+          "served": "claude-opus",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -2048,14 +2072,20 @@
           "id": "demo-codex-account-0",
           "model": "gpt-general",
           "effort": "medium",
-          "start": "2026-10-17T07:07:30.000Z",
+          "start": "2026-10-17T07:07:30.030Z",
           "done": true,
           "status": 200,
           "ms": 4508,
           "ttft": 872,
           "firstText": 892,
           "flow": 3636,
-          "served": "gpt-general"
+          "served": "gpt-general",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -2493,7 +2523,13 @@
           "ttft": 1045,
           "firstText": 1065,
           "flow": 4440,
-          "served": "gemini-flash"
+          "served": "gemini-flash",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -2915,14 +2951,20 @@
           "id": "demo-claude-account-0",
           "model": "claude-sonnet",
           "effort": "medium",
-          "start": "2026-10-17T07:10:30.000Z",
+          "start": "2026-10-17T07:10:30.030Z",
           "done": true,
           "status": 200,
           "ms": 6462,
           "ttft": 1218,
           "firstText": 1238,
           "flow": 5244,
-          "served": "claude-sonnet"
+          "served": "claude-sonnet",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -3344,14 +3386,20 @@
           "id": "demo-codex-account-0",
           "model": "gpt-code",
           "effort": "medium",
-          "start": "2026-10-17T07:12:00.000Z",
+          "start": "2026-10-17T07:12:00.030Z",
           "done": true,
           "status": 200,
           "ms": 7439,
           "ttft": 1391,
           "firstText": 1411,
           "flow": 6048,
-          "served": "gpt-code"
+          "served": "gpt-code",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -3772,14 +3820,20 @@
           "id": "demo-gemini-account-0",
           "model": "gemini-pro",
           "effort": "medium",
-          "start": "2026-10-17T07:13:30.000Z",
+          "start": "2026-10-17T07:13:30.030Z",
           "done": true,
           "status": 200,
           "ms": 8416,
           "ttft": 1564,
           "firstText": 1584,
           "flow": 6852,
-          "served": "gemini-pro"
+          "served": "gemini-pro",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -4201,14 +4255,20 @@
           "id": "demo-claude-account-0",
           "model": "claude-opus",
           "effort": "medium",
-          "start": "2026-10-17T07:15:00.000Z",
+          "start": "2026-10-17T07:15:00.030Z",
           "done": true,
           "status": 200,
           "ms": 9393,
           "ttft": 1737,
           "firstText": 1757,
           "flow": 7656,
-          "served": "claude-opus"
+          "served": "claude-opus",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -4646,7 +4706,13 @@
           "ttft": 1910,
           "firstText": 1930,
           "flow": 8460,
-          "served": "gpt-general"
+          "served": "gpt-general",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -5068,14 +5134,20 @@
           "id": "demo-gemini-account-0",
           "model": "gemini-flash",
           "effort": "medium",
-          "start": "2026-10-17T07:18:00.000Z",
+          "start": "2026-10-17T07:18:00.030Z",
           "done": true,
           "status": 200,
           "ms": 11347,
           "ttft": 2083,
           "firstText": 2103,
           "flow": 9264,
-          "served": "gemini-flash"
+          "served": "gemini-flash",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -5497,14 +5569,20 @@
           "id": "demo-claude-account-0",
           "model": "claude-sonnet",
           "effort": "medium",
-          "start": "2026-10-17T07:19:30.000Z",
+          "start": "2026-10-17T07:19:30.030Z",
           "done": true,
           "status": 200,
           "ms": 12324,
           "ttft": 2256,
           "firstText": 2276,
           "flow": 10068,
-          "served": "claude-sonnet"
+          "served": "claude-sonnet",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -5926,14 +6004,20 @@
           "id": "demo-codex-account-0",
           "model": "gpt-code",
           "effort": "medium",
-          "start": "2026-10-17T07:21:00.000Z",
+          "start": "2026-10-17T07:21:00.030Z",
           "done": true,
           "status": 200,
           "ms": 13301,
           "ttft": 2429,
           "firstText": 2449,
           "flow": 10872,
-          "served": "gpt-code"
+          "served": "gpt-code",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -6355,14 +6439,20 @@
           "id": "demo-gemini-account-0",
           "model": "gemini-pro",
           "effort": "medium",
-          "start": "2026-10-17T07:22:30.000Z",
+          "start": "2026-10-17T07:22:30.030Z",
           "done": true,
           "status": 200,
           "ms": 877,
           "ttft": 281,
           "firstText": 301,
           "flow": 596,
-          "served": "gemini-pro"
+          "served": "gemini-pro",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -6800,7 +6890,13 @@
           "ttft": 454,
           "firstText": 474,
           "flow": 1400,
-          "served": "claude-opus"
+          "served": "claude-opus",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -7222,14 +7318,20 @@
           "id": "demo-codex-account-0",
           "model": "gpt-general",
           "effort": "medium",
-          "start": "2026-10-17T07:25:30.000Z",
+          "start": "2026-10-17T07:25:30.030Z",
           "done": true,
           "status": 200,
           "ms": 2831,
           "ttft": 627,
           "firstText": 647,
           "flow": 2204,
-          "served": "gpt-general"
+          "served": "gpt-general",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -7651,14 +7753,20 @@
           "id": "demo-gemini-account-0",
           "model": "gemini-flash",
           "effort": "medium",
-          "start": "2026-10-17T07:27:00.000Z",
+          "start": "2026-10-17T07:27:00.030Z",
           "done": true,
           "status": 200,
           "ms": 3808,
           "ttft": 800,
           "firstText": 820,
           "flow": 3008,
-          "served": "gemini-flash"
+          "served": "gemini-flash",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -8080,14 +8188,20 @@
           "id": "demo-claude-account-0",
           "model": "claude-sonnet",
           "effort": "medium",
-          "start": "2026-10-17T07:28:30.000Z",
+          "start": "2026-10-17T07:28:30.030Z",
           "done": true,
           "status": 200,
           "ms": 4785,
           "ttft": 973,
           "firstText": 993,
           "flow": 3812,
-          "served": "claude-sonnet"
+          "served": "claude-sonnet",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -8509,14 +8623,20 @@
           "id": "demo-codex-account-0",
           "model": "gpt-code",
           "effort": "medium",
-          "start": "2026-10-17T07:30:00.000Z",
+          "start": "2026-10-17T07:30:00.030Z",
           "done": true,
           "status": 200,
           "ms": 5762,
           "ttft": 1146,
           "firstText": 1166,
           "flow": 4616,
-          "served": "gpt-code"
+          "served": "gpt-code",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -8954,7 +9074,13 @@
           "ttft": 1319,
           "firstText": 1339,
           "flow": 5420,
-          "served": "gemini-pro"
+          "served": "gemini-pro",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -9376,14 +9502,20 @@
           "id": "demo-claude-account-0",
           "model": "claude-opus",
           "effort": "medium",
-          "start": "2026-10-17T07:33:00.000Z",
+          "start": "2026-10-17T07:33:00.030Z",
           "done": true,
           "status": 200,
           "ms": 7716,
           "ttft": 1492,
           "firstText": 1512,
           "flow": 6224,
-          "served": "claude-opus"
+          "served": "claude-opus",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -9804,14 +9936,20 @@
           "id": "demo-codex-account-0",
           "model": "gpt-general",
           "effort": "medium",
-          "start": "2026-10-17T07:34:30.000Z",
+          "start": "2026-10-17T07:34:30.030Z",
           "done": true,
           "status": 200,
           "ms": 8693,
           "ttft": 1665,
           "firstText": 1685,
           "flow": 7028,
-          "served": "gpt-general"
+          "served": "gpt-general",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -10233,14 +10371,20 @@
           "id": "demo-gemini-account-0",
           "model": "gemini-flash",
           "effort": "medium",
-          "start": "2026-10-17T07:36:00.000Z",
+          "start": "2026-10-17T07:36:00.030Z",
           "done": true,
           "status": 200,
           "ms": 9670,
           "ttft": 1838,
           "firstText": 1858,
           "flow": 7832,
-          "served": "gemini-flash"
+          "served": "gemini-flash",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -10662,14 +10806,20 @@
           "id": "demo-claude-account-0",
           "model": "claude-sonnet",
           "effort": "medium",
-          "start": "2026-10-17T07:37:30.000Z",
+          "start": "2026-10-17T07:37:30.030Z",
           "done": true,
           "status": 200,
           "ms": 10647,
           "ttft": 2011,
           "firstText": 2031,
           "flow": 8636,
-          "served": "claude-sonnet"
+          "served": "claude-sonnet",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -11107,7 +11257,13 @@
           "ttft": 2184,
           "firstText": 2204,
           "flow": 9440,
-          "served": "gpt-code"
+          "served": "gpt-code",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -11529,14 +11685,20 @@
           "id": "demo-gemini-account-0",
           "model": "gemini-pro",
           "effort": "medium",
-          "start": "2026-10-17T07:40:30.000Z",
+          "start": "2026-10-17T07:40:30.030Z",
           "done": true,
           "status": 200,
           "ms": 12601,
           "ttft": 2357,
           "firstText": 2377,
           "flow": 10244,
-          "served": "gemini-pro"
+          "served": "gemini-pro",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -11958,14 +12120,20 @@
           "id": "demo-claude-account-0",
           "model": "claude-opus",
           "effort": "medium",
-          "start": "2026-10-17T07:42:00.000Z",
+          "start": "2026-10-17T07:42:00.030Z",
           "done": true,
           "status": 200,
           "ms": 13578,
           "ttft": 209,
           "firstText": 229,
           "flow": 13369,
-          "served": "claude-opus"
+          "served": "claude-opus",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -12387,14 +12555,20 @@
           "id": "demo-codex-account-0",
           "model": "gpt-general",
           "effort": "medium",
-          "start": "2026-10-17T07:43:30.000Z",
+          "start": "2026-10-17T07:43:30.030Z",
           "done": true,
           "status": 200,
           "ms": 1154,
           "ttft": 382,
           "firstText": 402,
           "flow": 772,
-          "served": "gpt-general"
+          "served": "gpt-general",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -12815,14 +12989,20 @@
           "id": "demo-gemini-account-0",
           "model": "gemini-flash",
           "effort": "medium",
-          "start": "2026-10-17T07:45:00.000Z",
+          "start": "2026-10-17T07:45:00.030Z",
           "done": true,
           "status": 200,
           "ms": 2131,
           "ttft": 555,
           "firstText": 575,
           "flow": 1576,
-          "served": "gemini-flash"
+          "served": "gemini-flash",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -13260,7 +13440,13 @@
           "ttft": 728,
           "firstText": 748,
           "flow": 2380,
-          "served": "claude-sonnet"
+          "served": "claude-sonnet",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -13682,14 +13868,20 @@
           "id": "demo-codex-account-0",
           "model": "gpt-code",
           "effort": "medium",
-          "start": "2026-10-17T07:48:00.000Z",
+          "start": "2026-10-17T07:48:00.030Z",
           "done": true,
           "status": 200,
           "ms": 4085,
           "ttft": 901,
           "firstText": 921,
           "flow": 3184,
-          "served": "gpt-code"
+          "served": "gpt-code",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -14111,14 +14303,20 @@
           "id": "demo-gemini-account-0",
           "model": "gemini-pro",
           "effort": "medium",
-          "start": "2026-10-17T07:49:30.000Z",
+          "start": "2026-10-17T07:49:30.030Z",
           "done": true,
           "status": 502,
           "ms": 5062,
           "ttft": 1074,
           "firstText": 1094,
           "flow": 3988,
-          "served": "gemini-pro"
+          "served": "gemini-pro",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -14540,14 +14738,20 @@
           "id": "demo-claude-account-0",
           "model": "claude-opus",
           "effort": "medium",
-          "start": "2026-10-17T07:51:00.000Z",
+          "start": "2026-10-17T07:51:00.030Z",
           "done": true,
           "status": 200,
           "ms": 6039,
           "ttft": 1247,
           "firstText": 1267,
           "flow": 4792,
-          "served": "claude-opus"
+          "served": "claude-opus",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -14969,14 +15173,20 @@
           "id": "demo-codex-account-0",
           "model": "gpt-general",
           "effort": "medium",
-          "start": "2026-10-17T07:52:30.000Z",
+          "start": "2026-10-17T07:52:30.030Z",
           "done": true,
           "status": 200,
           "ms": 7016,
           "ttft": 1420,
           "firstText": 1440,
           "flow": 5596,
-          "served": "gpt-general"
+          "served": "gpt-general",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -15414,7 +15624,13 @@
           "ttft": 1593,
           "firstText": 1613,
           "flow": 6400,
-          "served": "gemini-flash"
+          "served": "gemini-flash",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -15835,14 +16051,20 @@
           "id": "demo-claude-account-0",
           "model": "claude-sonnet",
           "effort": "medium",
-          "start": "2026-10-17T07:55:30.000Z",
+          "start": "2026-10-17T07:55:30.030Z",
           "done": true,
           "status": 200,
           "ms": 8970,
           "ttft": 1766,
           "firstText": 1786,
           "flow": 7204,
-          "served": "claude-sonnet"
+          "served": "claude-sonnet",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -16264,14 +16486,20 @@
           "id": "demo-codex-account-0",
           "model": "gpt-code",
           "effort": "medium",
-          "start": "2026-10-17T07:57:00.000Z",
+          "start": "2026-10-17T07:57:00.030Z",
           "done": true,
           "status": 200,
           "ms": 9947,
           "ttft": 1939,
           "firstText": 1959,
           "flow": 8008,
-          "served": "gpt-code"
+          "served": "gpt-code",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -16693,14 +16921,20 @@
           "id": "demo-gemini-account-0",
           "model": "gemini-pro",
           "effort": "medium",
-          "start": "2026-10-17T07:58:30.000Z",
+          "start": "2026-10-17T07:58:30.030Z",
           "done": true,
           "status": 200,
           "ms": 10924,
           "ttft": 2112,
           "firstText": 2132,
           "flow": 8812,
-          "served": "gemini-pro"
+          "served": "gemini-pro",
+          "net": {
+            "dns": 8,
+            "connect": 12,
+            "tls": 15,
+            "send": 5
+          }
         }
       ],
       "done": true,
@@ -17122,7 +17356,7 @@
           "id": "demo-claude-account-0",
           "model": "claude-opus",
           "effort": "medium",
-          "start": "2026-10-17T08:00:00.000Z",
+          "start": "2026-10-17T08:00:00.030Z",
           "done": false,
           "ttft": 2285,
           "firstText": 2305,

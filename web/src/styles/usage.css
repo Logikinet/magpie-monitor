@@ -48,6 +48,10 @@
 }
 .mp-kpis strong {
   display: block;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  word-spacing: 0;
+  white-space: nowrap;
   font:
     700 18px ui-monospace,
     monospace;
@@ -219,6 +223,16 @@
   width: 28px;
   height: 28px;
   font-size: 12px;
+}
+.mp-agent-initial {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
 }
 .mp-agent-icons {
   display: flex;

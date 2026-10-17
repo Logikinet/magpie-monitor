@@ -31,16 +31,17 @@ const order = [
 ];
 const colors = ['var(--c-blue)', 'var(--c-green)', 'var(--c-blue)', 'var(--c-violet)', 'var(--c-orange)'];
 const providerColors: Record<string, string> = {
-  antigravity: '#a78bfa',
-  agy: '#a78bfa',
-  dim: '#e0a84c',
-  codex: '#38bdf8',
-  grok: '#909090',
-  kiro: '#9d8cf5',
-  'workbuddy-ai': '#e0884c',
-  'our-free-model': '#6ec89a',
-  openrouter: '#8ab4f8',
-  deepseek: '#6ea8dc',
+  antigravity: '#c084fc',
+  agy: '#c084fc',
+  dim: '#10b981',
+  codex: '#10b981',
+  grok: '#e2e8f0',
+  kiro: '#8b5cf6',
+  workbuddy: '#06b6d4',
+  'workbuddy-ai': '#06b6d4',
+  'our-free-model': '#64748b',
+  openrouter: '#f59e0b',
+  deepseek: '#3b82f6',
 };
 export function quotaPace(used: number, since: string, reset: string, now = Date.now()) {
   const start = Date.parse(since),
@@ -104,7 +105,9 @@ function Account({ account: q, used }: { account: Data; used: boolean }) {
           const name = /^(5 hours|5-hour|5h)$/.test(w.name)
             ? '5h'
             : /^(7 days|weekly|week)$/.test(w.name)
-              ? '7d'
+              ? ({ zh: '7天', en: '7d', ja: '7日' } as const)[activeLocale()]
+            : /^(credits?)$/i.test(w.name)
+              ? ({ zh: '额度', en: 'Credits', ja: 'クレジット' } as const)[activeLocale()]
               : w.name;
           return (
             <section>
@@ -128,12 +131,12 @@ function Account({ account: q, used }: { account: Data; used: boolean }) {
               {w.resetsAt && (
                 <small>
                   {t.resets} {fmtDate(w.resetsAt)} · {fmtRelative(w.resetsAt)}
-                  {pace !== undefined && ` · pace ${pace >= 0 ? '+' : ''}${fmtNumber(pace)}%`}
+                  {pace !== undefined && ` · ${({ zh: '节奏', en: 'pace', ja: 'ペース' } as const)[activeLocale()]} ${pace >= 0 ? '+' : ''}${fmtNumber(pace)}%`}
                 </small>
               )}
               {w.holds && (
                 <small>
-                  {fmtTokens(w.holds.tokens)} token · {fmtCost(w.holds.cost)}
+                  {fmtTokens(w.holds.tokens)} {{ zh: 'Token', en: 'token', ja: 'トークン' }[activeLocale()]} · {fmtCost(w.holds.cost)}
                 </small>
               )}
               {w.runsOutAt && (
@@ -320,7 +323,7 @@ export function UsageDashboard({
       <div class="mp-quota-grid">
         {sorted.map(([provider, accounts]) => (
           <section class="mp-panel">
-            <h3 style={{ color: providerColors[provider] ?? 'var(--c-blue)' }}>
+            <h3 style={{ color: providerColors[provider] ?? '#64748b' }}>
               {accounts[0].name ?? provider}
             </h3>
             <Account account={accounts[0]} used={used} />

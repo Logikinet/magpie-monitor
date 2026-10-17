@@ -2,6 +2,7 @@ import { Icon } from '../../ui/icons';
 import { useEffect, useState } from 'preact/hooks';
 import type { WebClient } from '../../core/web-client';
 import { fmtNumber } from '../../core/format';
+import { agentHue } from '../../core/routing-model';
 import { usageText } from './usage-text';
 type Provider = ReturnType<typeof import('../../core/decode').decodeProviders>['providers'][number];
 export function ProvidersTable({ providers }: { providers: Provider[] }) {
@@ -39,7 +40,14 @@ export function ProvidersTable({ providers }: { providers: Provider[] }) {
                     title={String(a.name ?? a.id)}
                     aria-label={String(a.name ?? a.id)}
                   >
-                    <Icon name={String(a.icon ?? a.id ?? 'bot')} />
+                    <span
+                      class="mp-agent-initial"
+                      style={{ background: agentHue(String(a.id ?? a.name ?? 'agent')) }}
+                      title={String(a.name ?? a.id)}
+                      aria-label={String(a.name ?? a.id)}
+                    >
+                      {String(a.name ?? a.id ?? '?').slice(0, 1).toUpperCase()}
+                    </span>
                   </span>
                 ))}
             </div>

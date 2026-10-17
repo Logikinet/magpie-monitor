@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { TraceState } from '../../core/longpoll';
 import type { Route, TraceEnvelope, decodeGroups } from '../../core/decode';
+import type { WebClient } from '../../core/web-client';
 import { currentRoute, errorJumpTarget, recentAgents, routeWindow } from '../../core/routing-model';
 import { RoutingStage } from './RoutingStage';
 import { RoutingFoot } from './RoutingFoot';
@@ -61,6 +62,7 @@ export function RoutingView({
   state,
   refresh = () => {},
   usage = () => {},
+  client,
   lang = language(),
 }: {
   routes: Route[];
@@ -70,15 +72,23 @@ export function RoutingView({
   state?: TraceState;
   refresh?: () => void;
   usage?: () => void;
+  client?: Pick<WebClient, 'history'>;
   lang?: Lang;
 }) {
   const [pinned, setPinned] = useState<number | null>(null),
     [account, setAccount] = useState<string | null>(null),
     [masked, setMasked] = useState(false),
     [now, setNow] = useState(Date.now());
+  const [todayHistory, setTodayHistory] = useState<Route[]>([]);
+  const today = new Date().toLocaleDateString('en-CA');
   const window = routeWindow(routes),
     route = currentRoute(window, pinned),
     t = text[lang];
+  useEffect(() => {
+    let active = true;
+    client?.history(today).then((result) => { if (active) setTodayHistory(result.routes); }).catch(() => {});
+    return () => { active = false; };
+  }, [client, today]);
   useEffect(() => {
     if (pinned !== null && !window.some((r) => r.seq === pinned)) setPinned(null);
   }, [routes, pinned]);
@@ -169,6 +179,7 @@ export function RoutingView({
       <div class="rt-more">
         <RequestList
           routes={window}
+          todayRoutes={todayHistory.length ? todayHistory : window.filter((r) => r.time?.slice(0, 10) === today)}
           selected={route.seq}
           pinned={pinned !== null}
           pick={setPinned}
