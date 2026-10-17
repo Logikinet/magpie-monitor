@@ -1,0 +1,1 @@
+{"period": "day", "since": "2026-10-17T00:00:00Z", "bucket": "hour", "calls": "3", "errors": 0, "input": "12", "output": 8, "cache_read": 2, "cache_write": 1, "cost": "0.03", "series": [], "callerKeys": [], "unknown": {"x": 1}}

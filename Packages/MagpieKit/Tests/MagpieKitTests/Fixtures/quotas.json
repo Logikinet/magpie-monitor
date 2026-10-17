@@ -1,1 +1,0 @@
-{"object":"list","data":[{"provider":"anthropic","name":"Demo account","kind":"subscription","windows":[{"name":"5-hour","used":"12.5","remaining":87.5,"resetsAt":"2026-10-17T10:00:00.000Z"},{"name":"Weekly","used":25,"remaining":"75","display":"25 / 100"}],"user":"demo@example.ts.net","unknown":1}]}

@@ -3,13 +3,13 @@ import XCTest
 
 final class ModelTests: XCTestCase {
     private func fixture<T: Decodable>(_ name: String, as type: T.Type = T.self) throws -> T {
-        let url = Bundle.module.url(forResource: name, withExtension: "json", subdirectory: "Fixtures")!
-        return try MagpieJSON.decoder.decode(T.self, from: Data(contentsOf: url))
+        return try MagpieJSON.decoder.decode(T.self, from: MockFixtures.data(named: name))
     }
 
     func testFixturesDecode() throws {
         XCTAssertEqual(try fixture("hello", as: GatewayHello.self).name, "magpie")
-        let ledger = try fixture("ledger", as: Ledger.self)
+        let url = Bundle.module.url(forResource: "ledger_bad_rows", withExtension: "json", subdirectory: "Fixtures")!
+        let ledger = try MagpieJSON.decoder.decode(Ledger.self, from: Data(contentsOf: url))
         XCTAssertEqual(ledger.rows.elements.count, 1)
         XCTAssertEqual(ledger.rows.badCount, 2)
         XCTAssertEqual(ledger.rows.elements.first?.input?.value, 12)

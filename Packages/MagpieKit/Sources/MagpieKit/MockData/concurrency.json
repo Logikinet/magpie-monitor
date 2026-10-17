@@ -1,0 +1,1 @@
+{"object": "concurrency", "data": {"anthropic#fake": {"busy": "2", "waiting": 1, "limit": 4}}, "requests": "3", "waiting": 1, "tools": 0, "active": [{"session": "demo-session", "route": "41"}]}

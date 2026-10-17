@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "MagpieKit", targets: ["MagpieKit"])
     ],
     targets: [
-        .target(name: "MagpieKit"),
+        .target(name: "MagpieKit", resources: [.copy("MockData")]),
         .testTarget(name: "MagpieKitTests", dependencies: ["MagpieKit"], resources: [.copy("Fixtures")])
     ]
 )

@@ -39,11 +39,12 @@ magpie-ios/
 │   │   ├── Stores/                 # @Observable 状态（每 Tab 一个）
 │   │   ├── Bridge/                 # SwiftTerm UIViewRepresentable、键盘附件
 │   │   └── Support/                # 错误文案、格式化、Badge 等
-│   └── Resources/                  # Assets.xcassets、Fixture JSON（开发用）
+│   └── Resources/                  # Assets.xcassets
 ├── Packages/
 │   ├── MagpieKit/                  # 纯 Swift：模型 + 网络 + 解析，Linux 可测
 │   │   ├── Package.swift
 │   │   ├── Sources/MagpieKit/
+│   │   │   ├── MockData/           # 共享 Mock JSON（库资源）
 │   │   │   ├── Models/             # Codable 模型
 │   │   │   ├── Networking/         # GatewayClient / WebClient / Transport
 │   │   │   ├── LongPoll/           # trace 长轮询状态机
@@ -56,7 +57,6 @@ magpie-ios/
 │           ├── SSHConnection.swift # actor 封装
 │           ├── SSHCommandRunner.swift
 │           └── SSHPTYChannel.swift # tmux attach 用
-├── Fixtures/                       # Mock JSON（Ledger/Quota/Trace/路由）
 ├── .github/workflows/ci.yml
 └── docs/
     ├── magpie-api-notes.md
@@ -250,7 +250,7 @@ actor SSHConnection {
 ## 12. Mock 数据模式
 
 - `AppState.isMockMode` 开关（设置页 + 首屏无 Profile 时自动建议开启）。
-- 开启后所有 client 走 `MockTransport`，读取 `Fixtures/*.json`（Ledger/Quota/Trace/Concurrency/容器列表等），数据源切换为 `protocol` 实现（Live/Mock），UI 无感知。
+- 开启后所有 client 走 `MockTransport`，读取 `Packages/MagpieKit/Sources/MagpieKit/MockData/*.json`（Ledger/Quota/Trace/Concurrency/容器列表等），数据源切换为 `protocol` 实现（Live/Mock），UI 无感知。
 - 全程顶部/角标显示 **“Mock data”** 徽章，防止误当真实数据。
 - Mock 数据不触网、不连接 SSH（Tmux Tab 在 Mock 模式禁用或提供静态演示）。
 
