@@ -40,6 +40,15 @@ final class SSHParsingTests: XCTestCase {
         XCTAssertEqual(sessions[0].attached, 1)
     }
 
+    func testTmuxCommandUsesLiteralTabSeparators() {
+        XCTAssertTrue(SSHCommands.tmuxSessions.contains("#{session_name}\t#{session_windows}\t#{session_attached}"))
+        XCTAssertFalse(SSHCommands.tmuxSessions.contains("\\t"))
+        let sessions = SSHOutputParser.parseTmuxSessions("demo\t2\t1\ninvalid\n")
+        XCTAssertEqual(sessions.count, 1)
+        XCTAssertEqual(sessions.first?.name, "demo")
+        XCTAssertEqual(sessions.first?.windows, 2)
+    }
+
     func testCommandBuildersQuoteAndRejectUnsafeNames() throws {
         XCTAssertEqual(try SSHCommands.startDockerContainer("safe_name-1"), "docker start 'safe_name-1'")
         XCTAssertEqual(try SSHCommands.stopSystemdUnit("demo.service", useSudo: true), "sudo -n systemctl stop 'demo.service'")

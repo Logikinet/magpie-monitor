@@ -5,7 +5,7 @@ public enum SSHCommands {
     public static let dockerPS = "docker ps -a --format '{{.ID}}\\t{{.Names}}\\t{{.Image}}\\t{{.State}}\\t{{.Status}}\\t{{.Ports}}'"
     public static let systemdUnits = "systemctl list-units --type=service --all --no-pager --plain --no-legend"
     public static let processes = "ps -eo pid,ppid,pcpu,pmem,comm,args --no-headers"
-    public static let tmuxSessions = "tmux list-sessions -F '#{session_name}\\t#{session_windows}\\t#{session_attached}'"
+    public static let tmuxSessions = "tmux list-sessions -F '#{session_name}\t#{session_windows}\t#{session_attached}'"
 
     public static func startDockerContainer(_ name: String) throws -> String { try dockerAction("start", name) }
     public static func stopDockerContainer(_ name: String) throws -> String { try dockerAction("stop", name) }
