@@ -182,6 +182,9 @@ public struct SeriesPoint: Decodable {
     public let label: String?
     public let time: MagpieDate?
     public let by: [String: [String: UsageTotals]]?
+    public let calls: FlexibleInt?
+    public let cost: FlexibleDouble?
+    public let tokens: FlexibleInt?
 }
 
 public struct CallerKeyGroup: Decodable {

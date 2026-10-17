@@ -1,7 +1,232 @@
+import Charts
 import SwiftUI
+import MagpieKit
 
 struct ActivityView: View {
+    @Environment(AppState.self) private var appState
+    @State private var store = ActivityStore()
+    @State private var selectedRow: LedgerRow?
+    @State private var isAtTop = true
+
+    private let columns = [GridItem(.adaptive(minimum: 150), alignment: .top)]
+
     var body: some View {
-        ContentUnavailableView("动态", systemImage: "rectangle.dashed")
+        ScrollView {
+            VStack(alignment: .leading, spacing: DS.Spacing.large) {
+                GeometryReader { proxy in
+                    Color.clear.preference(key: ActivityTopKey.self, value: proxy.frame(in: .named("activityScroll")).minY >= -8)
+                }
+                .frame(height: 0)
+                controls
+                if let error = store.error, store.rows.isEmpty {
+                    unavailable(error)
+                } else {
+                    trendSection
+                    metrics
+                    filters
+                    requestList
+                }
+            }
+            .padding(DS.Spacing.medium)
+            .frame(maxWidth: 900, alignment: .leading)
+            .frame(maxWidth: .infinity)
+        }
+        .coordinateSpace(name: "activityScroll")
+        .onPreferenceChange(ActivityTopKey.self) { isAtTop = $0 }
+        .refreshable { await store.refresh(appState: appState) }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { Task { await store.refresh(appState: appState) } } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .accessibilityLabel("刷新请求记录")
+                .disabled(store.isLoading)
+            }
+        }
+        .sheet(item: $selectedRow) { row in
+            NavigationStack { ActivityRowDetail(row: row) }
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .task(id: appState.isActive) {
+            guard appState.isActive else { return }
+            await store.refresh(appState: appState)
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(appState.refreshInterval)) }
+                catch { return }
+                guard appState.isActive, isAtTop else { continue }
+                await store.refresh(appState: appState)
+            }
+        }
+        .onChange(of: store.period) { _, _ in Task { await store.refresh(appState: appState) } }
+        .onChange(of: store.agentFilter) { _, _ in Task { await store.refresh(appState: appState) } }
+        .onChange(of: store.providerFilter) { _, _ in Task { await store.refresh(appState: appState) } }
+        .onChange(of: store.modelFilter) { _, _ in Task { await store.refresh(appState: appState) } }
+    }
+
+    private var controls: some View {
+        HStack(spacing: DS.Spacing.small) {
+            Picker("统计周期", selection: $store.period) {
+                ForEach(ActivityPeriod.allCases) { period in Text(period.title).tag(period) }
+            }
+            .pickerStyle(.segmented)
+            if store.isLoading { ProgressView().accessibilityLabel("正在加载") }
+        }
+    }
+
+    private var trendSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.mediumSmall) {
+            SectionHeader(title: "请求趋势", subtitle: "按服务器返回的时间分桶")
+            if store.series.isEmpty {
+                Text("暂无趋势数据").font(.subheadline).foregroundStyle(.secondary)
+            } else {
+                Chart(Array(store.series.enumerated()), id: \.offset) { index, point in
+                    BarMark(x: .value("时间", point.label ?? "\(index)"), y: .value("请求数", point.calls?.value ?? 0))
+                        .foregroundStyle(.tint)
+                        .accessibilityLabel(point.label ?? "时间段 \(index + 1)")
+                        .accessibilityValue("\(point.calls?.value ?? 0) 次请求，\(point.tokens?.value ?? 0) 个令牌，费用 \(point.cost?.value ?? 0, format: .number.precision(.fractionLength(4)))")
+                }
+                .chartYAxisLabel("请求数")
+                .frame(height: 180)
+                .accessibilityLabel("请求趋势图")
+            }
+        }
+        .padding(DS.Spacing.medium)
+        .background(.background.secondary, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+    }
+
+    private var metrics: some View {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: DS.Spacing.mediumSmall) {
+            MetricCard(title: "请求", value: store.calls.formatted(), systemImage: "arrow.left.arrow.right")
+            MetricCard(title: "输入令牌", value: store.inputTokens.formatted(), systemImage: "arrow.down.left")
+            MetricCard(title: "输出令牌", value: store.outputTokens.formatted(), systemImage: "arrow.up.right")
+            MetricCard(title: "费用", value: store.cost.formatted(.number.precision(.fractionLength(0...4))), systemImage: "creditcard")
+        }
+    }
+
+    private var filters: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.small) {
+            SectionHeader(title: "筛选")
+            filterPicker("全部 Agent", selection: $store.agentFilter, options: store.agentOptions.map { ($0.id, $0.name) })
+            filterPicker("全部提供方", selection: $store.providerFilter, options: store.providerOptions.map { ($0.id, $0.name) })
+            filterPicker("全部模型", selection: $store.modelFilter, options: store.modelOptions.map { ($0, $0) })
+        }
+    }
+
+    private func filterPicker(_ title: String, selection: Binding<String>, options: [(String, String)]) -> some View {
+        Picker(title, selection: selection) {
+            Text(title).tag("")
+            ForEach(options.indices, id: \.self) { index in
+                Text(options[index].1).tag(options[index].0)
+            }
+        }
+        .pickerStyle(.menu)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, DS.Spacing.medium)
+        .frame(minHeight: 44)
+        .background(.background.secondary, in: RoundedRectangle(cornerRadius: DS.Radius.small, style: .continuous))
+    }
+
+    private var requestList: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.small) {
+            SectionHeader(title: "请求记录", subtitle: "共 \(store.total.formatted()) 条")
+            if store.rows.isEmpty {
+                EmptyStateView(title: "暂无请求记录", description: "调整周期或筛选条件后重试。", systemImage: "tray")
+            } else {
+                LazyVStack(spacing: 0) {
+                    ForEach(Array(store.rows.enumerated()), id: \.offset) { index, row in
+                        Button { selectedRow = row } label: { ActivityRowView(row: row) }
+                            .buttonStyle(.plain)
+                        Divider()
+                        if index == store.rows.count - 1 {
+                            Color.clear.frame(height: 1).onAppear {
+                                Task { await store.loadMore(appState: appState) }
+                            }
+                        }
+                    }
+                    if store.isLoadingMore { ProgressView().frame(maxWidth: .infinity).padding() }
+                }
+                .padding(.horizontal, DS.Spacing.medium)
+                .background(.background.secondary, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+            }
+            if let error = store.error { Text(error).font(.footnote).foregroundStyle(.red) }
+        }
+    }
+
+    private func unavailable(_ message: String) -> some View {
+        ContentUnavailableView {
+            Label("无法读取动态", systemImage: "exclamationmark.triangle")
+        } description: { Text(message) } actions: {
+            Button("重试") { Task { await store.refresh(appState: appState) } }
+        }
+    }
+}
+
+private struct ActivityRowView: View {
+    let row: LedgerRow
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.small) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(row.agentName ?? row.agent ?? "未知智能体").font(.headline).lineLimit(1)
+                Spacer(minLength: DS.Spacing.small)
+                Text(row.time?.date ?? Date.distantPast, format: .dateTime.month(.abbreviated).day().hour().minute())
+                    .font(.footnote).foregroundStyle(.secondary).monospacedDigit()
+            }
+            Text(row.model ?? "未知模型").font(.subheadline.monospaced()).textSelection(.enabled).lineLimit(2)
+            HStack(spacing: DS.Spacing.mediumSmall) {
+                Text(row.providerName ?? row.provider ?? "未知提供方")
+                Spacer(minLength: 0)
+                Text("入 \(row.input?.value ?? 0) · 出 \(row.output?.value ?? 0)").monospacedDigit()
+                Text((row.cost?.value ?? 0).formatted(.number.precision(.fractionLength(0...4))))
+                    .monospacedDigit()
+            }
+            .font(.footnote).foregroundStyle(.secondary)
+            HStack(spacing: DS.Spacing.mediumSmall) {
+                if row.swapped == true { StatusBadge(kind: .warning, text: "已切换") }
+                if row.routed == true { StatusBadge(kind: .neutral, text: "已路由") }
+                if row.error != nil || (row.status?.value ?? 0) >= 400 { StatusBadge(kind: .error, text: "错误") }
+            }
+        }
+        .padding(.vertical, DS.Spacing.medium)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("查看请求详情")
+    }
+}
+
+private struct ActivityTopKey: PreferenceKey {
+    static var defaultValue = true
+    static func reduce(value: inout Bool, nextValue: () -> Bool) { value = nextValue() }
+}
+
+private struct ActivityRowDetail: View {
+    let row: LedgerRow
+    private var fields: [(String, String)] {
+        [
+            ("时间", row.time?.rawString ?? "未知"), ("操作", row.operation ?? "未知"),
+            ("Agent", row.agentName ?? row.agent ?? "未知"), ("图标", row.icon ?? "未知"),
+            ("模型", row.model ?? "未知"), ("请求模型", row.requested ?? "未知"),
+            ("响应模型", row.served ?? "未知"), ("提供方", row.providerName ?? row.provider ?? "未知"),
+            ("主机", row.host ?? "未知"), ("状态码", row.status.map { "\($0.value)" } ?? "未知"),
+            ("输入令牌", "\(row.input?.value ?? 0)"), ("输出令牌", "\(row.output?.value ?? 0)"),
+            ("缓存读取", "\(row.cacheRead?.value ?? 0)"), ("缓存写入", "\(row.cacheWrite?.value ?? 0)"),
+            ("费用", (row.cost?.value ?? 0).formatted()), ("已计价", row.priced == true ? "是" : "否"),
+            ("已切换", row.swapped == true ? "是" : "否"), ("已路由", row.routed == true ? "是" : "否"),
+            ("错误", row.error ?? row.errorType ?? "无"), ("会话", row.session ?? "未知"),
+            ("请求 ID", row.requestID ?? "未知"), ("来源", row.source ?? "未知")
+        ]
+    }
+
+    var body: some View {
+        List {
+            ForEach(fields.indices, id: \.self) { index in
+                LabeledContent(fields[index].0) {
+                    Text(fields[index].1).textSelection(.enabled).multilineTextAlignment(.trailing)
+                }
+            }
+        }
+        .navigationTitle("请求详情")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

@@ -8,6 +8,13 @@ public struct Ledger: Decodable {
     public let total: FlexibleInt?
     public let bucket: String?
     public let series: LossyArray<SeriesPoint>?
+    public let calls: FlexibleInt?
+    public let input: FlexibleInt?
+    public let output: FlexibleInt?
+    public let cost: FlexibleDouble?
+    public let errors: FlexibleInt?
+    public let agents: LossyArray<LedgerNamed>?
+    public let providers: LossyArray<LedgerNamed>?
 }
 
 /// A flattened usage.Record plus the query-time fields added by usage.Row.
@@ -77,12 +84,21 @@ public struct LedgerRow: Decodable {
     public let routed: Bool?
     public let source: String?
     public let client: String?
+    public let agentName: String?
+    public let icon: String?
+    public let providerName: String?
+    public let callerKeyLabel: String?
+    public let access: String?
+    public let pricingModel: String?
+    public let computerName: String?
 
     enum CodingKeys: String, CodingKey {
         case operation, agent, provider, host, model, served, upstream, effort, status, stop
         case compaction, subagent, rejected, tries, session
         case error = "err"
         case kind, via, archive, computer, credits, priced, swapped, routed, source, client, cost, reasoning
+        case agentName, icon, providerName, callerKeyLabel, access, computerName
+        case pricingModel = "pricing_model"
         case routeID = "route_id"
         case time = "t"
         case providerKeyID = "providerKeyId"
@@ -120,5 +136,17 @@ public struct LedgerRow: Decodable {
         case parentAgent = "parent_agent"
         case handedOn = "handed_on"
         case sessionRole = "session_role"
+    }
+}
+
+public struct LedgerNamed: Decodable, Identifiable {
+    public let id: String
+    public let name: String
+    public let icon: String?
+}
+
+extension LedgerRow: Identifiable {
+    public var id: String {
+        requestID ?? responseID ?? "\(routeID?.value ?? -1)|\(time?.rawString ?? "")|\(agent ?? "")|\(model ?? "")"
     }
 }
