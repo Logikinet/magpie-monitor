@@ -55,7 +55,7 @@ enum DS {
         static let quotaOrange = dynamic("f59e0b", "f59e0b")
         static let quotaRed = dynamic("ef4444", "ef4444")
         static let kFree = Color.gray.opacity(0.12)
-        static func agent(_ name: String) -> Color { hex(MagpieKit.RoutingModel.agentHue(name)) }
+        static func agent(_ name: String) -> Color { hex(RoutingModel.agentHue(name)) }
     }
 
     enum Spacing {
