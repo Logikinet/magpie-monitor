@@ -76,19 +76,28 @@ export class DirectTransport implements Transport {
 const fixtures = import.meta.glob('../mock/fixtures/*.json', { eager: true, import: 'default' }) as Record<string, unknown>;
 export class MockTransport implements Transport {
     private seq = 0;
+    private traceCalls = 0;
     constructor(private options: {
         latencyMs?: number;
         traceWaitMs?: number;
     } = {}) { }
-    async request(req: Request) { const names: Record<string, string> = { '/api/hello': 'hello', '/v1/magpie/limit': 'hello', '/v1/magpie/usage': 'usage', '/v1/magpie/usage/requests': 'ledger', '/v1/magpie/quotas': 'quotas', '/v1/magpie/quotas/cards': 'quota_cards', '/v1/magpie/concurrency': 'concurrency', '/api/gateway/trace': 'trace', '/v1/magpie/route': 'route' }; const name = names[req.path]; await sleep(req.path === '/api/gateway/trace' ? Math.max(1, this.options.traceWaitMs ?? 1000) : this.options.latencyMs ?? 0, req.signal); if (req.path === '/v1/magpie/quotas/history')
+    async request(req: Request) { const names: Record<string, string> = { '/api/hello': 'hello', '/v1/magpie/limit': 'hello', '/v1/magpie/usage': 'usage', '/v1/magpie/usage/requests': 'ledger', '/v1/magpie/quotas': 'quotas', '/v1/magpie/quotas/cards': 'quota_cards', '/v1/magpie/concurrency': 'concurrency', '/api/gateway/trace': 'trace', '/v1/magpie/route': 'route' }; const name = names[req.path]; if (req.path === '/api/gateway/trace' && this.traceCalls++ > 0) await sleep(this.options.traceWaitMs ?? 4000, req.signal); else await sleep(req.path === '/api/gateway/trace' ? 0 : this.options.latencyMs ?? 0, req.signal); if (req.path === '/v1/magpie/quotas/history')
         return { status: 200, json: { data: [] } }; if (req.path === '/api/gateway/history')
         return { status: 200, json: { days: ['2026-10-17'], routes: (fixtures['../mock/fixtures/trace.json'] as {
                     routes: unknown[];
-                }).routes, cut: false } }; if (!name)
-        throw statusError(404); const json = structuredClone(fixtures[`../mock/fixtures/${name}.json`]) as Record<string, unknown>; if (name === 'trace') {
-        this.seq = Math.max(this.seq, Number(req.query?.after) || 0, Number(json.seq) || 0) + 1;
-        json.seq = this.seq;
-        json.routes = (json.routes as Record<string, unknown>[]).slice(0, 1).map(r => ({ ...r, seq: this.seq }));
+    }).routes, cut: false } }; if (!name)
+    throw statusError(404); const json = structuredClone(fixtures[`../mock/fixtures/${name}.json`]) as Record<string, unknown>; if (name === 'trace') {
+        const fixtureRoutes = json.routes as Record<string, any>[];
+        if (Number(req.query?.after) === 0 && this.traceCalls === 1) {
+            const routes = fixtureRoutes.slice().sort((a,b) => Number(b.seq)-Number(a.seq));
+            this.seq = Math.max(...routes.map(r => Number(r.seq)), Number(json.seq) || 0);
+            json.seq = this.seq; json.routes = routes;
+        } else {
+            this.seq = Math.max(this.seq, Number(req.query?.after) || 0, Number(json.seq) || 0) + 1;
+            const source = fixtureRoutes[(this.seq - 632) % fixtureRoutes.length];
+            json.seq = this.seq;
+            json.routes = [{ ...source, seq: this.seq, id: this.seq + 3500, time: new Date().toISOString(), session: `sess-demo-${String(this.seq).slice(-3)}` }];
+        }
     } if (name === 'ledger') {
         const rows = json.rows as unknown[], offset = Math.max(0, Number(req.query?.offset) || 0), limit = Math.max(0, Number(req.query?.limit ?? rows.length));
         json.offset = offset;
