@@ -9,6 +9,17 @@ struct OverviewQuota: Identifiable {
     let window: String
     let used: Double
     let limit: Double
+    let tokenUsage: TokenUsageValue?
+
+    var tokenSubtitle: String? {
+        guard let tokenUsage else { return nil }
+        let count = TokenFormatter.compact(tokenUsage.count, locale: Locale(identifier: "zh_CN"))
+        switch tokenUsage.source {
+        case .window: return "已消耗 \(count) token"
+        case .today: return "今日已消耗 \(count) token"
+        case .sevenDays: return "近 7 天已消耗 \(count) token"
+        }
+    }
 }
 
 @MainActor @Observable
@@ -56,6 +67,15 @@ final class OverviewStore {
 
         do {
             let result = try await quotaResult.get()
+            async let todayUsage: Result<UsageSummary, Error> = fetch {
+                guard let client else { throw MagpieError.network("missing client") }
+                return try await client.usage(period: "today")
+            }
+            async let weeklyUsage: Result<UsageSummary, Error> = fetch {
+                guard let client else { throw MagpieError.network("missing client") }
+                return try await client.usage(period: "7d")
+            }
+            let usages = (await todayUsage, await weeklyUsage)
             var items: [OverviewQuota] = []
             for quota in result.data.elements {
                 let windows = [(quota.fiveHourWindow, "5 小时"), (quota.weeklyWindow, "每周")]
@@ -63,10 +83,17 @@ final class OverviewStore {
                     guard let span else { continue }
                     guard span.unlimited != true else { continue }
                     if let used = span.usedPercentage {
+                        let providerID = quota.provider ?? ""
+                        let periodUsage = title == "每周" ? (try? usages.1.get()) : (try? usages.0.get())
                         items.append(
                             OverviewQuota(
-                                id: "\(quota.provider ?? quota.name ?? "provider")-\(title)",
-                                provider: quota.name ?? quota.provider ?? "提供方", window: title, used: used, limit: 100))
+                                id: "\(providerID.isEmpty ? quota.name ?? "provider" : providerID)-\(title)",
+                                provider: quota.name ?? quota.provider ?? "提供方", window: title, used: used, limit: 100,
+                                tokenUsage: TokenUsage.value(
+                                    window: span,
+                                    provider: providerID,
+                                    usage: periodUsage,
+                                    approximateSource: title == "每周" ? .sevenDays : .today)))
                     }
                 }
             }

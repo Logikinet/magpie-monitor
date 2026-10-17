@@ -151,6 +151,7 @@ struct QuotaGauge: View {
     let title: String
     let used: Double
     let limit: Double
+    var subtitle: String? = nil
 
     private var safeUsed: Double { used.isFinite ? max(0, used) : 0 }
     private var safeLimit: Double { limit.isFinite ? max(0, limit) : 0 }
@@ -168,7 +169,7 @@ struct QuotaGauge: View {
             }
             ProgressView(value: fraction)
                 .tint(percentage >= 100 ? .orange : .accentColor)
-            Text("已用 \(safeUsed.formatted()) / \(safeLimit.formatted())")
+            Text(subtitle ?? "已用 \(Int(safeUsed.rounded()))%")
                 .font(.footnote.monospacedDigit())
                 .foregroundStyle(.secondary)
         }
@@ -179,7 +180,7 @@ struct QuotaGauge: View {
         )
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(title)配额")
-        .accessibilityValue("已用 \(safeUsed.formatted())，上限 \(safeLimit.formatted())，\(percentage)%")
+        .accessibilityValue("\(subtitle ?? "已用 \(Int(safeUsed.rounded()))%")，\(percentage)%")
     }
 }
 

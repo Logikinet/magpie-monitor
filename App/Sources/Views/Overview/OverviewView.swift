@@ -90,7 +90,9 @@ struct OverviewView: View {
             } else {
                 LazyVGrid(columns: columns, alignment: .leading, spacing: DS.Spacing.mediumSmall) {
                     ForEach(store.quotas) { quota in
-                        QuotaGauge(title: "\(quota.provider) · \(quota.window)", used: quota.used, limit: quota.limit)
+                        QuotaGauge(
+                            title: "\(quota.provider) · \(quota.window)", used: quota.used, limit: quota.limit,
+                            subtitle: quota.tokenSubtitle)
                     }
                 }
             }

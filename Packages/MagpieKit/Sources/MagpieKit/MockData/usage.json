@@ -208,5 +208,27 @@
       "by": {}
     }
   ],
-  "callerKeys": []
+  "callerKeys": [],
+  "models": [
+    {
+      "provider": "anthropic",
+      "input": 31000,
+      "output": 11000
+    },
+    {
+      "provider": "openai",
+      "input": 47000,
+      "output": 21000
+    },
+    {
+      "provider": "google",
+      "input": 62000,
+      "output": 29000
+    },
+    {
+      "provider": "openrouter",
+      "input": 19000,
+      "output": 8000
+    }
+  ]
 }

@@ -143,11 +143,12 @@ public struct UsageSummary: Decodable {
     public let period: String?
     public let since: MagpieDate?
     public let totals: UsageTotals?
+    public let models: LossyArray<UsageModelTotal>?
     public let series: LossyArray<SeriesPoint>?
     public let callerKeys: LossyArray<CallerKeyGroup>?
 
     private enum CodingKeys: String, CodingKey {
-        case bucket, period, since, series, callerKeys
+        case bucket, period, since, series, callerKeys, models
         case calls, errors, retried, loops, input, output, cost, unpriced, tokens, reasoning
         case cacheRead = "cache_read"
         case cacheWrite = "cache_write"
@@ -160,6 +161,7 @@ public struct UsageSummary: Decodable {
         since = try container.decodeIfPresent(MagpieDate.self, forKey: .since)
         series = try container.decodeIfPresent(LossyArray<SeriesPoint>.self, forKey: .series)
         callerKeys = try container.decodeIfPresent(LossyArray<CallerKeyGroup>.self, forKey: .callerKeys)
+        models = try container.decodeIfPresent(LossyArray<UsageModelTotal>.self, forKey: .models)
 
         totals = UsageTotals(
             calls: try container.decodeIfPresent(FlexibleInt.self, forKey: .calls),
@@ -176,6 +178,13 @@ public struct UsageSummary: Decodable {
             tokens: try container.decodeIfPresent(FlexibleInt.self, forKey: .tokens)
         )
     }
+}
+
+/// A usage model group; provider IDs let quota cards aggregate model totals.
+public struct UsageModelTotal: Decodable {
+    public let provider: String?
+    public let input: FlexibleInt?
+    public let output: FlexibleInt?
 }
 
 public struct SeriesPoint: Decodable {

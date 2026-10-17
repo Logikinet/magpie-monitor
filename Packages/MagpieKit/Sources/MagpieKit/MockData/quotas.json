@@ -14,9 +14,9 @@
           "remaining": 52,
           "resetsAt": "2026-10-17T16:00:00Z",
           "display": "48 / 100",
-          "amount": 100,
-          "limit": 100,
-          "unit": "%",
+          "amount": 42000,
+          "limit": 120000,
+          "unit": "tokens",
           "pool": "account"
         },
         {
@@ -25,9 +25,9 @@
           "remaining": 48,
           "resetsAt": "2026-10-20T00:00:00Z",
           "display": "52 / 100",
-          "amount": 100,
-          "limit": 100,
-          "unit": "%",
+          "amount": 294000,
+          "limit": 500000,
+          "unit": "tokens",
           "pool": "account"
         }
       ],
@@ -50,9 +50,9 @@
           "remaining": 27,
           "resetsAt": "2026-10-17T16:00:00Z",
           "display": "73 / 100",
-          "amount": 100,
-          "limit": 100,
-          "unit": "%",
+          "amount": 68000,
+          "limit": 120000,
+          "unit": "tokens",
           "pool": "account"
         },
         {
@@ -61,9 +61,9 @@
           "remaining": 73,
           "resetsAt": "2026-10-20T00:00:00Z",
           "display": "27 / 100",
-          "amount": 100,
-          "limit": 100,
-          "unit": "%",
+          "amount": 476000,
+          "limit": 500000,
+          "unit": "tokens",
           "pool": "account"
         }
       ],
@@ -86,9 +86,9 @@
           "remaining": 6,
           "resetsAt": "2026-10-17T16:00:00Z",
           "display": "94 / 100",
-          "amount": 100,
-          "limit": 100,
-          "unit": "%",
+          "amount": 91000,
+          "limit": 120000,
+          "unit": "tokens",
           "pool": "account"
         },
         {
@@ -97,9 +97,9 @@
           "remaining": 94,
           "resetsAt": "2026-10-20T00:00:00Z",
           "display": "6 / 100",
-          "amount": 100,
-          "limit": 100,
-          "unit": "%",
+          "amount": 637000,
+          "limit": 500000,
+          "unit": "tokens",
           "pool": "account"
         }
       ],
@@ -122,9 +122,9 @@
           "remaining": 71,
           "resetsAt": "2026-10-17T16:00:00Z",
           "display": "29 / 100",
-          "amount": 100,
-          "limit": 100,
-          "unit": "%",
+          "amount": 27000,
+          "limit": 120000,
+          "unit": "tokens",
           "pool": "account"
         },
         {
@@ -133,9 +133,9 @@
           "remaining": 29,
           "resetsAt": "2026-10-20T00:00:00Z",
           "display": "71 / 100",
-          "amount": 100,
-          "limit": 100,
-          "unit": "%",
+          "amount": 189000,
+          "limit": 500000,
+          "unit": "tokens",
           "pool": "account"
         }
       ],

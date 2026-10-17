@@ -87,4 +87,39 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(quota.fiveHourWindow?.name, "5-hour")
         XCTAssertEqual(quota.weeklyWindow?.name, "Weekly")
     }
+
+    func testTokenFormatterLocalesAndBoundaries() {
+        let zh = Locale(identifier: "zh_CN")
+        let en = Locale(identifier: "en_US")
+        XCTAssertEqual(TokenFormatter.compact(0, locale: zh), "0")
+        XCTAssertEqual(TokenFormatter.compact(9_999, locale: zh), "9,999")
+        XCTAssertEqual(TokenFormatter.compact(10_000, locale: zh), "1 万")
+        XCTAssertEqual(TokenFormatter.compact(1_284_000, locale: zh), "128.4 万")
+        XCTAssertEqual(TokenFormatter.compact(100_000_000, locale: zh), "1 亿")
+        XCTAssertEqual(TokenFormatter.compact(0, locale: en), "0")
+        XCTAssertEqual(TokenFormatter.compact(9_999, locale: en), "9,999")
+        XCTAssertEqual(TokenFormatter.compact(10_000, locale: en), "10K")
+        XCTAssertEqual(TokenFormatter.compact(12_300, locale: en), "12.3K")
+        XCTAssertEqual(TokenFormatter.compact(1_280_000, locale: en), "1.28M")
+        XCTAssertEqual(TokenFormatter.compact(100_000_000, locale: en), "100M")
+    }
+
+    func testTokenUsagePrefersQuotaTokensThenProviderTotals() throws {
+        let span = try MagpieJSON.decoder.decode(
+            QuotaSpan.self, from: Data(#"{"name":"5-hour","amount":1234,"unit":"tokens"}"#.utf8))
+        let summary = try fixture("usage", as: UsageSummary.self)
+        let windowValue = TokenUsage.value(
+            window: span, provider: "anthropic", usage: summary, approximateSource: .today)
+        XCTAssertEqual(windowValue?.count, 1_234)
+        XCTAssertEqual(windowValue?.source, .window)
+
+        let percentageSpan = try MagpieJSON.decoder.decode(
+            QuotaSpan.self, from: Data(#"{"name":"5-hour","amount":100,"unit":"%"}"#.utf8))
+        let estimatedValue = TokenUsage.value(
+            window: percentageSpan, provider: "anthropic", usage: summary, approximateSource: .today)
+        XCTAssertEqual(estimatedValue?.count, 42_000)
+        XCTAssertEqual(estimatedValue?.source, .today)
+        XCTAssertNil(TokenUsage.value(
+            window: percentageSpan, provider: "unknown", usage: summary, approximateSource: .sevenDays))
+    }
 }
