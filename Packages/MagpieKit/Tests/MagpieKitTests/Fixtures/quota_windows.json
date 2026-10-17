@@ -1,0 +1,14 @@
+{
+  "object": "list",
+  "data": [
+    {
+      "provider": "demo-provider",
+      "name": "Demo account",
+      "kind": "subscription",
+      "windows": [
+        { "name": "5-hour", "used": 20, "remaining": 80 },
+        { "name": "Weekly", "used": 35, "remaining": 65 }
+      ]
+    }
+  ]
+}

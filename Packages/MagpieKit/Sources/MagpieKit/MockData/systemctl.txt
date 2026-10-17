@@ -1,2 +1,5 @@
-ssh.service loaded active running OpenBSD Secure Shell server
-demo-worker.service loaded inactive dead Example background worker
+docker.service loaded active running Docker Application Container Engine
+magpie.service loaded active running Magpie LLM gateway
+sshd.service loaded active running OpenBSD Secure Shell server
+systemd-resolved.service loaded active running Network Name Resolution
+tailscaled.service loaded active running Tailscale node agent

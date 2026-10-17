@@ -1,1 +1,52 @@
-{"session": "demo-session", "seq": "42", "route": {"seq": 42, "id": 41, "time": "2026-10-17T08:30:00Z", "agent": "claude-code", "model": "claude-demo", "provider": "anthropic", "order": []}}
+{
+  "session": "sess-demo-01",
+  "seq": 631,
+  "route": {
+    "seq": 620,
+    "id": 4129,
+    "time": "2026-10-17T14:00:00Z",
+    "agent": "claude-code",
+    "session": "sess-demo-01",
+    "usage": [
+      {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4",
+        "in": 1800,
+        "out": 420,
+        "cache_read": 450,
+        "cache_write": 90,
+        "reasoning": 210
+      }
+    ],
+    "kind": "chat",
+    "model": "claude-sonnet-4",
+    "effort": "high",
+    "provider": "anthropic",
+    "leadAccount": "demo-account-1",
+    "order": [
+      {
+        "id": "key-demo-1",
+        "provider": "anthropic",
+        "name": "Claude Team",
+        "icon": "generic",
+        "kind": "account",
+        "agent": "claude-code",
+        "plan": "Team",
+        "model": "claude-sonnet-4",
+        "routing": "weighted",
+        "fallback": false,
+        "used": 31,
+        "amount": 100,
+        "limit": 100,
+        "unit": "%",
+        "pace": 0.7,
+        "tokens": 12000,
+        "rank": 1,
+        "turn": true
+      }
+    ],
+    "done": true,
+    "status": 200,
+    "priced": true
+  }
+}

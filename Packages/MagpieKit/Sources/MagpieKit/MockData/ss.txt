@@ -1,2 +1,5 @@
-LISTEN 0 4096 0.0.0.0:22 0.0.0.0:* users:(("sshd",pid=100,fd=3))
-LISTEN 0 128 [::]:443 [::]:* users:(("web",pid=200,fd=4))
+State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+LISTEN 0      4096   127.0.0.1:3425      0.0.0.0:*
+LISTEN 0      4096   0.0.0.0:22          0.0.0.0:*
+LISTEN 0      4096   0.0.0.0:443         0.0.0.0:*
+LISTEN 0      4096   127.0.0.1:5432      0.0.0.0:*

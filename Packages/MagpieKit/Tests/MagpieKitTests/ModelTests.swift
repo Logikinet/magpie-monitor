@@ -14,14 +14,36 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(ledger.rows.badCount, 2)
         XCTAssertEqual(ledger.rows.elements.first?.input?.value, 12)
         XCTAssertEqual(ledger.rows.elements.first?.sessionRole, "root")
-        XCTAssertEqual(try fixture("quotas", as: QuotaList.self).data.elements.first?.weeklyWindow?.remaining?.value, 75)
+        XCTAssertEqual(try fixture("quotas", as: QuotaList.self).data.elements.count, 4)
         let cards = try fixture("quota_cards", as: QuotaCardList.self)
-        XCTAssertEqual(cards.data.elements.first?.accessSKU, "demo-plan")
+        XCTAssertEqual(cards.data.elements.first?.accessSKU, "demo-plan-1")
         XCTAssertEqual(cards.data.elements.first?.windows?.elements.first?.limit?.value, 100)
-        XCTAssertEqual(try fixture("concurrency", as: Concurrency.self).data?["anthropic#fake"]?.busy?.value, 2)
-        XCTAssertEqual(try fixture("trace", as: TraceEnvelope.self).routes?.elements.count, 1)
-        XCTAssertEqual(try fixture("usage", as: UsageSummary.self).totals?.calls?.value, 3)
-        XCTAssertEqual(try fixture("route", as: RouteLookup.self).route?.id?.value, 41)
+        XCTAssertEqual(try fixture("concurrency", as: Concurrency.self).data?["anthropic#key-demo-1"]?.busy?.value, 2)
+        XCTAssertEqual(try fixture("trace", as: TraceEnvelope.self).routes?.elements.count, 12)
+        XCTAssertEqual(try fixture("usage", as: UsageSummary.self).totals?.calls?.value, 30)
+        XCTAssertEqual(try fixture("route", as: RouteLookup.self).route?.id?.value, 4129)
+    }
+
+    func testEveryMockJSONDecodesWithoutBadRows() throws {
+        let ledger = try fixture("ledger", as: Ledger.self)
+        XCTAssertEqual(ledger.rows.elements.count, 30)
+        XCTAssertEqual(ledger.rows.badCount, 0)
+        XCTAssertEqual(ledger.series?.elements.count, 24)
+        XCTAssertEqual(ledger.series?.badCount, 0)
+        let quotas = try fixture("quotas", as: QuotaList.self)
+        XCTAssertEqual(quotas.data.badCount, 0)
+        XCTAssertTrue(quotas.data.elements.allSatisfy { $0.windows?.badCount == 0 })
+        let cards = try fixture("quota_cards", as: QuotaCardList.self)
+        XCTAssertEqual(cards.data.badCount, 0)
+        XCTAssertTrue(cards.data.elements.allSatisfy { $0.windows?.badCount == 0 })
+        let trace = try fixture("trace", as: TraceEnvelope.self)
+        XCTAssertEqual(trace.routes?.elements.count, 12)
+        XCTAssertEqual(trace.routes?.badCount, 0)
+        XCTAssertTrue(trace.routes?.elements.allSatisfy { $0.usage?.badCount == 0 && $0.order?.badCount == 0 } == true)
+        _ = try fixture("hello", as: GatewayHello.self)
+        _ = try fixture("usage", as: UsageSummary.self)
+        _ = try fixture("concurrency", as: Concurrency.self)
+        _ = try fixture("route", as: RouteLookup.self)
     }
 
     func testDatesAndMissingOptionals() throws {
@@ -36,7 +58,9 @@ final class ModelTests: XCTestCase {
     }
 
     func testWindowLookupNormalizesNames() throws {
-        let quota = try fixture("quotas", as: QuotaList.self).data.elements[0]
+        let url = Bundle.module.url(forResource: "quota_windows", withExtension: "json", subdirectory: "Fixtures")!
+        let data = try Data(contentsOf: url)
+        let quota = try MagpieJSON.decoder.decode(QuotaList.self, from: data).data.elements[0]
         XCTAssertEqual(quota.fiveHourWindow?.name, "5-hour")
         XCTAssertEqual(quota.weeklyWindow?.name, "Weekly")
     }
