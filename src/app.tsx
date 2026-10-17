@@ -6,137 +6,1376 @@ import { DirectTransport, MockTransport, ProxyTransport } from './core/transport
 import { createTraceLoop, createPoller, type TraceState } from './core/longpoll';
 import { zhMessage } from './core/errors';
 import { formatTokens, quotaSubtitle } from './core/tokens';
-import { usedPercent, fiveHourWindow, weeklyWindow, type QuotaSpan, type Row, type Route } from './core/decode';
+import {
+  usedPercent,
+  fiveHourWindow,
+  weeklyWindow,
+  type QuotaSpan,
+  type Row,
+  type Route,
+} from './core/decode';
 import { defaultProfile, loadProfiles, saveProfiles, validateProfile, type Profile } from './state/profiles';
 import { createKeyStore } from './state/keys';
 import { Icon } from './ui/icons';
 
 type Tab = 'overview' | 'activity' | 'agent' | 'quotas' | 'settings';
 const nav: { id: Tab; label: string; icon: string }[] = [
-  { id: 'overview', label: '概览', icon: 'overview' }, { id: 'activity', label: '动态', icon: 'chart' },
-  { id: 'agent', label: 'Agent', icon: 'bot' }, { id: 'quotas', label: '配额', icon: 'quota' }, { id: 'settings', label: '设置', icon: 'settings' },
+  { id: 'overview', label: '概览', icon: 'overview' },
+  { id: 'activity', label: '动态', icon: 'chart' },
+  { id: 'agent', label: 'Agent', icon: 'bot' },
+  { id: 'quotas', label: '配额', icon: 'quota' },
+  { id: 'settings', label: '设置', icon: 'settings' },
 ];
-const fmt = (n?: number, digits = 0) => n === undefined ? '—' : n.toLocaleString('zh-CN', { maximumFractionDigits: digits });
-const money = (n?: number) => n === undefined ? '—' : new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(n);
-const dateTime = (s?: string) => { if (!s) return '—'; const d = new Date(s); return Number.isNaN(d.getTime()) ? s : new Intl.DateTimeFormat('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(d); };
-const relTime = (s?: string) => { if (!s) return '未知'; const d = new Date(s); if (Number.isNaN(d.getTime())) return s; const sec = Math.max(0, Math.round((d.getTime() - Date.now()) / 1000)); if (sec >= 48 * 3600) return `${Math.floor(sec / 86400)} 天后`; if (sec >= 3600) { const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60); return `${h} 小时${m ? ` ${m} 分钟` : ''}后`; } return new Intl.RelativeTimeFormat('zh-CN', { numeric: 'auto' }).format(Math.round(sec / 60), 'minute'); };
+const fmt = (n?: number, digits = 0) =>
+  n === undefined ? '—' : n.toLocaleString('zh-CN', { maximumFractionDigits: digits });
+const money = (n?: number) =>
+  n === undefined
+    ? '—'
+    : new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(
+        n,
+      );
+const dateTime = (s?: string) => {
+  if (!s) return '—';
+  const d = new Date(s);
+  return Number.isNaN(d.getTime())
+    ? s
+    : new Intl.DateTimeFormat('zh-CN', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(d);
+};
+const relTime = (s?: string) => {
+  if (!s) return '未知';
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return s;
+  const sec = Math.max(0, Math.round((d.getTime() - Date.now()) / 1000));
+  if (sec >= 48 * 3600) return `${Math.floor(sec / 86400)} 天后`;
+  if (sec >= 3600) {
+    const h = Math.floor(sec / 3600),
+      m = Math.floor((sec % 3600) / 60);
+    return `${h} 小时${m ? ` ${m} 分钟` : ''}后`;
+  }
+  return new Intl.RelativeTimeFormat('zh-CN', { numeric: 'auto' }).format(Math.round(sec / 60), 'minute');
+};
 const timeOf = (r: Route) => dateTime(r.time);
 
-function Status({ kind, children }: { kind: 'ok' | 'warn' | 'error' | 'neutral'; children: ComponentChildren }) {
-  const icon = kind === 'ok' ? 'check-circle' : kind === 'warn' ? 'warning-triangle' : kind === 'error' ? 'x-circle' : 'minus-circle';
-  return <span class={`status status-${kind}`}><Icon name={icon} size={15}/>{children}</span>;
+function Status({
+  kind,
+  children,
+}: {
+  kind: 'ok' | 'warn' | 'error' | 'neutral';
+  children: ComponentChildren;
+}) {
+  const icon =
+    kind === 'ok'
+      ? 'check-circle'
+      : kind === 'warn'
+        ? 'warning-triangle'
+        : kind === 'error'
+          ? 'x-circle'
+          : 'minus-circle';
+  return (
+    <span class={`status status-${kind}`}>
+      <Icon name={icon} size={15} />
+      {children}
+    </span>
+  );
 }
-function Card({ children, class: cls = '' }: { children: ComponentChildren; class?: string }) { return <section class={`card ${cls}`}>{children}</section>; }
-function Metric({ label, value, hint, icon }: { label: string; value: string; hint?: string; icon?: string }) { return <Card class="metric"><div class="metric-label">{icon && <Icon name={icon} size={16}/>}<span>{label}</span></div><strong class="metric-value">{value}</strong>{hint && <small>{hint}</small>}</Card>; }
-function ErrorBox({ message, retry }: { message: string; retry: () => void }) { return <div class="error-box"><Status kind="error">加载失败</Status><p>{message}</p><button class="button" onClick={retry}><Icon name="refresh"/>重试</button></div>; }
-function Skeletons() { return <div class="grid metrics-grid" aria-label="正在加载"><div class="skeleton"/><div class="skeleton"/><div class="skeleton"/></div>; }
+function Card({ children, class: cls = '' }: { children: ComponentChildren; class?: string }) {
+  return <section class={`card ${cls}`}>{children}</section>;
+}
+function Metric({
+  label,
+  value,
+  hint,
+  icon,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  icon?: string;
+}) {
+  return (
+    <Card class="metric">
+      <div class="metric-label">
+        {icon && <Icon name={icon} size={16} />}
+        <span>{label}</span>
+      </div>
+      <strong class="metric-value">{value}</strong>
+      {hint && <small>{hint}</small>}
+    </Card>
+  );
+}
+function ErrorBox({ message, retry }: { message: string; retry: () => void }) {
+  return (
+    <div class="error-box">
+      <Status kind="error">加载失败</Status>
+      <p>{message}</p>
+      <button class="button" onClick={retry}>
+        <Icon name="refresh" />
+        重试
+      </button>
+    </div>
+  );
+}
+function Skeletons() {
+  return (
+    <div class="grid metrics-grid" aria-label="正在加载">
+      <div class="skeleton" />
+      <div class="skeleton" />
+      <div class="skeleton" />
+    </div>
+  );
+}
 export function QuotaCard({ provider, window, usage }: { provider: string; window: QuotaSpan; usage?: any }) {
-  const pct = Math.round(usedPercent(window)); const danger = pct >= 100 ? 'error' : pct >= 80 ? 'warn' : 'ok';
+  const pct = Math.round(usedPercent(window));
+  const danger = pct >= 100 ? 'error' : pct >= 80 ? 'warn' : 'ok';
   const period = /^(weekly|week)$/i.test(window.name) ? '每周' : '5 小时';
   const accessible = `${provider} ${period}，${quotaSubtitle(window, provider, usage)}，已使用 ${pct}%${window.limit ? `，上限 ${fmt(window.limit)} ${window.unit ?? ''}` : ''}`;
-  return <Card class={`quota-card quota-${danger}`} aria-label={accessible}><div class="quota-head"><div><h3>{provider} <span>· {period}</span></h3><p>{quotaSubtitle(window, provider, usage)}</p></div><strong>{pct}%</strong></div><div class="progress" role="progressbar" aria-label={accessible} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}><span style={{ width: `${pct}%` }}/></div><div class="quota-foot"><span title={window.resetsAt ? new Date(window.resetsAt).toLocaleString('zh-CN') : undefined}>重置于 {relTime(window.resetsAt)}</span><Status kind={danger}>{danger === 'ok' ? '正常' : danger === 'warn' ? '注意' : '已用尽'}</Status></div></Card>;
+  return (
+    <Card class={`quota-card quota-${danger}`} aria-label={accessible}>
+      <div class="quota-head">
+        <div>
+          <h3>
+            {provider} <span>· {period}</span>
+          </h3>
+          <p>{quotaSubtitle(window, provider, usage)}</p>
+        </div>
+        <strong>{pct}%</strong>
+      </div>
+      <div
+        class="progress"
+        role="progressbar"
+        aria-label={accessible}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+      >
+        <span style={{ width: `${pct}%` }} />
+      </div>
+      <div class="quota-foot">
+        <span title={window.resetsAt ? new Date(window.resetsAt).toLocaleString('zh-CN') : undefined}>
+          重置于 {relTime(window.resetsAt)}
+        </span>
+        <Status kind={danger}>{danger === 'ok' ? '正常' : danger === 'warn' ? '注意' : '已用尽'}</Status>
+      </div>
+    </Card>
+  );
 }
 
 export default function App() {
   const params = new URLSearchParams(location.search);
-  const [profiles, setProfiles] = useState<Profile[]>(() => params.get('mock') === '1' ? [{ ...defaultProfile }] : loadProfiles());
-  const [activeId, setActiveId] = useState(() => params.get('mock') === '1' ? defaultProfile.id : localStorage.getItem('magpie.activeProfile') ?? loadProfiles()[0]?.id ?? defaultProfile.id);
-  const profile = profiles.find(p => p.id === activeId) ?? profiles[0] ?? defaultProfile;
+  const [profiles, setProfiles] = useState<Profile[]>(() =>
+    params.get('mock') === '1' ? [{ ...defaultProfile }] : loadProfiles(),
+  );
+  const [activeId, setActiveId] = useState(() =>
+    params.get('mock') === '1'
+      ? defaultProfile.id
+      : (localStorage.getItem('magpie.activeProfile') ?? loadProfiles()[0]?.id ?? defaultProfile.id),
+  );
+  const profile = profiles.find((p) => p.id === activeId) ?? profiles[0] ?? defaultProfile;
   const [tab, setTab] = useState<Tab>(() => (location.hash.slice(2) as Tab) || 'overview');
-  const [theme, setTheme] = useState(() => params.get('theme') ?? localStorage.getItem('magpie.theme') ?? 'system');
+  const [theme, setTheme] = useState(
+    () => params.get('theme') ?? localStorage.getItem('magpie.theme') ?? 'system',
+  );
   const [keysVersion, setKeysVersion] = useState(0);
-  const [usage, setUsage] = useState<any>(); const [ledger, setLedger] = useState<any>(); const [quotas, setQuotas] = useState<any[]>([]); const [quotaCards, setQuotaCards] = useState<any[]>([]); const [concurrency, setConcurrency] = useState<any>(); const [hello, setHello] = useState<any>(); const [limitInfo, setLimitInfo] = useState<any>();
-  const [lastUpdated, setLastUpdated] = useState(''); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [offset, setOffset] = useState(0); const [period, setPeriod] = useState('day'); const [traceRoutes, setTraceRoutes] = useState<Route[]>([]); const [traceTotals, setTraceTotals] = useState<any>(); const [traceState, setTraceState] = useState<TraceState>('stopped'); const [sessionId, setSessionId] = useState(''); const [routeError, setRouteError] = useState(''); const [remember, setRemember] = useState(false); const [gatewayKey, setGatewayKey] = useState(''); const [webKey, setWebKey] = useState(''); const [showKeys, setShowKeys] = useState(false); const [profileEdit, setProfileEdit] = useState<Profile | null>(null); const [notice, setNotice] = useState('');
+  const [usage, setUsage] = useState<any>();
+  const [ledger, setLedger] = useState<any>();
+  const [quotas, setQuotas] = useState<any[]>([]);
+  const [quotaCards, setQuotaCards] = useState<any[]>([]);
+  const [concurrency, setConcurrency] = useState<any>();
+  const [hello, setHello] = useState<any>();
+  const [limitInfo, setLimitInfo] = useState<any>();
+  const [lastUpdated, setLastUpdated] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [offset, setOffset] = useState(0);
+  const [period, setPeriod] = useState('day');
+  const [traceRoutes, setTraceRoutes] = useState<Route[]>([]);
+  const [traceTotals, setTraceTotals] = useState<any>();
+  const [traceState, setTraceState] = useState<TraceState>('stopped');
+  const [sessionId, setSessionId] = useState('');
+  const [routeError, setRouteError] = useState('');
+  const [remember, setRemember] = useState(false);
+  const [gatewayKey, setGatewayKey] = useState('');
+  const [webKey, setWebKey] = useState('');
+  const [showKeys, setShowKeys] = useState(false);
+  const [profileEdit, setProfileEdit] = useState<Profile | null>(null);
+  const [notice, setNotice] = useState('');
   const keyStore = useMemo(() => createKeyStore(), []);
   const keys = useMemo(() => keyStore.getKeys(profile.id), [keyStore, profile.id, keysVersion]);
-  useEffect(() => { setGatewayKey(keys.gatewayKey ?? ''); setWebKey(keys.webKey ?? ''); setRemember(keyStore.isRemembered(profile.id)); }, [profile.id, keysVersion]);
-  const transport = useMemo(() => profile.mode === 'mock' ? new MockTransport() : profile.mode === 'direct' ? new DirectTransport(profile, { gatewayKey: keys.gatewayKey }) : new ProxyTransport({ gatewayKey: keys.gatewayKey, webKey: keys.webKey }), [profile, keys.gatewayKey, keys.webKey]);
-  const gateway = useMemo(() => new GatewayClient(transport), [transport]); const web = useMemo(() => new WebClient(transport), [transport]);
+  useEffect(() => {
+    setGatewayKey(keys.gatewayKey ?? '');
+    setWebKey(keys.webKey ?? '');
+    setRemember(keyStore.isRemembered(profile.id));
+  }, [profile.id, keysVersion]);
+  const transport = useMemo(
+    () =>
+      profile.mode === 'mock'
+        ? new MockTransport()
+        : profile.mode === 'direct'
+          ? new DirectTransport(profile, { gatewayKey: keys.gatewayKey })
+          : new ProxyTransport({ gatewayKey: keys.gatewayKey, webKey: keys.webKey }),
+    [profile, keys.gatewayKey, keys.webKey],
+  );
+  const gateway = useMemo(() => new GatewayClient(transport), [transport]);
+  const web = useMemo(() => new WebClient(transport), [transport]);
   const isMock = profile.mode === 'mock';
-  const refresh = useCallback(async (signal?: AbortSignal) => {
-    setError('');
-    const results = await Promise.allSettled([gateway.usage(period), gateway.requests({ period, offset: 0, limit: 20 }), gateway.quotas(), gateway.quotaCards(), gateway.concurrency(), profile.mode === 'direct' ? Promise.resolve(undefined) : gateway.hello(), gateway.limit()]);
-    if (signal?.aborted) return;
-    const failed = results.find(r => r.status === 'rejected') as PromiseRejectedResult | undefined;
-    if (results[0].status === 'fulfilled') setUsage(results[0].value);
-    if (results[1].status === 'fulfilled') { setLedger(results[1].value); setOffset(results[1].value.rows.length); }
-    if (results[2].status === 'fulfilled') setQuotas(results[2].value.data);
-    if (results[3].status === 'fulfilled') setQuotaCards(results[3].value.data);
-    if (results[4].status === 'fulfilled') setConcurrency(results[4].value);
-    if (results[5].status === 'fulfilled') setHello(results[5].value);
-    if (results[6].status === 'fulfilled') setLimitInfo(results[6].value);
-    setLastUpdated(new Date().toISOString()); setLoading(false);
-    if (failed) setError(zhMessage((failed.reason ?? { kind: 'network' }) as any, { api: profile.mode === 'live' ? 'web' : 'gateway', mode: profile.mode }));
-  }, [gateway, profile.mode, period]);
-  useEffect(() => { void refresh(); const poll = createPoller(profile.refreshSec * 1000, refresh); poll.start(); return () => poll.stop(); }, [refresh, profile.refreshSec, profile.id]);
-  useEffect(() => { const themeValue = ['dark', 'light'].includes(theme) ? theme : ''; if (themeValue) document.documentElement.dataset.theme = themeValue; else delete document.documentElement.dataset.theme; if (!params.has('theme')) localStorage.setItem('magpie.theme', theme); }, [theme]);
-  useEffect(() => { const change = () => { const next = (location.hash.slice(2) as Tab) || 'overview'; if (nav.some(n => n.id === next)) setTab(next); }; addEventListener('hashchange', change); return () => removeEventListener('hashchange', change); }, []);
-  useEffect(() => { if (tab !== 'agent' || profile.mode === 'direct') return; const loop = createTraceLoop({ fetchTrace: (after, wait, signal) => web.trace(after, wait, signal), onRoutes: routes => setTraceRoutes(prev => [...routes, ...prev].slice(0, 200)), onEnvelope: env => setTraceTotals(env.totals), onState: setTraceState }); loop.start(); return () => loop.stop(); }, [tab, profile.id, profile.mode, web]);
-  useEffect(() => { if (profile.mode !== 'direct' || tab !== 'agent' || !sessionId) return; let active = true, after = 0; const poll = async () => { try { const env = await gateway.route(sessionId, after, 25); if (!active) return; after = env.seq; if (env.route) setTraceRoutes(prev => [env.route!, ...prev].slice(0, 200)); setRouteError(''); } catch (e) { if (active) setRouteError(zhMessage(e as any, { api: 'gateway' })); } if (active) setTimeout(poll, 500); }; void poll(); return () => { active = false; }; }, [profile.mode, tab, sessionId, gateway]);
-  const chooseTab = (id: Tab) => { location.hash = `/${id}`; setTab(id); };
-  const chooseProfile = (id: string) => { localStorage.setItem('magpie.activeProfile', id); setActiveId(id); setUsage(undefined); setLoading(true); };
-  const allWindows = quotas.flatMap(q => [fiveHourWindow(q), weeklyWindow(q)].filter(Boolean).map((w: any) => ({ provider: q.provider, window: w })));
+  const refresh = useCallback(
+    async (signal?: AbortSignal) => {
+      setError('');
+      const results = await Promise.allSettled([
+        gateway.usage(period),
+        gateway.requests({ period, offset: 0, limit: 20 }),
+        gateway.quotas(),
+        gateway.quotaCards(),
+        gateway.concurrency(),
+        profile.mode === 'direct' ? Promise.resolve(undefined) : gateway.hello(),
+        gateway.limit(),
+      ]);
+      if (signal?.aborted) return;
+      const failed = results.find((r) => r.status === 'rejected') as PromiseRejectedResult | undefined;
+      if (results[0].status === 'fulfilled') setUsage(results[0].value);
+      if (results[1].status === 'fulfilled') {
+        setLedger(results[1].value);
+        setOffset(results[1].value.rows.length);
+      }
+      if (results[2].status === 'fulfilled') setQuotas(results[2].value.data);
+      if (results[3].status === 'fulfilled') setQuotaCards(results[3].value.data);
+      if (results[4].status === 'fulfilled') setConcurrency(results[4].value);
+      if (results[5].status === 'fulfilled') setHello(results[5].value);
+      if (results[6].status === 'fulfilled') setLimitInfo(results[6].value);
+      setLastUpdated(new Date().toISOString());
+      setLoading(false);
+      if (failed)
+        setError(
+          zhMessage((failed.reason ?? { kind: 'network' }) as any, {
+            api: profile.mode === 'live' ? 'web' : 'gateway',
+            mode: profile.mode,
+          }),
+        );
+    },
+    [gateway, profile.mode, period],
+  );
+  useEffect(() => {
+    void refresh();
+    const poll = createPoller(profile.refreshSec * 1000, refresh);
+    poll.start();
+    return () => poll.stop();
+  }, [refresh, profile.refreshSec, profile.id]);
+  useEffect(() => {
+    const themeValue = ['dark', 'light'].includes(theme) ? theme : '';
+    if (themeValue) document.documentElement.dataset.theme = themeValue;
+    else delete document.documentElement.dataset.theme;
+    if (!params.has('theme')) localStorage.setItem('magpie.theme', theme);
+  }, [theme]);
+  useEffect(() => {
+    const change = () => {
+      const next = (location.hash.slice(2) as Tab) || 'overview';
+      if (nav.some((n) => n.id === next)) setTab(next);
+    };
+    addEventListener('hashchange', change);
+    return () => removeEventListener('hashchange', change);
+  }, []);
+  useEffect(() => {
+    if (tab !== 'agent' || profile.mode === 'direct') return;
+    const loop = createTraceLoop({
+      fetchTrace: (after, wait, signal) => web.trace(after, wait, signal),
+      onRoutes: (routes) =>
+        setTraceRoutes((prev) =>
+          [...prev, ...routes]
+            .sort((a, b) => Number((b as any).seq ?? (b as any).id) - Number((a as any).seq ?? (a as any).id))
+            .slice(0, 200),
+        ),
+      onEnvelope: (env) => setTraceTotals(env.totals),
+      onState: setTraceState,
+    });
+    loop.start();
+    return () => loop.stop();
+  }, [tab, profile.id, profile.mode, web]);
+  useEffect(() => {
+    if (profile.mode !== 'direct' || tab !== 'agent' || !sessionId) return;
+    let active = true,
+      after = 0;
+    const poll = async () => {
+      try {
+        const env = await gateway.route(sessionId, after, 25);
+        if (!active) return;
+        after = env.seq;
+        if (env.route) setTraceRoutes((prev) => [env.route!, ...prev].slice(0, 200));
+        setRouteError('');
+      } catch (e) {
+        if (active) setRouteError(zhMessage(e as any, { api: 'gateway' }));
+      }
+      if (active) setTimeout(poll, 500);
+    };
+    void poll();
+    return () => {
+      active = false;
+    };
+  }, [profile.mode, tab, sessionId, gateway]);
+  const chooseTab = (id: Tab) => {
+    location.hash = `/${id}`;
+    setTab(id);
+  };
+  const chooseProfile = (id: string) => {
+    localStorage.setItem('magpie.activeProfile', id);
+    setActiveId(id);
+    setUsage(undefined);
+    setLoading(true);
+  };
+  const allWindows = quotas.flatMap((q) =>
+    [fiveHourWindow(q), weeklyWindow(q)]
+      .filter(Boolean)
+      .map((w: any) => ({ provider: q.provider, window: w })),
+  );
   const topQuotas = allWindows.slice(0, 4);
   const series = ledger?.series ?? usage?.series ?? [];
   const rows: Row[] = ledger?.rows ?? [];
   const concurrencyLanes = concurrency?.data ?? [];
-  const traceStatus = traceState === 'running' ? ['ok', '实时'] : traceState === 'backoff' ? ['warn', '重连中'] : traceState === 'needsAuth' ? ['error', '需要重新认证'] : ['neutral', '已暂停'];
+  const traceStatus =
+    traceState === 'running'
+      ? ['ok', '实时']
+      : traceState === 'backoff'
+        ? ['warn', '重连中']
+        : traceState === 'needsAuth'
+          ? ['error', '需要重新认证']
+          : ['neutral', '已暂停'];
 
-  const loadMore = async () => { try { const next = await gateway.requests({ period, offset, limit: 20 }); setLedger((old: any) => ({ ...next, rows: [...(old?.rows ?? []), ...next.rows] })); setOffset(offset + next.rows.length); } catch (e) { setError(zhMessage(e as any, { api: 'gateway' })); } };
-  const saveProfile = (p: Profile) => { const valid = validateProfile(p); const next = profiles.some(x => x.id === valid.id) ? profiles.map(x => x.id === valid.id ? valid : x) : [...profiles, valid]; saveProfiles(next); setProfiles(next); setProfileEdit(null); if (!profiles.some(x => x.id === valid.id)) chooseProfile(valid.id); };
-  const saveKeys = () => { keyStore.setKeys(profile.id, { gatewayKey, webKey }, remember); setKeysVersion(v => v + 1); setNotice('密钥已保存'); };
-  const removeProfile = (id: string) => { if (profiles.length < 2) return; const next = profiles.filter(p => p.id !== id); setProfiles(next); saveProfiles(next); keyStore.clearKeys(id); if (id === profile.id) chooseProfile(next[0].id); };
+  const loadMore = async () => {
+    try {
+      const next = await gateway.requests({ period, offset, limit: 20 });
+      setLedger((old: any) => ({ ...next, rows: [...(old?.rows ?? []), ...next.rows] }));
+      setOffset(offset + next.rows.length);
+    } catch (e) {
+      setError(zhMessage(e as any, { api: 'gateway' }));
+    }
+  };
+  const saveProfile = (p: Profile) => {
+    const valid = validateProfile(p);
+    const next = profiles.some((x) => x.id === valid.id)
+      ? profiles.map((x) => (x.id === valid.id ? valid : x))
+      : [...profiles, valid];
+    saveProfiles(next);
+    setProfiles(next);
+    setProfileEdit(null);
+    if (!profiles.some((x) => x.id === valid.id)) chooseProfile(valid.id);
+  };
+  const saveKeys = () => {
+    keyStore.setKeys(profile.id, { gatewayKey, webKey }, remember);
+    setKeysVersion((v) => v + 1);
+    setNotice('密钥已保存');
+  };
+  const removeProfile = (id: string) => {
+    if (profiles.length < 2) return;
+    const next = profiles.filter((p) => p.id !== id);
+    setProfiles(next);
+    saveProfiles(next);
+    keyStore.clearKeys(id);
+    if (id === profile.id) chooseProfile(next[0].id);
+  };
 
-  return <div class="app-shell" data-testid={`view-${tab}`}>
-    <header class="topbar"><a class="brand" href="#/overview" onClick={() => chooseTab('overview')} aria-label="magpie 概览"><span class="brand-mark">m</span><span>magpie</span></a>
-      <div class="header-profile"><label class="sr-only" for="profile-switch">选择 Profile</label><select id="profile-switch" value={profile.id} onChange={e => chooseProfile((e.currentTarget as HTMLSelectElement).value)}>{profiles.map(p => <option value={p.id}>{p.name}</option>)}</select></div>
-      <div class="header-state"><Status kind={error ? 'error' : 'ok'}>{error ? '连接错误' : '连接正常'}</Status>{isMock && <span class="badge badge-secondary" data-testid="mock-badge" title="Mock data" aria-label="Mock data"><Icon name="play-rect"/>模拟数据</span>}{profile.mode === 'direct' && profile.gatewayUrl?.startsWith('http://') && <span class="badge badge-warn"><Icon name="lock-open"/>不安全（HTTP）</span>}</div>
-      {profile.mode !== 'mock' && <span class="mode-pill">{profile.mode === 'live' ? 'Live' : 'Direct'}</span>}
-      <div class="top-actions">{profile.webGuiUrl && <a class="button button-quiet external" target="_blank" rel="noopener noreferrer" href={profile.webGuiUrl}><Icon name="external-link"/>打开 magpie web</a>}<button class="button button-quiet refresh-button" onClick={() => void refresh()}><Icon name="refresh"/><span>刷新</span></button></div>
-    </header>
-    <aside class="sidebar"><nav aria-label="主导航">{nav.map(n => <a href={`#/${n.id}`} onClick={() => chooseTab(n.id)} aria-current={tab === n.id ? 'page' : undefined}><Icon name={n.icon}/><span>{n.label}</span></a>)}</nav><div class="sidebar-foot"><Status kind={error ? 'error' : 'ok'}>{error ? '连接错误' : '连接正常'}</Status><small>{profile.name}</small></div></aside>
-    <nav class="mobile-nav" aria-label="主导航">{nav.map(n => <a href={`#/${n.id}`} onClick={() => chooseTab(n.id)} aria-current={tab === n.id ? 'page' : undefined}><Icon name={n.icon}/><span>{n.label}</span></a>)}</nav>
-    <main class="main-content"><div class="page-wrap">
-      {tab === 'overview' && <><div class="page-heading"><div><p class="eyebrow">MAGPIE MONITOR</p><h1>概览</h1><p>网关使用情况与运行状态</p></div>{profile.webGuiUrl && <a class="button button-secondary external" href={profile.webGuiUrl} target="_blank" rel="noopener noreferrer"><Icon name="external-link"/>打开 magpie web</a>}</div>
-        {error && <ErrorBox message={error} retry={() => void refresh()}/ >}{loading && !usage ? <Skeletons/> : <><Card class="connection-card"><div class="connection-state"><Status kind={error ? 'error' : 'ok'}>{error ? '连接错误' : '连接正常'}</Status><span>版本 <b class="mono">{hello?.version ?? '—'}</b></span></div><span class="muted">最后更新 {dateTime(lastUpdated)}</span></Card>
-          <div class="grid metrics-grid"><Metric icon="activity" label="今日请求" value={fmt(usage?.calls)}/><Metric icon="gauge" label="今日 token" value={usage?.tokens === undefined ? '—' : formatTokens(usage.tokens)} hint="输入 + 输出"/><Metric label="今日费用" value={money(usage?.cost)}/><Metric label="错误数" value={fmt(usage?.errors)}/><Metric label="并发" value={`${fmt(concurrency?.active?.length ?? concurrency?.requests)} / ${fmt(concurrency?.waiting)}`} hint="运行中 / 等待中"/></div>
-          <Section title="配额概览" action={<button class="text-button" onClick={() => chooseTab('quotas')}>查看全部 <span aria-hidden="true">→</span></button>}/><div class="grid quota-grid">{topQuotas.map(x => <QuotaCard provider={x.provider} window={x.window} usage={usage}/>)}</div>
-          <KeyValueCard title="限额信息" subtitle="网关当前限制配置" value={limitInfo}/><KeyValueCard title="服务信息" subtitle="网关版本信息" value={hello}/></>}
-      </>}
-      {tab === 'activity' && <><div class="page-heading"><div><p class="eyebrow">REQUEST LEDGER</p><h1>动态</h1><p>请求趋势与路由记录</p></div><div class="segmented">{[['day','今天'],['7d','7 天'],['30d','30 天']].map(([key,label]) => <button class={period === key ? 'selected' : ''} onClick={() => { setPeriod(key); setOffset(0); }}>{label}</button>)}</div></div>
-        {error && <ErrorBox message={error} retry={() => void refresh()}/ >}{loading && !ledger ? <Skeletons/> : <><Card class="chart-card"><div class="section-title"><div><h2>请求趋势</h2><p class="chart-subtitle">{fmt(ledger?.total ?? usage?.calls ?? rows.length)} 个请求</p></div><span class="muted">{series.length} 个时间段</span></div><TrendChart series={series}/></Card><Section title="请求记录" action={<span class="muted">{ledger?.total ?? 0} 条</span>}/><Ledger rows={rows}/>{offset < (ledger?.total ?? 0) && <button class="button load-more" onClick={() => void loadMore()}>加载更多</button>}</>}
-      </>}
-      {tab === 'agent' && <><div class="page-heading"><div><p class="eyebrow">LIVE ROUTING</p><h1>Agent</h1><p>实时路由 trace 与并发状态</p></div></div>
-        {profile.mode === 'direct' && <Card class="notice-card"><Status kind="warn">直连模式无全局 trace</Status><p>输入 session id 后轮询单会话路由记录。</p><form class="session-form" onSubmit={e => { e.preventDefault(); setTraceRoutes([]); }}><input value={sessionId} onInput={e => setSessionId((e.currentTarget as HTMLInputElement).value)} placeholder="session id" aria-label="session id"/><button class="button button-primary">开始轮询</button></form></Card>}
-        {profile.mode !== 'direct' && <Card class="trace-card"><div class="section-title"><h2>Trace 流</h2><Status kind={traceStatus[0] as any}>{traceStatus[1]}</Status></div><div class="chip-row"><span class="chip">请求 {fmt(traceTotals?.requests ?? 186)}</span><span class="chip">已重路由 {fmt(traceTotals?.rerouted ?? 14)}</span><span class="chip">错误 {fmt(traceTotals?.errors ?? 3)}</span></div><TraceList routes={traceRoutes.length ? traceRoutes : []} emptyLabel={isMock ? '正在等待模拟 trace…' : '等待新的路由事件…'}/></Card>}
-        {routeError && <ErrorBox message={routeError} retry={() => setSessionId(sessionId)}/ >}{profile.mode === 'direct' && <TraceList routes={traceRoutes} emptyLabel="输入 session id 开始查看"/>}
-        <Section title="并发线路" action={<span class="muted">{fmt(concurrency?.active?.length)} 个活跃请求</span>}/><div class="grid lanes-grid">{concurrencyLanes.map((lane: any) => <Lane lane={lane}/>)}</div>
-      </>}
-      {tab === 'quotas' && <><div class="page-heading"><div><p class="eyebrow">PROVIDER LIMITS</p><h1>配额</h1><p>各服务商的使用窗口与重置时间</p></div></div>{error && <ErrorBox message={error} retry={() => void refresh()}/ >}{loading && !quotas.length ? <Skeletons/> : <><Section title="使用窗口" action={<span class="muted">{allWindows.length} 个窗口</span>}/><div class="grid quota-grid">{allWindows.map(x => <QuotaCard provider={x.provider} window={x.window} usage={usage}/>)}</div><Section title="配额卡片" action={<span class="muted">{quotaCards.length} 项</span>}/>{quotaCards.length ? <div class="grid generic-quota-grid">{quotaCards.map((card: any) => <GenericQuota card={card}/>)}</div> : <Empty text="当前没有额外的配额卡片"/>}</>}</>}
-      {tab === 'settings' && <><div class="page-heading"><div><p class="eyebrow">PREFERENCES</p><h1>设置</h1><p>连接 Profile、密钥与外观</p></div></div><Section title="服务器配置" action={<button class="button button-primary" onClick={() => setProfileEdit({ id: `profile-${Date.now()}`, name: '', mode: 'mock', refreshSec: 20 })}>添加配置</button>}/>
-        {profileEdit && <ProfileForm initial={profileEdit} cancel={() => setProfileEdit(null)} save={saveProfile}/>}
-        <div class="profile-list">{profiles.map(p => <Card class="profile-row"><div class="profile-meta"><strong>{p.name}</strong><span class="muted">{p.mode === 'mock' ? '模拟数据' : p.mode === 'live' ? '经代理' : '直连'} · 每 {p.refreshSec} 秒刷新</span>{p.gatewayUrl?.startsWith('http://') && <span class="badge badge-warn"><Icon name="lock-open"/>不安全（HTTP）</span>}</div><div class="row-actions"><button class="button button-quiet" onClick={() => chooseProfile(p.id)}>切换</button><button class="button button-quiet" onClick={() => setProfileEdit(p)}>编辑</button><button class="button button-quiet danger-text" disabled={profiles.length < 2} onClick={() => removeProfile(p.id)}>删除</button></div></Card>)}</div>
-        <Section title="密钥"/><Card class="settings-card"><div class="form-grid"><label>Gateway key<input type={showKeys ? 'text' : 'password'} autoComplete="off" value={gatewayKey} onInput={e => setGatewayKey((e.currentTarget as HTMLInputElement).value)} placeholder="输入 gateway key"/></label>{profile.mode === 'live' && <label>Runtime key<input type={showKeys ? 'text' : 'password'} autoComplete="off" value={webKey} onInput={e => setWebKey((e.currentTarget as HTMLInputElement).value)} placeholder="输入 runtime key"/></label>}</div><div class="inline-controls"><button class="text-button" onClick={() => setShowKeys(v => !v)}>{showKeys ? '隐藏密钥' : '显示密钥'}</button><label class="check-label"><input type="checkbox" checked={remember} onChange={e => setRemember((e.currentTarget as HTMLInputElement).checked)}/>记住 key（在此设备）</label></div>{remember && <div class="warning-box"><Status kind="warn">本地存储提示</Status><p>启用后密钥会保存在此设备的浏览器 localStorage 中。仅在可信任的个人设备上使用。</p></div>}<div class="row-actions"><button class="button button-primary" onClick={saveKeys}>保存密钥</button><button class="button" onClick={() => { keyStore.clearKeys(); setKeysVersion(v => v + 1); setGatewayKey(''); setWebKey(''); }}>清除所有 key</button></div>{notice && <p class="success-note">{notice}</p>}</Card>
-        <Section title="外观与数据"/><Card class="settings-card"><label class="field-label">主题<select value={theme} onChange={e => setTheme((e.currentTarget as HTMLSelectElement).value)}><option value="system">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label><div class="field-label">Profile 管理<div class="row-actions"><button class="button" onClick={() => downloadProfiles(profiles)}>导出 Profile</button><label class="button file-button">导入 Profile<input type="file" accept="application/json" onChange={e => importProfileFile(e.currentTarget as HTMLInputElement, setProfiles, setNotice)}/></label></div><small>导出内容不包含任何 key。</small></div></Card>
-        <Section title="关于"/><Card class="about-card"><p><strong>magpie web</strong> · MIT License</p><p>用于查看网关状态、请求与配额。Tmux/服务 请使用 iOS App。</p><a href="https://magpie.example.com" target="_blank" rel="noopener noreferrer" class="text-link">magpie 项目 <Icon name="external-link" size={14}/></a></Card>
-      </>}
-    </div></main>
-  </div>;
+  return (
+    <div class="app-shell" data-testid={`view-${tab}`}>
+      <header class="topbar">
+        <a class="brand" href="#/overview" onClick={() => chooseTab('overview')} aria-label="magpie 概览">
+          <span class="brand-mark">m</span>
+          <span>magpie</span>
+        </a>
+        <div class="header-profile">
+          <label class="sr-only" for="profile-switch">
+            选择 Profile
+          </label>
+          <select
+            id="profile-switch"
+            value={profile.id}
+            onChange={(e) => chooseProfile((e.currentTarget as HTMLSelectElement).value)}
+          >
+            {profiles.map((p) => (
+              <option value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+        <div class="header-state">
+          <Status kind={error ? 'error' : 'ok'}>{error ? '连接错误' : '连接正常'}</Status>
+          {isMock && (
+            <span
+              class="badge badge-secondary"
+              data-testid="mock-badge"
+              title="Mock data"
+              aria-label="Mock data"
+            >
+              <Icon name="play-rect" />
+              模拟数据
+            </span>
+          )}
+          {profile.mode === 'direct' && profile.gatewayUrl?.startsWith('http://') && (
+            <span class="badge badge-warn">
+              <Icon name="lock-open" />
+              不安全（HTTP）
+            </span>
+          )}
+        </div>
+        {profile.mode !== 'mock' && (
+          <span class="mode-pill">{profile.mode === 'live' ? 'Live' : 'Direct'}</span>
+        )}
+        <div class="top-actions">
+          {profile.webGuiUrl && (
+            <a
+              class="button button-quiet external"
+              target="_blank"
+              rel="noopener noreferrer"
+              href={profile.webGuiUrl}
+            >
+              <Icon name="external-link" />
+              打开 magpie web
+            </a>
+          )}
+          <button class="button button-quiet refresh-button" onClick={() => void refresh()}>
+            <Icon name="refresh" />
+            <span>刷新</span>
+          </button>
+        </div>
+      </header>
+      <aside class="sidebar">
+        <nav aria-label="主导航">
+          {nav.map((n) => (
+            <a
+              href={`#/${n.id}`}
+              onClick={() => chooseTab(n.id)}
+              aria-current={tab === n.id ? 'page' : undefined}
+            >
+              <Icon name={n.icon} />
+              <span>{n.label}</span>
+            </a>
+          ))}
+        </nav>
+        <div class="sidebar-foot">
+          <Status kind={error ? 'error' : 'ok'}>{error ? '连接错误' : '连接正常'}</Status>
+          <small>{profile.name}</small>
+        </div>
+      </aside>
+      <nav class="mobile-nav" aria-label="主导航">
+        {nav.map((n) => (
+          <a
+            href={`#/${n.id}`}
+            onClick={() => chooseTab(n.id)}
+            aria-current={tab === n.id ? 'page' : undefined}
+          >
+            <Icon name={n.icon} />
+            <span>{n.label}</span>
+          </a>
+        ))}
+      </nav>
+      <main class="main-content">
+        <div class="page-wrap">
+          {tab === 'overview' && (
+            <>
+              <div class="page-heading">
+                <div>
+                  <p class="eyebrow">MAGPIE MONITOR</p>
+                  <h1>概览</h1>
+                  <p>网关使用情况与运行状态</p>
+                </div>
+                {profile.webGuiUrl && (
+                  <a
+                    class="button button-secondary external"
+                    href={profile.webGuiUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Icon name="external-link" />
+                    打开 magpie web
+                  </a>
+                )}
+              </div>
+              {error && <ErrorBox message={error} retry={() => void refresh()} />}
+              {loading && !usage ? (
+                <Skeletons />
+              ) : (
+                <>
+                  <Card class="connection-card">
+                    <div class="connection-state">
+                      <Status kind={error ? 'error' : 'ok'}>{error ? '连接错误' : '连接正常'}</Status>
+                      <span>
+                        服务 <b>{hello?.name ?? 'magpie'}</b> · 版本{' '}
+                        <b class="mono">{hello?.version ?? '—'}</b>
+                      </span>
+                    </div>
+                    <span class="status last-updated">最后更新 {dateTime(lastUpdated)}</span>
+                  </Card>
+                  <div class="grid metrics-grid">
+                    <Metric icon="activity" label="今日请求" value={fmt(usage?.calls)} />
+                    <Metric
+                      icon="gauge"
+                      label="今日 token"
+                      value={usage?.tokens === undefined ? '—' : formatTokens(usage.tokens)}
+                      hint="输入 + 输出"
+                    />
+                    <Metric label="今日费用" value={money(usage?.cost)} />
+                    <Metric label="错误数" value={fmt(usage?.errors)} />
+                    <Metric
+                      label="并发"
+                      value={`${fmt(concurrency?.active?.length ?? concurrency?.requests)} / ${fmt(concurrency?.waiting)}`}
+                      hint="运行中 / 等待中"
+                    />
+                  </div>
+                  <Section
+                    title="配额概览"
+                    action={
+                      <button class="text-button" onClick={() => chooseTab('quotas')}>
+                        查看全部 <span aria-hidden="true">→</span>
+                      </button>
+                    }
+                  />
+                  <div class="grid quota-grid">
+                    {topQuotas.map((x) => (
+                      <QuotaCard provider={x.provider} window={x.window} usage={usage} />
+                    ))}
+                  </div>
+                  <KeyValueCard title="限额信息" subtitle="网关当前限制配置" value={limitInfo} />
+                </>
+              )}
+            </>
+          )}
+          {tab === 'activity' && (
+            <>
+              <div class="page-heading">
+                <div>
+                  <p class="eyebrow">REQUEST LEDGER</p>
+                  <h1>动态</h1>
+                  <p>请求趋势与路由记录</p>
+                </div>
+                <div class="segmented">
+                  {[
+                    ['day', '今天'],
+                    ['7d', '7 天'],
+                    ['30d', '30 天'],
+                  ].map(([key, label]) => (
+                    <button
+                      class={period === key ? 'selected' : ''}
+                      onClick={() => {
+                        setPeriod(key);
+                        setOffset(0);
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {error && <ErrorBox message={error} retry={() => void refresh()} />}
+              {loading && !ledger ? (
+                <Skeletons />
+              ) : (
+                <>
+                  <Card class="chart-card">
+                    <div class="section-title">
+                      <div>
+                        <h2>请求趋势</h2>
+                        <p class="chart-subtitle">
+                          {fmt(ledger?.total ?? usage?.calls ?? rows.length)} 个请求
+                        </p>
+                      </div>
+                      <span class="muted">{series.length} 个时间段</span>
+                    </div>
+                    <TrendChart series={series} />
+                  </Card>
+                  <Section title="请求记录" action={<span class="muted">{ledger?.total ?? 0} 条</span>} />
+                  <Ledger rows={rows} />
+                  {offset < (ledger?.total ?? 0) && (
+                    <button class="button load-more" onClick={() => void loadMore()}>
+                      加载更多
+                    </button>
+                  )}
+                </>
+              )}
+            </>
+          )}
+          {tab === 'agent' && (
+            <>
+              <div class="page-heading">
+                <div>
+                  <p class="eyebrow">LIVE ROUTING</p>
+                  <h1>Agent</h1>
+                  <p>实时路由 trace 与并发状态</p>
+                </div>
+              </div>
+              {profile.mode === 'direct' && (
+                <Card class="notice-card">
+                  <Status kind="warn">直连模式无全局 trace</Status>
+                  <p>输入 session id 后轮询单会话路由记录。</p>
+                  <form
+                    class="session-form"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      setTraceRoutes([]);
+                    }}
+                  >
+                    <input
+                      value={sessionId}
+                      onInput={(e) => setSessionId((e.currentTarget as HTMLInputElement).value)}
+                      placeholder="session id"
+                      aria-label="session id"
+                    />
+                    <button class="button button-primary">开始轮询</button>
+                  </form>
+                </Card>
+              )}
+              {profile.mode !== 'direct' && (
+                <Card class="trace-card">
+                  <div class="section-title">
+                    <h2>Trace 流</h2>
+                    <Status kind={traceStatus[0] as any}>{traceStatus[1]}</Status>
+                  </div>
+                  <div class="chip-row">
+                    <span class="chip">请求 {fmt(traceTotals?.requests ?? 186)}</span>
+                    <span class="chip">已重路由 {fmt(traceTotals?.rerouted ?? 14)}</span>
+                    <span class="chip">错误 {fmt(traceTotals?.errors ?? 3)}</span>
+                  </div>
+                  <TraceList
+                    routes={traceRoutes.length ? traceRoutes : []}
+                    emptyLabel={isMock ? '正在等待模拟 trace…' : '等待新的路由事件…'}
+                  />
+                </Card>
+              )}
+              {routeError && <ErrorBox message={routeError} retry={() => setSessionId(sessionId)} />}
+              {profile.mode === 'direct' && (
+                <TraceList routes={traceRoutes} emptyLabel="输入 session id 开始查看" />
+              )}
+              <Section
+                title="并发线路"
+                action={<span class="muted">{fmt(concurrency?.active?.length)} 个活跃请求</span>}
+              />
+              <div class="grid lanes-grid">
+                {concurrencyLanes.map((lane: any) => (
+                  <Lane lane={lane} />
+                ))}
+              </div>
+            </>
+          )}
+          {tab === 'quotas' && (
+            <>
+              <div class="page-heading">
+                <div>
+                  <p class="eyebrow">PROVIDER LIMITS</p>
+                  <h1>配额</h1>
+                  <p>各服务商的使用窗口与重置时间</p>
+                </div>
+              </div>
+              {error && <ErrorBox message={error} retry={() => void refresh()} />}
+              {loading && !quotas.length ? (
+                <Skeletons />
+              ) : (
+                <>
+                  <Section title="使用窗口" action={<span class="muted">{allWindows.length} 个窗口</span>} />
+                  <div class="grid quota-grid">
+                    {allWindows.map((x) => (
+                      <QuotaCard provider={x.provider} window={x.window} usage={usage} />
+                    ))}
+                  </div>
+                  <Section title="配额卡片" action={<span class="muted">{quotaCards.length} 项</span>} />
+                  {quotaCards.length ? (
+                    <div class="grid generic-quota-grid">
+                      {quotaCards.map((card: any) => (
+                        <GenericQuota card={card} />
+                      ))}
+                    </div>
+                  ) : (
+                    <Empty text="当前没有额外的配额卡片" />
+                  )}
+                </>
+              )}
+            </>
+          )}
+          {tab === 'settings' && (
+            <>
+              <div class="page-heading">
+                <div>
+                  <p class="eyebrow">PREFERENCES</p>
+                  <h1>设置</h1>
+                  <p>连接 Profile、密钥与外观</p>
+                </div>
+              </div>
+              <Section
+                title="服务器配置"
+                action={
+                  <button
+                    class="button button-primary"
+                    onClick={() =>
+                      setProfileEdit({ id: `profile-${Date.now()}`, name: '', mode: 'mock', refreshSec: 20 })
+                    }
+                  >
+                    添加配置
+                  </button>
+                }
+              />
+              {profileEdit && (
+                <ProfileForm initial={profileEdit} cancel={() => setProfileEdit(null)} save={saveProfile} />
+              )}
+              <div class="profile-list">
+                {profiles.map((p) => (
+                  <Card class="profile-row">
+                    <div class="profile-meta">
+                      <strong>{p.name}</strong>
+                      <span class="muted">
+                        {p.mode === 'mock' ? '模拟数据' : p.mode === 'live' ? '经代理' : '直连'} · 每{' '}
+                        {p.refreshSec} 秒刷新
+                      </span>
+                      {p.gatewayUrl?.startsWith('http://') && (
+                        <span class="badge badge-warn">
+                          <Icon name="lock-open" />
+                          不安全（HTTP）
+                        </span>
+                      )}
+                    </div>
+                    <div class="row-actions">
+                      <button class="button button-quiet" onClick={() => chooseProfile(p.id)}>
+                        切换
+                      </button>
+                      <button class="button button-quiet" onClick={() => setProfileEdit(p)}>
+                        编辑
+                      </button>
+                      <button
+                        class="button button-quiet danger-text"
+                        disabled={profiles.length < 2}
+                        onClick={() => removeProfile(p.id)}
+                      >
+                        删除
+                      </button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+              <Section title="密钥" />
+              <Card class="settings-card">
+                <div class="form-grid">
+                  <label>
+                    Gateway key
+                    <input
+                      type={showKeys ? 'text' : 'password'}
+                      autoComplete="off"
+                      value={gatewayKey}
+                      onInput={(e) => setGatewayKey((e.currentTarget as HTMLInputElement).value)}
+                      placeholder="输入 gateway key"
+                    />
+                  </label>
+                  {profile.mode === 'live' && (
+                    <label>
+                      Runtime key
+                      <input
+                        type={showKeys ? 'text' : 'password'}
+                        autoComplete="off"
+                        value={webKey}
+                        onInput={(e) => setWebKey((e.currentTarget as HTMLInputElement).value)}
+                        placeholder="输入 runtime key"
+                      />
+                    </label>
+                  )}
+                </div>
+                <div class="inline-controls">
+                  <button class="text-button" onClick={() => setShowKeys((v) => !v)}>
+                    {showKeys ? '隐藏密钥' : '显示密钥'}
+                  </button>
+                  <label class="check-label">
+                    <input
+                      type="checkbox"
+                      checked={remember}
+                      onChange={(e) => setRemember((e.currentTarget as HTMLInputElement).checked)}
+                    />
+                    记住 key（在此设备）
+                  </label>
+                </div>
+                {remember && (
+                  <div class="warning-box">
+                    <Status kind="warn">本地存储提示</Status>
+                    <p>启用后密钥会保存在此设备的浏览器 localStorage 中。仅在可信任的个人设备上使用。</p>
+                  </div>
+                )}
+                <div class="row-actions">
+                  <button class="button button-primary" onClick={saveKeys}>
+                    保存密钥
+                  </button>
+                  <button
+                    class="button"
+                    onClick={() => {
+                      keyStore.clearKeys();
+                      setKeysVersion((v) => v + 1);
+                      setGatewayKey('');
+                      setWebKey('');
+                    }}
+                  >
+                    清除所有 key
+                  </button>
+                </div>
+                {notice && <p class="success-note">{notice}</p>}
+              </Card>
+              <Section title="外观与数据" />
+              <Card class="settings-card">
+                <label class="field-label">
+                  主题
+                  <select
+                    value={theme}
+                    onChange={(e) => setTheme((e.currentTarget as HTMLSelectElement).value)}
+                  >
+                    <option value="system">跟随系统</option>
+                    <option value="light">浅色</option>
+                    <option value="dark">深色</option>
+                  </select>
+                </label>
+                <div class="field-label">
+                  Profile 管理
+                  <div class="row-actions">
+                    <button class="button" onClick={() => downloadProfiles(profiles)}>
+                      导出 Profile
+                    </button>
+                    <label class="button file-button">
+                      导入 Profile
+                      <input
+                        type="file"
+                        accept="application/json"
+                        onChange={(e) =>
+                          importProfileFile(e.currentTarget as HTMLInputElement, setProfiles, setNotice)
+                        }
+                      />
+                    </label>
+                  </div>
+                  <small>导出内容不包含任何 key。</small>
+                </div>
+              </Card>
+              <Section title="关于" />
+              <Card class="about-card">
+                <p>
+                  <strong>magpie web</strong> · MIT License
+                </p>
+                <p>用于查看网关状态、请求与配额。Tmux/服务 请使用 iOS App。</p>
+                <a
+                  href="https://magpie.example.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-link"
+                >
+                  magpie 项目 <Icon name="external-link" size={14} />
+                </a>
+              </Card>
+            </>
+          )}
+        </div>
+      </main>
+    </div>
+  );
 }
 
-function Section({ title, action }: { title: string; action?: ComponentChildren }) { return <div class="section-heading"><h2>{title}</h2>{action}</div>; }
-function TrendChart({ series }: { series: any[] }) { const host = useRef<HTMLDivElement>(null); const [width, setWidth] = useState(600), [height, setHeight] = useState(() => matchMedia('(max-width: 760px)').matches ? 180 : 220); useEffect(() => { const el = host.current; if (!el) return; const update = () => setWidth(el.clientWidth || 600); update(); if (typeof ResizeObserver !== 'undefined') { const observer = new ResizeObserver(update); observer.observe(el); return () => observer.disconnect(); } addEventListener('resize', update); return () => removeEventListener('resize', update); }, []); useEffect(() => { const media = matchMedia('(max-width: 760px)'), update = () => setHeight(media.matches ? 180 : 220); update(); media.addEventListener?.('change', update); return () => media.removeEventListener?.('change', update); }, []); const values = series.map(p => Number(p.calls ?? 0)); const max = Math.max(1, ...values); const left = 46, right = 8, top = 12, bottom = 28, plotW = width - left - right, plotH = height - top - bottom, gap = values.length > 1 ? 4 : 0, bar = Math.max(1, (plotW - gap * Math.max(0, values.length - 1)) / Math.max(1, values.length)), tickStep = Math.max(1, Math.ceil(values.length / Math.max(1, Math.floor(width / 80)))); const label = (p:any) => p?.label ?? dateTime(p?.time); return <div class="chart-wrap" ref={host}><svg width={width} height={height} role="img" aria-label="请求数量趋势"><title>按时间段统计的请求数量趋势</title>{[0,1,2,3].map(i => { const value = max * (3-i)/3, y = top + i*plotH/3; return <g><path d={`M${left} ${y}H${width-right}`} class="chart-grid"/><text x={left-7} y={y+4} text-anchor="end" class="chart-y-label">{compactNumber(value)}</text></g>; })}{values.map((v, i) => { const h = Math.max(v ? 2 : 0, v / max * plotH); const x=left+i*(bar+gap); return <rect x={x} y={top+plotH-h} width={bar} height={h} rx="2" tabIndex={0} aria-label={`${label(series[i])}: ${fmt(v)} 个请求`}><title>{label(series[i])} · {fmt(v)} 个请求</title></rect>; })}{values.map((_,i) => i===0 || i===values.length-1 || i%tickStep===0 ? <text x={left+i*(bar+gap)+bar/2} y={height-5} text-anchor="middle" class="chart-x-label">{label(series[i])}</text> : null)}</svg></div>; }
-function compactNumber(n:number) { return Intl.NumberFormat('zh-CN',{notation:'compact',maximumFractionDigits:1}).format(n); }
-function Ledger({ rows }: { rows: Row[] }) { if (!rows.length) return <Empty text="此时间段暂无请求记录"/>; return <><div class="ledger-table-wrap"><table class="ledger-table"><thead><tr><th>时间</th><th>Agent</th><th>模型</th><th>Provider</th><th>Tokens（入 / 出）</th><th>费用</th><th>状态</th></tr></thead><tbody>{rows.map(r => <LedgerRow row={r}/>)}</tbody></table></div><div class="ledger-mobile">{rows.map(r => <LedgerRow row={r} mobile/>)}</div></>; }
-function LedgerRow({ row, mobile = false }: { row: Row; mobile?: boolean }) { const r = row as Record<string, any>; const ok = Number(r.status ?? 200) < 400; const when = dateTime(typeof r.t === 'string' ? r.t : undefined); const incoming = typeof r.in === 'number' ? r.in : undefined, outgoing = typeof r.out === 'number' ? r.out : undefined; const cost = typeof r.cost === 'number' ? r.cost : undefined; const agent = String(r.agentName ?? r.agent ?? '—'), model = String(r.model ?? '—'), provider = String(r.providerName ?? r.provider ?? '—'); return mobile ? <Card class="ledger-mobile-row"><div class="ledger-mobile-top"><time>{when}</time><Status kind={ok ? 'ok' : 'error'}>{ok ? '正常' : '错误'}</Status></div><strong>{agent}</strong><code>{model}</code><div class="ledger-meta"><span>{provider}</span><span>{fmt(incoming)} / {fmt(outgoing)}</span><span>{money(cost)}</span></div>{(row.swapped || row.routed) && <small>已切换 / 已路由</small>}</Card> : <tr><td>{when}</td><td>{agent}</td><td><code>{model}</code></td><td>{provider}</td><td class="number-cell">{fmt(incoming)} / {fmt(outgoing)}</td><td>{money(cost)}</td><td><span class="row-status"><Status kind={ok ? 'ok' : 'error'}>{ok ? '正常' : '错误'}</Status>{(row.swapped || row.routed) && <span class="muted">已路由</span>}</span></td></tr>; }
-function TraceList({ routes, emptyLabel }: { routes: Route[]; emptyLabel: string }) { if (!routes.length) return <Empty text={emptyLabel}/>; return <div class="trace-list">{routes.map(r => { const x = r as any, inTokens=(x.usage??[]).reduce((n:any,u:any)=>n+(u.in??0),0), outTokens=(x.usage??[]).reduce((n:any,u:any)=>n+(u.out??0),0); return <div class="trace-row"><div class="trace-icon"><Icon name={x.error || (x.status && x.status >= 400) ? 'x-circle' : x.rule ? 'refresh' : 'check-circle'}/></div><div class="trace-body"><div class="trace-title"><strong>{x.agent ?? 'Agent'}</strong><code>{x.model ?? '—'}</code><span class="muted">{x.provider ?? ''}</span>{x.effort && <span class="chip trace-chip">{x.effort}</span>}{x.tier && <span class="chip trace-chip">{x.tier}</span>}</div><div class="trace-details"><div class="trace-sub">{x.rule && <span>↻ 重路由 · {x.rule.reason ?? x.rule.name}</span>}{x.group?.name && <span>分组 · {x.group.name}</span>}{x.subagent && <span>◈ 子 Agent · {x.subagent.name ?? '是'}</span>}{x.pinned && <span>⌖ 固定线路</span>}{x.rerouted && !x.rule && <span>↻ 已重路由</span>}{x.parentSession && <span>↳ 子调用</span>}{!x.rule && !x.error && <span>✓ 完成</span>}{x.session && <code>{x.session}</code>}</div><div class="trace-usage">入 {fmt(inTokens)} · 出 {fmt(outTokens)}{x.cost != null && x.priced && <span> · 费用 {money(x.cost)}</span>}</div></div></div><time title={dateTime(x.time)}>{relativeAgo(x.time)}</time></div>; })}</div>; }
-function relativeAgo(s?:string) { if(!s)return '—'; const mins=Math.max(0,Math.floor((Date.now()-new Date(s).getTime())/60000)); return mins<1?'刚刚':mins<60?`${mins} 分钟前`:`${Math.floor(mins/60)} 小时前`; }
-function Lane({ lane }: { lane: any }) { const busy = lane.busy ?? 0, waiting = lane.waiting ?? 0, limit = lane.limit ?? Math.max(1, busy); const pct = Math.min(100, Math.round(busy / limit * 100)); return <Card class="lane-card"><div class="lane-head"><strong class="mono">{lane.id ?? lane.name ?? lane.provider ?? 'Provider'}</strong><Status kind={waiting ? 'warn' : 'ok'}>{waiting ? '等待中' : '正常'}</Status></div><div class="progress"><span style={{ width: `${pct}%` }}/></div><div class="lane-foot"><span>运行中 {busy} / {limit}</span><span>等待 {waiting}</span></div></Card>; }
-function GenericQuota({ card }: { card: Record<string, any> }) { return <Card class="generic-card"><div class="generic-head"><div><h3>{card.name ?? card.title ?? card.provider ?? '配额'}</h3><p>{[card.provider, card.plan ?? card.kind].filter(Boolean).join(' · ')}</p></div></div>{(card.windows ?? []).map((w:any)=>{ const pct = Math.round(Number(w.used ?? (Number(w.limit) > 0 ? Number(w.amount) / Number(w.limit) * 100 : 0))), level = pct >= 100 ? 'error' : pct >= 80 ? 'warn' : 'ok', windowName = /^(5-hour|5h)$/i.test(w.name) ? '5 小时' : /^(weekly|week)$/i.test(w.name) ? '每周' : w.name; return <div class={`generic-window quota-${level}`}><div class="generic-window-head"><span>{windowName}</span>{pct > 0 && <strong>{pct}%</strong>}</div><div class="progress"><span style={{width:`${Math.min(100,Math.max(0,pct))}%`}}/></div>{/^(token|tokens)$/i.test(w.unit??'')&&<small>已消耗 {formatTokens(Number(w.amount ?? w.used ?? 0))} token</small>}</div>; })}{(card.balance || card.balanceSplit?.length) && <div class="balance-rows">{card.balance && <div><span>余额</span><strong>{formatAmount(card.balance)}</strong></div>}{(card.balanceSplit??[]).map((b:any)=><div><span>{b.name}</span><strong>{formatAmount(b.balance ?? b.amount)}</strong></div>)}</div>}{card.asOf && <small class="as-of">更新于 {dateTime(card.asOf)}</small>}</Card>; }
-function formatAmount(v:any) { if(typeof v==='number')return money(v); if(typeof v==='string' && /^\$?-?[\d,.]+$/.test(v)){const n=Number(v.replace(/[$,]/g,''));return money(n);} return String(v); }
-function KeyValueCard({title,subtitle,value}:{title:string;subtitle:string;value:any}) { if(!value||typeof value!=='object')return null; const entries=Object.entries(value).filter(([,v])=>v!=null&&['string','number','boolean'].includes(typeof v)&&String(v).trim()!==''); if(!entries.length)return null; return <Card class="limit-card"><div><h2>{title}</h2><p>{subtitle}</p></div><dl>{entries.map(([k,v])=><div><dt>{keyLabel(k)}</dt><dd class={/id|key/i.test(k)?'mono':''}>{typeof v==='number'?fmt(v):typeof v==='boolean'?(v?'是':'否'):String(v)}</dd></div>)}</dl></Card>; }
-function keyLabel(k:string){return ({name:'名称',version:'版本',limit:'限额',requests:'请求数',tokens:'Token',active:'运行中',waiting:'等待中'} as Record<string,string>)[k]??k;}
-function Empty({ text }: { text: string }) { return <div class="empty-state"><Icon name="minus-circle" size={20}/><span>{text}</span></div>; }
-function ProfileForm({ initial, cancel, save }: { initial: Profile; cancel: () => void; save: (p: Profile) => void }) { const [value, setValue] = useState(initial); const patch = (p: Partial<Profile>) => setValue(v => ({ ...v, ...p })); const [err, setErr] = useState(''); return <Card class="settings-card profile-form"><div class="form-grid"><label>名称<input value={value.name} onInput={e => patch({ name: (e.currentTarget as HTMLInputElement).value })}/></label><label>模式<select value={value.mode} onChange={e => patch({ mode: (e.currentTarget as HTMLSelectElement).value as Profile['mode'] })}><option value="live">Live · Worker 代理，可用全局 trace</option><option value="direct">Direct · 浏览器直连，仅 gateway API</option><option value="mock">Mock · 本地演示数据，零网络</option></select></label>{value.mode === 'direct' && <label>Gateway URL<input value={value.gatewayUrl ?? ''} placeholder="https://magpie.example.com" onInput={e => patch({ gatewayUrl: (e.currentTarget as HTMLInputElement).value })}/></label>}{value.mode === 'live' && <label>Web GUI 端口<input type="number" min="1" max="65535" value={value.webPort ?? ''} onInput={e => patch({ webPort: Number((e.currentTarget as HTMLInputElement).value) || undefined })}/></label>}<label>magpie web 地址（可选）<input value={value.webGuiUrl ?? ''} placeholder="https://magpie.example.com" onInput={e => patch({ webGuiUrl: (e.currentTarget as HTMLInputElement).value || undefined })}/></label><label>刷新间隔<select value={value.refreshSec} onChange={e => patch({ refreshSec: Number((e.currentTarget as HTMLSelectElement).value) as Profile['refreshSec'] })}>{[10,20,30,60].map(n => <option value={n}>{n} 秒</option>)}</select></label></div>{err && <p class="error-text">{err}</p>}<div class="row-actions"><button class="button button-primary" onClick={() => { try { if (!value.name.trim()) throw new Error('请填写名称'); if (value.mode === 'direct' && !value.gatewayUrl) throw new Error('直连模式需要网关地址'); save(value); } catch (e) { setErr((e as Error).message); } }}>保存 Profile</button><button class="button" onClick={cancel}>取消</button></div></Card>; }
-function downloadProfiles(profiles: Profile[]) { const safe = profiles.map(({ id,name,mode,gatewayUrl,webPort,webGuiUrl,refreshSec }) => ({ id,name,mode,gatewayUrl,webPort,webGuiUrl,refreshSec })); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(safe, null, 2)], { type: 'application/json' })); a.download = 'magpie-profiles.json'; a.click(); URL.revokeObjectURL(a.href); }
-function importProfileFile(input: HTMLInputElement, setProfiles: (p: Profile[]) => void, setNotice: (s: string) => void) { const file = input.files?.[0]; if (!file) return; void file.text().then(text => { const parsed = JSON.parse(text); if (!Array.isArray(parsed)) throw new Error('Profile 文件格式无效'); setProfiles(parsed as Profile[]); saveProfiles(parsed as Profile[]); setNotice('Profile 已导入（密钥不会导入）'); }).catch(e => setNotice(`导入失败：${(e as Error).message}`)); }
+function Section({ title, action }: { title: string; action?: ComponentChildren }) {
+  return (
+    <div class="section-heading">
+      <h2>{title}</h2>
+      {action}
+    </div>
+  );
+}
+function TrendChart({ series }: { series: any[] }) {
+  const host = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(600),
+    [height, setHeight] = useState(() => (matchMedia('(max-width: 760px)').matches ? 180 : 220));
+  useEffect(() => {
+    const el = host.current;
+    if (!el) return;
+    const update = () => setWidth(el.clientWidth || 600);
+    update();
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(update);
+      observer.observe(el);
+      return () => observer.disconnect();
+    }
+    addEventListener('resize', update);
+    return () => removeEventListener('resize', update);
+  }, []);
+  useEffect(() => {
+    const media = matchMedia('(max-width: 760px)'),
+      update = () => setHeight(media.matches ? 180 : 220);
+    update();
+    media.addEventListener?.('change', update);
+    return () => media.removeEventListener?.('change', update);
+  }, []);
+  const values = series.map((p) => Number(p.calls ?? 0));
+  const max = Math.max(1, ...values);
+  const left = 46,
+    right = 8,
+    top = 12,
+    bottom = 28,
+    plotW = width - left - right,
+    plotH = height - top - bottom,
+    gap = values.length > 1 ? 4 : 0,
+    bar = Math.max(1, (plotW - gap * Math.max(0, values.length - 1)) / Math.max(1, values.length)),
+    tickStep = Math.max(1, Math.ceil(values.length / Math.max(1, Math.floor(width / 80))));
+  const label = (p: any) => p?.label ?? dateTime(p?.time);
+  return (
+    <div class="chart-wrap" ref={host}>
+      <svg width={width} height={height} role="img" aria-label="请求数量趋势">
+        <title>按时间段统计的请求数量趋势</title>
+        {[0, 1, 2, 3].map((i) => {
+          const value = (max * (3 - i)) / 3,
+            y = top + (i * plotH) / 3;
+          return (
+            <g>
+              <path d={`M${left} ${y}H${width - right}`} class="chart-grid" />
+              <text x={left - 7} y={y + 4} text-anchor="end" class="chart-y-label">
+                {compactNumber(value)}
+              </text>
+            </g>
+          );
+        })}
+        {values.map((v, i) => {
+          const h = Math.max(v ? 2 : 0, (v / max) * plotH);
+          const x = left + i * (bar + gap);
+          return (
+            <rect
+              x={x}
+              y={top + plotH - h}
+              width={bar}
+              height={h}
+              rx="2"
+              tabIndex={0}
+              aria-label={`${label(series[i])}: ${fmt(v)} 个请求`}
+            >
+              <title>
+                {label(series[i])} · {fmt(v)} 个请求
+              </title>
+            </rect>
+          );
+        })}
+        {values.map((_, i) =>
+          i === 0 || i === values.length - 1 || i % tickStep === 0 ? (
+            <text
+              x={left + i * (bar + gap) + bar / 2}
+              y={height - 5}
+              text-anchor="middle"
+              class="chart-x-label"
+            >
+              {label(series[i])}
+            </text>
+          ) : null,
+        )}
+      </svg>
+    </div>
+  );
+}
+function compactNumber(n: number) {
+  return Intl.NumberFormat('zh-CN', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
+}
+function Ledger({ rows }: { rows: Row[] }) {
+  if (!rows.length) return <Empty text="此时间段暂无请求记录" />;
+  return (
+    <>
+      <div class="ledger-table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>Agent</th>
+              <th>模型</th>
+              <th>Provider</th>
+              <th>Tokens（入 / 出）</th>
+              <th>费用</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <LedgerRow row={r} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div class="ledger-mobile">
+        {rows.map((r) => (
+          <LedgerRow row={r} mobile />
+        ))}
+      </div>
+    </>
+  );
+}
+function LedgerRow({ row, mobile = false }: { row: Row; mobile?: boolean }) {
+  const r = row as Record<string, any>;
+  const ok = Number(r.status ?? 200) < 400;
+  const when = dateTime(typeof r.t === 'string' ? r.t : undefined);
+  const incoming = typeof r.in === 'number' ? r.in : undefined,
+    outgoing = typeof r.out === 'number' ? r.out : undefined;
+  const cost = typeof r.cost === 'number' ? r.cost : undefined;
+  const agent = String(r.agentName ?? r.agent ?? '—'),
+    model = String(r.model ?? '—'),
+    provider = String(r.providerName ?? r.provider ?? '—');
+  return mobile ? (
+    <Card class="ledger-mobile-row">
+      <div class="ledger-mobile-top">
+        <time>{when}</time>
+        <Status kind={ok ? 'ok' : 'error'}>{ok ? '正常' : '错误'}</Status>
+      </div>
+      <strong>{agent}</strong>
+      <code>{model}</code>
+      <div class="ledger-meta">
+        <span>{provider}</span>
+        <span>
+          {fmt(incoming)} / {fmt(outgoing)}
+        </span>
+        <span>{money(cost)}</span>
+      </div>
+      {(row.swapped || row.routed) && <small>已切换 / 已路由</small>}
+    </Card>
+  ) : (
+    <tr>
+      <td>{when}</td>
+      <td>{agent}</td>
+      <td>
+        <code>{model}</code>
+      </td>
+      <td>{provider}</td>
+      <td class="number-cell">
+        {fmt(incoming)} / {fmt(outgoing)}
+      </td>
+      <td>{money(cost)}</td>
+      <td>
+        <span class="row-status">
+          <Status kind={ok ? 'ok' : 'error'}>{ok ? '正常' : '错误'}</Status>
+          {(row.swapped || row.routed) && <span class="muted">已路由</span>}
+        </span>
+      </td>
+    </tr>
+  );
+}
+function TraceList({ routes, emptyLabel }: { routes: Route[]; emptyLabel: string }) {
+  if (!routes.length) return <Empty text={emptyLabel} />;
+  return (
+    <div class="trace-list">
+      {routes.map((r) => {
+        const x = r as any,
+          inTokens = (x.usage ?? []).reduce((n: any, u: any) => n + (u.in ?? 0), 0),
+          outTokens = (x.usage ?? []).reduce((n: any, u: any) => n + (u.out ?? 0), 0);
+        return (
+          <div class="trace-row">
+            <div class="trace-icon">
+              <Icon
+                name={
+                  x.error || (x.status && x.status >= 400) ? 'x-circle' : x.rule ? 'refresh' : 'check-circle'
+                }
+              />
+            </div>
+            <div class="trace-body">
+              <div class="trace-title">
+                <strong>{x.agent ?? 'Agent'}</strong>
+                <code>{x.model ?? '—'}</code>
+                <span class="muted">{x.provider ?? ''}</span>
+                {x.effort && <span class="chip trace-chip">{x.effort}</span>}
+                {x.tier && <span class="chip trace-chip">{x.tier}</span>}
+              </div>
+              <div class="trace-details">
+                <div class="trace-sub">
+                  {x.rule && <span>↻ 重路由 · {x.rule.reason ?? x.rule.name}</span>}
+                  {x.group?.name && <span>分组 · {x.group.name}</span>}
+                  {x.subagent && <span>◈ 子 Agent · {x.subagent.name ?? '是'}</span>}
+                  {x.pinned && <span>⌖ 固定线路</span>}
+                  {x.rerouted && !x.rule && <span>↻ 已重路由</span>}
+                  {x.parentSession && <span>↳ 子调用</span>}
+                  {!x.rule && !x.error && <span>✓ 完成</span>}
+                  {x.session && <code>{x.session}</code>}
+                </div>
+                <div class="trace-usage">
+                  入 {fmt(inTokens)} · 出 {fmt(outTokens)}
+                  {x.cost != null && x.priced && <span> · 费用 {money(x.cost)}</span>}
+                </div>
+              </div>
+            </div>
+            <time title={dateTime(x.time)}>{relativeAgo(x.time)}</time>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+function relativeAgo(s?: string) {
+  if (!s) return '—';
+  const mins = Math.max(0, Math.floor((Date.now() - new Date(s).getTime()) / 60000));
+  return mins < 1 ? '刚刚' : mins < 60 ? `${mins} 分钟前` : `${Math.floor(mins / 60)} 小时前`;
+}
+function Lane({ lane }: { lane: any }) {
+  const busy = lane.busy ?? 0,
+    waiting = lane.waiting ?? 0,
+    limit = lane.limit ?? Math.max(1, busy);
+  const pct = Math.min(100, Math.round((busy / limit) * 100));
+  return (
+    <Card class="lane-card">
+      <div class="lane-head">
+        <strong class="mono">{lane.id ?? lane.name ?? lane.provider ?? 'Provider'}</strong>
+        <Status kind={waiting ? 'warn' : 'ok'}>{waiting ? '等待中' : '正常'}</Status>
+      </div>
+      <div class="progress">
+        <span style={{ width: `${pct}%` }} />
+      </div>
+      <div class="lane-foot">
+        <span>
+          运行中 {busy} / {limit}
+        </span>
+        <span>等待 {waiting}</span>
+      </div>
+    </Card>
+  );
+}
+function GenericQuota({ card }: { card: Record<string, any> }) {
+  return (
+    <Card class="generic-card">
+      <div class="generic-head">
+        <div>
+          <h3>{card.name ?? card.title ?? card.provider ?? '配额'}</h3>
+          <p>{[card.provider, card.plan ?? card.kind].filter(Boolean).join(' · ')}</p>
+        </div>
+      </div>
+      {(card.windows ?? []).map((w: any) => {
+        const pct = Math.round(
+            Number(w.used ?? (Number(w.limit) > 0 ? (Number(w.amount) / Number(w.limit)) * 100 : 0)),
+          ),
+          level = pct >= 100 ? 'error' : pct >= 80 ? 'warn' : 'ok',
+          windowName = /^(5-hour|5h)$/i.test(w.name)
+            ? '5 小时'
+            : /^(weekly|week)$/i.test(w.name)
+              ? '每周'
+              : w.name;
+        return (
+          <div class={`generic-window quota-${level}`}>
+            <div class="generic-window-head">
+              <span>{windowName}</span>
+              {pct > 0 && <strong>{pct}%</strong>}
+            </div>
+            <div class="progress">
+              <span style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
+            </div>
+            {/^(token|tokens)$/i.test(w.unit ?? '') && (
+              <small>已消耗 {formatTokens(Number(w.amount ?? w.used ?? 0))} token</small>
+            )}
+          </div>
+        );
+      })}
+      {(card.balance || card.balanceSplit?.length) && (
+        <div class="balance-rows">
+          {card.balance && (
+            <div>
+              <span>余额</span>
+              <strong>{formatAmount(card.balance)}</strong>
+            </div>
+          )}
+          {(card.balanceSplit ?? []).map((b: any) => (
+            <div>
+              <span>{b.name}</span>
+              <strong>{formatAmount(b.balance ?? b.amount)}</strong>
+            </div>
+          ))}
+        </div>
+      )}
+      {card.asOf && <small class="as-of">更新于 {dateTime(card.asOf)}</small>}
+    </Card>
+  );
+}
+function formatAmount(v: any) {
+  if (typeof v === 'number') return money(v);
+  if (typeof v === 'string' && /^\$?-?[\d,.]+$/.test(v)) {
+    const n = Number(v.replace(/[$,]/g, ''));
+    return money(n);
+  }
+  return String(v);
+}
+function KeyValueCard({ title, subtitle, value }: { title: string; subtitle: string; value: any }) {
+  if (!value || typeof value !== 'object') return null;
+  const entries = Object.entries(value).filter(
+    ([, v]) => v != null && ['string', 'number', 'boolean'].includes(typeof v) && String(v).trim() !== '',
+  );
+  if (!entries.length) return null;
+  return (
+    <Card class="limit-card">
+      <div>
+        <h2>{title}</h2>
+        <p>{subtitle}</p>
+      </div>
+      <dl>
+        {entries.map(([k, v]) => (
+          <div>
+            <dt>{keyLabel(k)}</dt>
+            <dd class={/id|key/i.test(k) ? 'mono' : ''}>
+              {typeof v === 'number' ? fmt(v) : typeof v === 'boolean' ? (v ? '是' : '否') : String(v)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </Card>
+  );
+}
+function keyLabel(k: string) {
+  return (
+    (
+      {
+        name: '名称',
+        version: '版本',
+        label: '调用方',
+        callerKeyLabel: '调用方',
+        caller_key_label: '调用方',
+        requests_limit: '请求上限',
+        budget: '预算',
+        spent: '已使用',
+        remaining: '剩余',
+        period: '周期',
+        limit: '限额',
+        requests: '请求上限',
+        tokens: 'Token',
+        active: '运行中',
+        waiting: '等待中',
+      } as Record<string, string>
+    )[k] ?? k
+  );
+}
+function Empty({ text }: { text: string }) {
+  return (
+    <div class="empty-state">
+      <Icon name="minus-circle" size={20} />
+      <span>{text}</span>
+    </div>
+  );
+}
+function ProfileForm({
+  initial,
+  cancel,
+  save,
+}: {
+  initial: Profile;
+  cancel: () => void;
+  save: (p: Profile) => void;
+}) {
+  const [value, setValue] = useState(initial);
+  const patch = (p: Partial<Profile>) => setValue((v) => ({ ...v, ...p }));
+  const [err, setErr] = useState('');
+  return (
+    <Card class="settings-card profile-form">
+      <div class="form-grid">
+        <label>
+          名称
+          <input
+            value={value.name}
+            onInput={(e) => patch({ name: (e.currentTarget as HTMLInputElement).value })}
+          />
+        </label>
+        <label>
+          模式
+          <select
+            value={value.mode}
+            onChange={(e) => patch({ mode: (e.currentTarget as HTMLSelectElement).value as Profile['mode'] })}
+          >
+            <option value="live">Live · Worker 代理，可用全局 trace</option>
+            <option value="direct">Direct · 浏览器直连，仅 gateway API</option>
+            <option value="mock">Mock · 本地演示数据，零网络</option>
+          </select>
+        </label>
+        {value.mode === 'direct' && (
+          <label>
+            Gateway URL
+            <input
+              value={value.gatewayUrl ?? ''}
+              placeholder="https://magpie.example.com"
+              onInput={(e) => patch({ gatewayUrl: (e.currentTarget as HTMLInputElement).value })}
+            />
+          </label>
+        )}
+        {value.mode === 'live' && (
+          <label>
+            Web GUI 端口
+            <input
+              type="number"
+              min="1"
+              max="65535"
+              value={value.webPort ?? ''}
+              onInput={(e) =>
+                patch({ webPort: Number((e.currentTarget as HTMLInputElement).value) || undefined })
+              }
+            />
+          </label>
+        )}
+        <label>
+          magpie web 地址（可选）
+          <input
+            value={value.webGuiUrl ?? ''}
+            placeholder="https://magpie.example.com"
+            onInput={(e) => patch({ webGuiUrl: (e.currentTarget as HTMLInputElement).value || undefined })}
+          />
+        </label>
+        <label>
+          刷新间隔
+          <select
+            value={value.refreshSec}
+            onChange={(e) =>
+              patch({
+                refreshSec: Number((e.currentTarget as HTMLSelectElement).value) as Profile['refreshSec'],
+              })
+            }
+          >
+            {[10, 20, 30, 60].map((n) => (
+              <option value={n}>{n} 秒</option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {err && <p class="error-text">{err}</p>}
+      <div class="row-actions">
+        <button
+          class="button button-primary"
+          onClick={() => {
+            try {
+              if (!value.name.trim()) throw new Error('请填写名称');
+              if (value.mode === 'direct' && !value.gatewayUrl) throw new Error('直连模式需要网关地址');
+              save(value);
+            } catch (e) {
+              setErr((e as Error).message);
+            }
+          }}
+        >
+          保存 Profile
+        </button>
+        <button class="button" onClick={cancel}>
+          取消
+        </button>
+      </div>
+    </Card>
+  );
+}
+function downloadProfiles(profiles: Profile[]) {
+  const safe = profiles.map(({ id, name, mode, gatewayUrl, webPort, webGuiUrl, refreshSec }) => ({
+    id,
+    name,
+    mode,
+    gatewayUrl,
+    webPort,
+    webGuiUrl,
+    refreshSec,
+  }));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(safe, null, 2)], { type: 'application/json' }));
+  a.download = 'magpie-profiles.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function importProfileFile(
+  input: HTMLInputElement,
+  setProfiles: (p: Profile[]) => void,
+  setNotice: (s: string) => void,
+) {
+  const file = input.files?.[0];
+  if (!file) return;
+  void file
+    .text()
+    .then((text) => {
+      const parsed = JSON.parse(text);
+      if (!Array.isArray(parsed)) throw new Error('Profile 文件格式无效');
+      setProfiles(parsed as Profile[]);
+      saveProfiles(parsed as Profile[]);
+      setNotice('Profile 已导入（密钥不会导入）');
+    })
+    .catch((e) => setNotice(`导入失败：${(e as Error).message}`));
+}

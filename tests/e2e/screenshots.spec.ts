@@ -7,7 +7,7 @@ for (const view of views) {
   for (const theme of themes) {
     test(`${view} · ${theme}`, async ({ page }, testInfo) => {
       const outsideRequests: string[] = [];
-      page.on('request', request => {
+      page.on('request', (request) => {
         const host = new URL(request.url()).hostname;
         if (host !== 'localhost') outsideRequests.push(request.url());
       });

@@ -1,8 +1,46 @@
 import { it, expect } from 'vitest';
 import { redact } from '../../src/core/redact';
 import { zhMessage, type MagpieError } from '../../src/core/errors';
-it('recursively masks sensitive fields without mutating source', () => { const source = { headers: { Authorization: 'Bearer sensitive-demo', Cookie: 'session=sensitive-demo' }, gatewayKey: 'sensitive-demo', rows: [{ password: 'sensitive-demo', safe: 'visible' }] }; const result = redact(source); expect(JSON.stringify(result)).not.toContain('sensitive-demo'); expect(source.gatewayKey).toBe('sensitive-demo'); expect(JSON.stringify(result)).toContain('visible'); const cycle: Record<string, unknown> = {}; cycle.self = cycle; expect(redact(cycle)).toEqual({ self: '[Circular]' }); });
-it('masks bearer, cookie, URL params and recognizable key strings', () => { for (const text of ['Authorization: Bearer sensitive-demo', 'Cookie: a=sensitive-demo; b=sensitive-demo', 'https://magpie.example.com?k=foo&gatewayKey=sensitive-demo', '{"webKey":"sensitive-demo"}', 'token=sensitive-demo', 'sk-sensitive-demo'])
-    expect(redact(text)).not.toContain('sensitive-demo'); });
-it('provides safe actionable Chinese error messages', () => { expect(zhMessage({ kind: 'unauthorized' }, { api: 'web' })).toContain('MAGPIE_WEB_KEY'); expect(zhMessage({ kind: 'forbidden' })).toContain('Share on local network'); expect(zhMessage({ kind: 'cors' })).toContain('Network and sharing → Web pages'); expect(zhMessage({ kind: 'mixedContent' })).toContain('HTTPS'); for (const kind of ['unauthorized', 'forbidden', 'badStatus', 'network', 'timeout', 'decoding', 'cors', 'mixedContent', 'aborted'] as const)
-    expect(zhMessage({ kind, secret: 'sensitive-demo' } as MagpieError)).not.toContain('sensitive-demo'); });
+it('recursively masks sensitive fields without mutating source', () => {
+  const source = {
+    headers: { Authorization: 'Bearer sensitive-demo', Cookie: 'session=sensitive-demo' },
+    gatewayKey: 'sensitive-demo',
+    rows: [{ password: 'sensitive-demo', safe: 'visible' }],
+  };
+  const result = redact(source);
+  expect(JSON.stringify(result)).not.toContain('sensitive-demo');
+  expect(source.gatewayKey).toBe('sensitive-demo');
+  expect(JSON.stringify(result)).toContain('visible');
+  const cycle: Record<string, unknown> = {};
+  cycle.self = cycle;
+  expect(redact(cycle)).toEqual({ self: '[Circular]' });
+});
+it('masks bearer, cookie, URL params and recognizable key strings', () => {
+  for (const text of [
+    'Authorization: Bearer sensitive-demo',
+    'Cookie: a=sensitive-demo; b=sensitive-demo',
+    'https://magpie.example.com?k=foo&gatewayKey=sensitive-demo',
+    '{"webKey":"sensitive-demo"}',
+    'token=sensitive-demo',
+    'sk-sensitive-demo',
+  ])
+    expect(redact(text)).not.toContain('sensitive-demo');
+});
+it('provides safe actionable Chinese error messages', () => {
+  expect(zhMessage({ kind: 'unauthorized' }, { api: 'web' })).toContain('MAGPIE_WEB_KEY');
+  expect(zhMessage({ kind: 'forbidden' })).toContain('Share on local network');
+  expect(zhMessage({ kind: 'cors' })).toContain('Network and sharing → Web pages');
+  expect(zhMessage({ kind: 'mixedContent' })).toContain('HTTPS');
+  for (const kind of [
+    'unauthorized',
+    'forbidden',
+    'badStatus',
+    'network',
+    'timeout',
+    'decoding',
+    'cors',
+    'mixedContent',
+    'aborted',
+  ] as const)
+    expect(zhMessage({ kind, secret: 'sensitive-demo' } as MagpieError)).not.toContain('sensitive-demo');
+});

@@ -10,7 +10,12 @@ export default defineConfig({
     },
     {
       name: 'mobile',
-      use: { browserName: 'chromium', viewport: { width: 390, height: 844 }, isMobile: true, deviceScaleFactor: 2 },
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        deviceScaleFactor: 2,
+      },
     },
   ],
   webServer: {

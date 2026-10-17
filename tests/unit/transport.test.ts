@@ -2,24 +2,162 @@ import { afterEach, it, expect, vi } from 'vitest';
 import { ProxyTransport, DirectTransport, MockTransport } from '../../src/core/transport';
 import { GatewayClient } from '../../src/core/gateway-client';
 import { WebClient } from '../../src/core/web-client';
-afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
-const response = (_url: RequestInfo | URL, _init?: RequestInit) => Promise.resolve(new Response(JSON.stringify({ name: 'magpie', seq: 1, routes: [] })));
-it('sets only the matching proxy header, omits credentials and encodes query', async () => { const fetcher = vi.fn(response); const transport = new ProxyTransport({ gatewayKey: 'gateway-demo', webKey: 'web-demo', fetch: fetcher }); await transport.request({ api: 'gateway', path: '/v1/magpie/usage', query: { period: '7d', empty: undefined } }); expect(fetcher.mock.calls[0]).toEqual(['/proxy/gateway/v1/magpie/usage?period=7d', expect.objectContaining({ headers: { 'X-Magpie-Gateway-Key': 'gateway-demo' }, credentials: 'omit' })]); await transport.request({ api: 'web', path: '/api/hello' }); expect(fetcher.mock.calls[1][1]).toMatchObject({ headers: { 'X-Magpie-Web-Key': 'web-demo' }, credentials: 'omit' }); });
-it('direct uses Bearer and blocks mixed content and web API before fetching', async () => { const fetcher = vi.fn(response); await new DirectTransport({ gatewayUrl: 'https://magpie.example.com/' }, { gatewayKey: 'demo', fetch: fetcher }).request({ api: 'gateway', path: '/v1/magpie/limit' }); expect(fetcher).toHaveBeenCalledWith('https://magpie.example.com/v1/magpie/limit', expect.objectContaining({ headers: { Authorization: 'Bearer demo' }, credentials: 'omit' })); fetcher.mockClear(); await expect(new DirectTransport({ gatewayUrl: 'http://magpie.example.com' }, { pageProtocol: 'https:', fetch: fetcher }).request({ api: 'gateway', path: '/x' })).rejects.toMatchObject({ kind: 'mixedContent' }); await expect(new DirectTransport({ gatewayUrl: 'https://magpie.example.com' }, { fetch: fetcher }).request({ api: 'web', path: '/api/hello' })).rejects.toMatchObject({ kind: 'badStatus' }); expect(fetcher).not.toHaveBeenCalled(); });
-it('maps HTTP, JSON and network errors without leaking response text', async () => { for (const [status, kind] of [[401, 'unauthorized'], [403, 'forbidden'], [500, 'badStatus']] as const)
-    await expect(new ProxyTransport({ fetch: vi.fn(async () => new Response('secret', { status })) }).request({ api: 'web', path: '/x' })).rejects.toEqual({ kind, status }); await expect(new ProxyTransport({ fetch: vi.fn(async () => new Response('not json')) }).request({ api: 'web', path: '/x' })).rejects.toEqual({ kind: 'decoding' }); const fetcher = vi.fn(async () => { throw new TypeError('Failed to fetch'); }); await expect(new ProxyTransport({ fetch: fetcher }).request({ api: 'web', path: '/x' })).rejects.toEqual({ kind: 'network' }); await expect(new DirectTransport({ gatewayUrl: 'https://magpie.example.com' }, { fetch: fetcher }).request({ api: 'gateway', path: '/x' })).rejects.toEqual({ kind: 'cors' }); });
-it('composes timeout and caller cancellation, removes timers', async () => { vi.useFakeTimers(); const fetcher = vi.fn((_url: RequestInfo | URL, init?: RequestInit) => new Promise<Response>((_resolve, reject) => { if (init?.signal?.aborted)
-    reject(new DOMException('Aborted', 'AbortError')); init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError'))); })); const transport = new ProxyTransport({ fetch: fetcher }); const timed = expect(transport.request({ api: 'web', path: '/x', timeoutMs: 35 })).rejects.toEqual({ kind: 'timeout' }); await vi.advanceTimersByTimeAsync(35); await timed; const controller = new AbortController(); const aborted = expect(transport.request({ api: 'web', path: '/x', signal: controller.signal })).rejects.toEqual({ kind: 'aborted' }); controller.abort(); await aborted; expect(vi.getTimerCount()).toBe(0); });
-it('clients build typed query parameters and longpoll timeout', async () => { const request = vi.fn(async () => ({ status: 200, json: {} })); const transport = { request }; const gateway = new GatewayClient(transport), web = new WebClient(transport); await gateway.requests({ period: 'today', offset: 10, limit: 20, filters: { model: 'a/b', provider: 'p' } }); expect(request).toHaveBeenLastCalledWith(expect.objectContaining({ api: 'gateway', path: '/v1/magpie/usage/requests', query: { period: 'today', offset: 10, limit: 20, model: 'a/b', provider: 'p' } })); await gateway.route('session', 3, 25); expect(request).toHaveBeenLastCalledWith(expect.objectContaining({ query: { session: 'session', after: 3, wait: 25 }, timeoutMs: 35000 })); const c = new AbortController(); await web.trace(42, 1, c.signal); expect(request).toHaveBeenLastCalledWith({ api: 'web', path: '/api/gateway/trace', query: { after: 42, wait: 1 }, signal: c.signal, timeoutMs: 35000 }); await web.history('2026-10-17'); expect(request).toHaveBeenLastCalledWith(expect.objectContaining({ query: { day: '2026-10-17' } })); });
-it('mock never invokes fetch and supports aborting latency', async () => { vi.useFakeTimers(); const spy = vi.spyOn(globalThis, 'fetch'); const c = new AbortController(); const p = expect(new MockTransport({ latencyMs: 100 }).request({ api: 'web', path: '/api/hello', signal: c.signal })).rejects.toEqual({ kind: 'aborted' }); c.abort(); await p; expect(spy).not.toHaveBeenCalled(); });
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
+const response = (_url: RequestInfo | URL, _init?: RequestInit) =>
+  Promise.resolve(new Response(JSON.stringify({ name: 'magpie', seq: 1, routes: [] })));
+it('sets only the matching proxy header, omits credentials and encodes query', async () => {
+  const fetcher = vi.fn(response);
+  const transport = new ProxyTransport({ gatewayKey: 'gateway-demo', webKey: 'web-demo', fetch: fetcher });
+  await transport.request({
+    api: 'gateway',
+    path: '/v1/magpie/usage',
+    query: { period: '7d', empty: undefined },
+  });
+  expect(fetcher.mock.calls[0]).toEqual([
+    '/proxy/gateway/v1/magpie/usage?period=7d',
+    expect.objectContaining({ headers: { 'X-Magpie-Gateway-Key': 'gateway-demo' }, credentials: 'omit' }),
+  ]);
+  await transport.request({ api: 'web', path: '/api/hello' });
+  expect(fetcher.mock.calls[1][1]).toMatchObject({
+    headers: { 'X-Magpie-Web-Key': 'web-demo' },
+    credentials: 'omit',
+  });
+});
+it('direct uses Bearer and blocks mixed content and web API before fetching', async () => {
+  const fetcher = vi.fn(response);
+  await new DirectTransport(
+    { gatewayUrl: 'https://magpie.example.com/' },
+    { gatewayKey: 'demo', fetch: fetcher },
+  ).request({ api: 'gateway', path: '/v1/magpie/limit' });
+  expect(fetcher).toHaveBeenCalledWith(
+    'https://magpie.example.com/v1/magpie/limit',
+    expect.objectContaining({ headers: { Authorization: 'Bearer demo' }, credentials: 'omit' }),
+  );
+  fetcher.mockClear();
+  await expect(
+    new DirectTransport(
+      { gatewayUrl: 'http://magpie.example.com' },
+      { pageProtocol: 'https:', fetch: fetcher },
+    ).request({ api: 'gateway', path: '/x' }),
+  ).rejects.toMatchObject({ kind: 'mixedContent' });
+  await expect(
+    new DirectTransport({ gatewayUrl: 'https://magpie.example.com' }, { fetch: fetcher }).request({
+      api: 'web',
+      path: '/api/hello',
+    }),
+  ).rejects.toMatchObject({ kind: 'badStatus' });
+  expect(fetcher).not.toHaveBeenCalled();
+});
+it('maps HTTP, JSON and network errors without leaking response text', async () => {
+  for (const [status, kind] of [
+    [401, 'unauthorized'],
+    [403, 'forbidden'],
+    [500, 'badStatus'],
+  ] as const)
+    await expect(
+      new ProxyTransport({ fetch: vi.fn(async () => new Response('secret', { status })) }).request({
+        api: 'web',
+        path: '/x',
+      }),
+    ).rejects.toEqual({ kind, status });
+  await expect(
+    new ProxyTransport({ fetch: vi.fn(async () => new Response('not json')) }).request({
+      api: 'web',
+      path: '/x',
+    }),
+  ).rejects.toEqual({ kind: 'decoding' });
+  const fetcher = vi.fn(async () => {
+    throw new TypeError('Failed to fetch');
+  });
+  await expect(new ProxyTransport({ fetch: fetcher }).request({ api: 'web', path: '/x' })).rejects.toEqual({
+    kind: 'network',
+  });
+  await expect(
+    new DirectTransport({ gatewayUrl: 'https://magpie.example.com' }, { fetch: fetcher }).request({
+      api: 'gateway',
+      path: '/x',
+    }),
+  ).rejects.toEqual({ kind: 'cors' });
+});
+it('composes timeout and caller cancellation, removes timers', async () => {
+  vi.useFakeTimers();
+  const fetcher = vi.fn(
+    (_url: RequestInfo | URL, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        if (init?.signal?.aborted) reject(new DOMException('Aborted', 'AbortError'));
+        init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+      }),
+  );
+  const transport = new ProxyTransport({ fetch: fetcher });
+  const timed = expect(transport.request({ api: 'web', path: '/x', timeoutMs: 35 })).rejects.toEqual({
+    kind: 'timeout',
+  });
+  await vi.advanceTimersByTimeAsync(35);
+  await timed;
+  const controller = new AbortController();
+  const aborted = expect(
+    transport.request({ api: 'web', path: '/x', signal: controller.signal }),
+  ).rejects.toEqual({ kind: 'aborted' });
+  controller.abort();
+  await aborted;
+  expect(vi.getTimerCount()).toBe(0);
+});
+it('clients build typed query parameters and longpoll timeout', async () => {
+  const request = vi.fn(async () => ({ status: 200, json: {} }));
+  const transport = { request };
+  const gateway = new GatewayClient(transport),
+    web = new WebClient(transport);
+  await gateway.requests({
+    period: 'today',
+    offset: 10,
+    limit: 20,
+    filters: { model: 'a/b', provider: 'p' },
+  });
+  expect(request).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      api: 'gateway',
+      path: '/v1/magpie/usage/requests',
+      query: { period: 'today', offset: 10, limit: 20, model: 'a/b', provider: 'p' },
+    }),
+  );
+  await gateway.route('session', 3, 25);
+  expect(request).toHaveBeenLastCalledWith(
+    expect.objectContaining({ query: { session: 'session', after: 3, wait: 25 }, timeoutMs: 35000 }),
+  );
+  const c = new AbortController();
+  await web.trace(42, 1, c.signal);
+  expect(request).toHaveBeenLastCalledWith({
+    api: 'web',
+    path: '/api/gateway/trace',
+    query: { after: 42, wait: 1 },
+    signal: c.signal,
+    timeoutMs: 35000,
+  });
+  await web.history('2026-10-17');
+  expect(request).toHaveBeenLastCalledWith(expect.objectContaining({ query: { day: '2026-10-17' } }));
+});
+it('mock never invokes fetch and supports aborting latency', async () => {
+  vi.useFakeTimers();
+  const spy = vi.spyOn(globalThis, 'fetch');
+  const c = new AbortController();
+  const p = expect(
+    new MockTransport({ latencyMs: 100 }).request({ api: 'web', path: '/api/hello', signal: c.signal }),
+  ).rejects.toEqual({ kind: 'aborted' });
+  c.abort();
+  await p;
+  expect(spy).not.toHaveBeenCalled();
+});
 it('rebases mock timestamps deterministically and keeps quota resets in the future', async () => {
   const now = new Date('2030-04-05T12:00:00.000Z');
   const transport = new MockTransport({ now: () => now });
   const ledger = await transport.request({ api: 'gateway', path: '/v1/magpie/usage/requests' });
   const rows = (ledger.json as any).rows as any[];
-  expect(Math.max(...rows.map(row => Date.parse(row.t ?? row.time)))).toBe(now.getTime() - 60_000);
+  expect(Math.max(...rows.map((row) => Date.parse(row.t ?? row.time)))).toBe(now.getTime() - 60_000);
   const quotas = await transport.request({ api: 'gateway', path: '/v1/magpie/quotas' });
   const data = (quotas.json as any).data as any[];
-  expect(data.every(q => Date.parse(q.asOf) === now.getTime() - 60_000)).toBe(true);
-  expect(data.flatMap(q => q.windows).every((w: any) => Date.parse(w.resetsAt) > now.getTime())).toBe(true);
+  expect(data.every((q) => Date.parse(q.asOf) === now.getTime() - 60_000)).toBe(true);
+  expect(data.flatMap((q) => q.windows).every((w: any) => Date.parse(w.resetsAt) > now.getTime())).toBe(true);
 });

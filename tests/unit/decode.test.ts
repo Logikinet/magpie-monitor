@@ -3,18 +3,108 @@ import * as d from '../../src/core/decode';
 import { MockTransport } from '../../src/core/transport';
 import { GatewayClient } from '../../src/core/gateway-client';
 import { WebClient } from '../../src/core/web-client';
-const fixtures = import.meta.glob('../../src/mock/fixtures/*.json', { eager: true, import: 'default' }) as Record<string, unknown>;
+const fixtures = import.meta.glob('../../src/mock/fixtures/*.json', {
+  eager: true,
+  import: 'default',
+}) as Record<string, unknown>;
 const fixture = (name: string) => fixtures[`../../src/mock/fixtures/${name}.json`];
 describe('lenient decoding', () => {
-    it('accepts scalar drift but rejects misleading values', () => { expect(d.toNumber('1.2')).toBe(1.2); for (const v of ['', ' ', 'bad', Infinity, null, true, {}])
-        expect(d.toNumber(v)).toBeUndefined(); expect(d.toStr(3)).toBe('3'); expect(d.toStr({})).toBeUndefined(); expect(d.toBool('false')).toBe(false); expect(d.toBool('1')).toBe(true); expect(d.toBool('no')).toBeUndefined(); });
-    it('preserves invalid raw times and parses ISO variants', () => { for (const time of ['2026-10-17T12:00:00Z', '2026-10-17T12:00:00.123+08:00'])
-        expect(d.parseTime(time).date).toBeInstanceOf(Date); expect(d.parseTime('unknown')).toEqual({ raw: 'unknown' }); expect(d.parseTime(null)).toEqual({}); });
-    it('skips invalid rows and ignores unknown fields', () => { const ledger = d.decodeLedger({ ...d.record(fixture('ledger')), rows: [null, 5, {}, { provider: 'openai', cost: '1.2', priced: '1', surprise: 42 }] }); expect(ledger.bad).toBe(3); expect(ledger.rows).toEqual([{ provider: 'openai', cost: 1.2, priced: true }]); expect(d.lossyArray(d.decodeHello)('oops').bad).toBe(1); });
-    it('decodes all fixtures', () => { expect(d.decodeHello(fixture('hello')).name).toBe('magpie'); expect(d.decodeUsageSummary(fixture('usage')).models).toHaveLength(4); expect(d.decodeLedger(fixture('ledger')).rows.length).toBeGreaterThan(0); const quotas = d.decodeQuotas(fixture('quotas')); expect(quotas.bad).toBe(0); expect(d.fiveHourWindow(quotas.data[0])?.amount).toBe(42000); expect(d.weeklyWindow(quotas.data[0])).toBeDefined(); expect(d.decodeQuotaCards(fixture('quota_cards')).data.length).toBeGreaterThan(0); expect(d.decodeConcurrency(fixture('concurrency')).data[0].id).toBeDefined(); expect(d.decodeTraceEnvelope(fixture('trace')).routes.length).toBeGreaterThan(0); expect(d.decodeRouteEnvelope(fixture('route')).route).toBeDefined(); });
-    it('handles totals and nested failures', () => { const usage = d.decodeUsageSummary({ calls: '4', errors: '2', input: '10', output: 2, cost: '0.3', tokens: '12', cache_read: '3', cache_write: 1, models: [false, { provider: 'p', input: '2' }], series: [null, { calls: '1' }], unknown: 'ignored' }); expect(usage).toMatchObject({ calls: 4, errors: 2, input: 10, output: 2, cost: .3, tokens: 12, cache_read: 3, cache_write: 1, bad: 2 }); expect(usage.unknown).toBeUndefined(); expect(d.decodeQuota({ provider: 'p', windows: [null, { name: '5H', used: '103' }] }).bad).toBe(1); expect(d.decodeTraceEnvelope({ seq: '4', routes: [null, { seq: '4', id: 2 }], totals: { requests: '1' } })).toMatchObject({ seq: 4, bad: 1, totals: { requests: 1 } }); expect(d.decodeRouteEnvelope({ route: null }).route).toBeNull(); });
-    it('matches quota window names case insensitively and clamps percent', () => { for (const name of ['5-HOUR', '5h'])
-        expect(d.fiveHourWindow(d.decodeQuota({ provider: 'p', windows: [{ name }] }))).toBeDefined(); for (const name of ['WEEKLY', 'Week'])
-        expect(d.weeklyWindow(d.decodeQuota({ provider: 'p', windows: [{ name }] }))).toBeDefined(); expect(d.usedPercent({ name: 'x', used: 200 })).toBe(100); expect(d.usedPercent({ name: 'x', remaining: 20 })).toBe(80); expect(d.usedPercent({ name: 'x', used: -5 })).toBe(0); });
-    it('serves client methods without fetch, with pagination and advancing trace', async () => { const transport = new MockTransport({ traceWaitMs: 1 }); const client = new GatewayClient(transport), web = new WebClient(transport); expect((await client.hello()).version).toContain('mock'); expect((await client.usage('today')).models.length).toBe(4); expect((await client.requests({ period: 'today', offset: 2, limit: 3 })).rows).toHaveLength(3); await client.quotas(true); await client.quotaCards(); await client.quotaHistory(); await client.route('demo'); await client.concurrency(); await client.limit(); await web.history('2026-10-17'); const a = await web.trace(0), b = await web.trace(a.seq); expect(b.seq).toBeGreaterThan(a.seq); expect(b.routes[0].seq).toBe(b.seq); await expect(transport.request({ api: 'web', path: '/missing' })).rejects.toMatchObject({ status: 404 }); });
+  it('accepts scalar drift but rejects misleading values', () => {
+    expect(d.toNumber('1.2')).toBe(1.2);
+    for (const v of ['', ' ', 'bad', Infinity, null, true, {}]) expect(d.toNumber(v)).toBeUndefined();
+    expect(d.toStr(3)).toBe('3');
+    expect(d.toStr({})).toBeUndefined();
+    expect(d.toBool('false')).toBe(false);
+    expect(d.toBool('1')).toBe(true);
+    expect(d.toBool('no')).toBeUndefined();
+  });
+  it('preserves invalid raw times and parses ISO variants', () => {
+    for (const time of ['2026-10-17T12:00:00Z', '2026-10-17T12:00:00.123+08:00'])
+      expect(d.parseTime(time).date).toBeInstanceOf(Date);
+    expect(d.parseTime('unknown')).toEqual({ raw: 'unknown' });
+    expect(d.parseTime(null)).toEqual({});
+  });
+  it('skips invalid rows and ignores unknown fields', () => {
+    const ledger = d.decodeLedger({
+      ...d.record(fixture('ledger')),
+      rows: [null, 5, {}, { provider: 'openai', cost: '1.2', priced: '1', surprise: 42 }],
+    });
+    expect(ledger.bad).toBe(3);
+    expect(ledger.rows).toEqual([{ provider: 'openai', cost: 1.2, priced: true }]);
+    expect(d.lossyArray(d.decodeHello)('oops').bad).toBe(1);
+  });
+  it('decodes all fixtures', () => {
+    expect(d.decodeHello(fixture('hello')).name).toBe('magpie');
+    expect(d.decodeUsageSummary(fixture('usage')).models).toHaveLength(4);
+    expect(d.decodeLedger(fixture('ledger')).rows.length).toBeGreaterThan(0);
+    const quotas = d.decodeQuotas(fixture('quotas'));
+    expect(quotas.bad).toBe(0);
+    expect(d.fiveHourWindow(quotas.data[0])?.amount).toBe(42000);
+    expect(d.weeklyWindow(quotas.data[0])).toBeDefined();
+    expect(d.decodeQuotaCards(fixture('quota_cards')).data.length).toBeGreaterThan(0);
+    expect(d.decodeConcurrency(fixture('concurrency')).data[0].id).toBeDefined();
+    expect(d.decodeTraceEnvelope(fixture('trace')).routes.length).toBeGreaterThan(0);
+    expect(d.decodeRouteEnvelope(fixture('route')).route).toBeDefined();
+  });
+  it('handles totals and nested failures', () => {
+    const usage = d.decodeUsageSummary({
+      calls: '4',
+      errors: '2',
+      input: '10',
+      output: 2,
+      cost: '0.3',
+      tokens: '12',
+      cache_read: '3',
+      cache_write: 1,
+      models: [false, { provider: 'p', input: '2' }],
+      series: [null, { calls: '1' }],
+      unknown: 'ignored',
+    });
+    expect(usage).toMatchObject({
+      calls: 4,
+      errors: 2,
+      input: 10,
+      output: 2,
+      cost: 0.3,
+      tokens: 12,
+      cache_read: 3,
+      cache_write: 1,
+      bad: 2,
+    });
+    expect(usage.unknown).toBeUndefined();
+    expect(d.decodeQuota({ provider: 'p', windows: [null, { name: '5H', used: '103' }] }).bad).toBe(1);
+    expect(
+      d.decodeTraceEnvelope({ seq: '4', routes: [null, { seq: '4', id: 2 }], totals: { requests: '1' } }),
+    ).toMatchObject({ seq: 4, bad: 1, totals: { requests: 1 } });
+    expect(d.decodeRouteEnvelope({ route: null }).route).toBeNull();
+  });
+  it('matches quota window names case insensitively and clamps percent', () => {
+    for (const name of ['5-HOUR', '5h'])
+      expect(d.fiveHourWindow(d.decodeQuota({ provider: 'p', windows: [{ name }] }))).toBeDefined();
+    for (const name of ['WEEKLY', 'Week'])
+      expect(d.weeklyWindow(d.decodeQuota({ provider: 'p', windows: [{ name }] }))).toBeDefined();
+    expect(d.usedPercent({ name: 'x', used: 200 })).toBe(100);
+    expect(d.usedPercent({ name: 'x', remaining: 20 })).toBe(80);
+    expect(d.usedPercent({ name: 'x', used: -5 })).toBe(0);
+  });
+  it('serves client methods without fetch, with pagination and advancing trace', async () => {
+    const transport = new MockTransport({ traceWaitMs: 1 });
+    const client = new GatewayClient(transport),
+      web = new WebClient(transport);
+    expect((await client.hello()).version).toContain('mock');
+    expect((await client.usage('today')).models.length).toBe(4);
+    expect((await client.requests({ period: 'today', offset: 2, limit: 3 })).rows).toHaveLength(3);
+    await client.quotas(true);
+    await client.quotaCards();
+    await client.quotaHistory();
+    await client.route('demo');
+    await client.concurrency();
+    await client.limit();
+    await web.history('2026-10-17');
+    const a = await web.trace(0),
+      b = await web.trace(a.seq);
+    expect(b.seq).toBeGreaterThan(a.seq);
+    expect(b.routes[0].seq).toBe(b.seq);
+    await expect(transport.request({ api: 'web', path: '/missing' })).rejects.toMatchObject({ status: 404 });
+  });
 });

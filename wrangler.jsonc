@@ -7,13 +7,13 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/proxy/*"]
+    "run_worker_first": ["/proxy/*"],
   },
   // Create private VPC services through your Tunnel, then replace these placeholders.
   // Keep magpie on loopback; never enable MAGPIE_TRUST_PROXY.
   "vpc_services": [
     { "binding": "MAGPIE_GATEWAY", "service_id": "<YOUR_GATEWAY_VPC_SERVICE_ID>" },
-    { "binding": "MAGPIE_WEB", "service_id": "<YOUR_WEB_VPC_SERVICE_ID>" }
+    { "binding": "MAGPIE_WEB", "service_id": "<YOUR_WEB_VPC_SERVICE_ID>" },
   ],
   "vars": {
     // Protect the custom domain with Access; copy its team domain and application AUD.
@@ -23,8 +23,8 @@
     "GATEWAY_ORIGIN": "http://127.0.0.1:3425",
     "WEB_ORIGIN": "http://127.0.0.1:3426",
     // Must match the Web GUI port used in magpie's cookie name.
-    "WEB_PORT": "3426"
+    "WEB_PORT": "3426",
     // Local development only: ACCESS_DISABLED="true" works solely on localhost/127.0.0.1.
     // Credentials stay in per-request headers; do not put keys in vars.
-  }
+  },
 }

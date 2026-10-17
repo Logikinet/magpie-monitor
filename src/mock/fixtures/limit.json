@@ -1,0 +1,8 @@
+{
+  "caller_key_label": "Web Monitor",
+  "budget": 5000000,
+  "spent": 1284000,
+  "remaining": 3716000,
+  "period": "本月",
+  "requests_limit": 10000
+}

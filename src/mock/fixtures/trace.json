@@ -177,10 +177,7 @@
         "name": "Coding pool",
         "routing": "weighted",
         "affinity": "session",
-        "members": [
-          "member-demo-a",
-          "member-demo-b"
-        ]
+        "members": ["member-demo-a", "member-demo-b"]
       },
       "rule": {
         "name": "故障转移",
@@ -386,10 +383,7 @@
         "name": "Coding pool",
         "routing": "weighted",
         "affinity": "session",
-        "members": [
-          "member-demo-a",
-          "member-demo-b"
-        ]
+        "members": ["member-demo-a", "member-demo-b"]
       },
       "rule": {
         "name": "故障转移",
