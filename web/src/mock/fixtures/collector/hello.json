@@ -1,0 +1,10 @@
+{
+  "host": "devbox",
+  "readonly": true,
+  "caps": [
+    "sys",
+    "tmux"
+  ],
+  "name": "magpie-collector",
+  "version": "0.1.0"
+}

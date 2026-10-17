@@ -5,7 +5,8 @@ export interface WorkerEnv extends Env {
 export default {
   async fetch(request: Request, env: WorkerEnv, _ctx: ExecutionContext): Promise<Response> {
     const path = new URL(request.url).pathname;
-    if (path === '/proxy' || path.startsWith('/proxy/')) return proxy(request, env);
+    if (path === '/proxy' || path.startsWith('/proxy/') || path.startsWith('/v1/collector/'))
+      return proxy(request, env);
     return secureResponse(await env.ASSETS.fetch(request), true);
   },
 };

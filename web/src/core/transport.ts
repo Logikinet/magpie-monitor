@@ -1,7 +1,7 @@
 import type { MagpieError } from './errors';
 export type Query = Record<string, string | number | boolean | undefined>;
 export interface Request {
-  api: 'gateway' | 'web';
+  api: 'gateway' | 'web' | 'collector';
   path: string;
   query?: Query;
   signal?: AbortSignal;
@@ -86,7 +86,7 @@ async function fetchJSON(
 export class ProxyTransport implements Transport {
   constructor(private options: FetchOptions = {}) {}
   request(req: Request) {
-    const key = req.api === 'gateway' ? this.options.gatewayKey : this.options.webKey;
+    const key = req.api === 'collector' ? undefined : req.api === 'gateway' ? this.options.gatewayKey : this.options.webKey;
     const headers: Record<string, string> = {};
     if (key) headers[req.api === 'gateway' ? 'X-Magpie-Gateway-Key' : 'X-Magpie-Web-Key'] = key;
     return fetchJSON(
@@ -130,7 +130,7 @@ export class DirectTransport implements Transport {
     );
   }
 }
-const fixtures = import.meta.glob('../mock/fixtures/*.json', { eager: true, import: 'default' }) as Record<
+const fixtures = import.meta.glob('../mock/fixtures/**/*.json', { eager: true, import: 'default' }) as Record<
   string,
   unknown
 >;
@@ -209,6 +209,13 @@ export class MockTransport implements Transport {
     return all;
   }
   async request(req: Request) {
+    if (req.api === 'collector') {
+      const suffix = req.path.replace('/v1/collector/', '');
+      const name = suffix.startsWith('runtimes/') ? 'runtime' : suffix.replace('/', '-');
+      const json = fixtures[`../mock/fixtures/collector/${name}.json`];
+      if (!json) throw statusError(404);
+      return { status: 200, json: structuredClone(json) };
+    }
     const names: Record<string, string> = {
       '/api/hello': 'hello',
       '/api/groups': 'groups',

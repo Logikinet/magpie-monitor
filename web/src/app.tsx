@@ -1,3 +1,12 @@
+import { CollectorClient } from './core/collector-client';
+import {
+  useCollector,
+  HostOverview,
+  ActivityTimeline,
+  ServicesView,
+  TmuxView,
+  RuntimesView,
+} from './views/collector/CollectorViews';
 import { UsageView } from './views/agent/UsageView';
 import { ProvidersView } from './views/agent/ProvidersView';
 import { fmtCost, fmtDate, fmtRelative, fmtNumber, fmtTokens } from './core/format';
@@ -25,12 +34,13 @@ import { AgentNav, AgentPlaceholder, readPage, type AgentTab } from './views/age
 import type { decodeGroups } from './core/decode';
 import { detectLocale, languageChoice, setLanguage, t, type LanguageChoice } from './i18n';
 
-type Tab = 'overview' | 'activity' | 'agent' | 'settings';
+type Tab = 'home' | 'activity' | 'tmux' | 'agent' | 'svc' | 'settings';
 const nav: { id: Tab; label: string; icon: string }[] = [
-  { id: 'overview', label: 'nav.overview', icon: 'overview' },
+  { id: 'home', label: 'nav.overview', icon: 'overview' },
   { id: 'activity', label: 'nav.activity', icon: 'chart' },
+  { id: 'tmux', label: 'collector.tmux', icon: 'terminal' },
   { id: 'agent', label: 'nav.agent', icon: 'bot' },
-  { id: 'settings', label: 'nav.settings', icon: 'settings' },
+  { id: 'svc', label: 'collector.svc', icon: 'server' },
 ];
 const fmt = fmtNumber;
 const money = fmtCost;
@@ -135,7 +145,9 @@ export function QuotaCard({ provider, window, usage }: { provider: string; windo
         <span title={window.resetsAt ? fmtDate(window.resetsAt) : undefined}>
           {t('quota.reset', { time: relTime(window.resetsAt) })}
         </span>
-        <Status kind={danger}>{danger === 'ok' ? t('quota.ok') : danger === 'warn' ? t('quota.warn') : t('quota.exhausted')}</Status>
+        <Status kind={danger}>
+          {danger === 'ok' ? t('quota.ok') : danger === 'warn' ? t('quota.warn') : t('quota.exhausted')}
+        </Status>
       </div>
     </Card>
   );
@@ -160,7 +172,7 @@ export default function App() {
   const [traceVersion, setTraceVersion] = useState(0);
   const [agentRevision, setAgentRevision] = useState(0);
   const [theme, setTheme] = useState(
-    () => params.get('theme') ?? localStorage.getItem('magpie.theme') ?? 'system',
+    () => params.get('theme') ?? localStorage.getItem('magpie.theme') ?? 'dark',
   );
   const [keysVersion, setKeysVersion] = useState(0);
   const [usage, setUsage] = useState<any>();
@@ -203,6 +215,15 @@ export default function App() {
   );
   const gateway = useMemo(() => new GatewayClient(transport), [transport]);
   const web = useMemo(() => new WebClient(transport), [transport]);
+  const collector = useMemo(
+    () =>
+      profile.mode === 'mock' || profile.collectorUrl
+        ? new CollectorClient(transport, profile.mode === 'mock' ? undefined : profile.collectorUrl)
+        : undefined,
+    [transport, profile.collectorUrl, profile.mode],
+  );
+  const { data: collectorData, error: collectorError } = useCollector(collector, agentRevision);
+  const [activityView, setActivityView] = useState('timeline');
   const isMock = profile.mode === 'mock';
   const refresh = useCallback(
     async (signal?: AbortSignal) => {
@@ -368,7 +389,12 @@ export default function App() {
   return (
     <div class="app-shell" data-testid={`view-${tab}`}>
       <header class="topbar">
-        <a class="brand" href="#/overview" onClick={() => chooseTab('overview')} aria-label={`magpie ${t('overview.title')}`}>
+        <a
+          class="brand"
+          href="#/home"
+          onClick={() => chooseTab('home')}
+          aria-label={`magpie ${t('overview.title')}`}
+        >
           <span class="brand-mark">m</span>
           <span>magpie</span>
         </a>
@@ -387,7 +413,10 @@ export default function App() {
           </select>
         </div>
         <div class="header-state">
-          <Status kind={error ? 'error' : 'ok'}>{error ? t('app.connectionError') : t('app.connected')}</Status>
+          {collectorData.hello?.readonly && <span class="badge">{t('collector.readonly')}</span>}
+          <Status kind={error ? 'error' : 'ok'}>
+            {error ? t('app.connectionError') : t('app.connected')}
+          </Status>
           {isMock && (
             <span
               class="badge badge-secondary"
@@ -407,16 +436,29 @@ export default function App() {
           )}
         </div>
         {profile.mode !== 'mock' && (
-          <span class="mode-pill">{profile.mode === 'live' ? t('settings.live') : t('settings.directPill')}</span>
+          <span class="mode-pill">
+            {profile.mode === 'live' ? t('settings.live') : t('settings.directPill')}
+          </span>
         )}
         <div class="top-actions">
+          <button
+            class="button button-quiet"
+            aria-label={t('nav.settings')}
+            onClick={() => chooseTab('settings')}
+          >
+            <Icon name="settings" />
+          </button>
           <label class="language-switch">
             <span class="sr-only">{t('lang.label')}</span>
-            <select aria-label={t('lang.label')} value={language} onChange={(e) => {
-              const choice = (e.currentTarget as HTMLSelectElement).value as LanguageChoice;
-              setLanguageChoice(choice);
-              setLocale(setLanguage(choice));
-            }}>
+            <select
+              aria-label={t('lang.label')}
+              value={language}
+              onChange={(e) => {
+                const choice = (e.currentTarget as HTMLSelectElement).value as LanguageChoice;
+                setLanguageChoice(choice);
+                setLocale(setLanguage(choice));
+              }}
+            >
               <option value="auto">{t('lang.auto')}</option>
               <option value="zh">{t('lang.zh')}</option>
               <option value="en">{t('lang.en')}</option>
@@ -460,7 +502,9 @@ export default function App() {
           ))}
         </nav>
         <div class="sidebar-foot">
-          <Status kind={error ? 'error' : 'ok'}>{error ? t('app.connectionError') : t('app.connected')}</Status>
+          <Status kind={error ? 'error' : 'ok'}>
+            {error ? t('app.connectionError') : t('app.connected')}
+          </Status>
           <small>{profile.name}</small>
         </div>
       </aside>
@@ -478,7 +522,45 @@ export default function App() {
       </nav>
       <main class="main-content">
         <div class="page-wrap">
-          {tab === 'overview' && (
+          {collectorError && (
+            <p role="alert">
+              {collectorError}{' '}
+              <button class="button" onClick={() => setAgentRevision((v) => v + 1)}>
+                {t('app.retry')}
+              </button>
+            </p>
+          )}
+          {tab === 'home' && collector && (
+            <HostOverview
+              data={collectorData}
+              navigate={(id) => (id === 'agent' ? chooseAgentTab('runtimes') : chooseTab(id as Tab))}
+            />
+          )}
+          {tab === 'tmux' &&
+            (collector ? (
+              <TmuxView data={collectorData} client={collector} />
+            ) : (
+              <p>{t('collector.unconfigured')}</p>
+            ))}
+          {tab === 'svc' &&
+            (collector ? <ServicesView data={collectorData} /> : <p>{t('collector.unconfigured')}</p>)}
+          {tab === 'activity' && collector && (
+            <>
+              <nav class="collector-chips">
+                {['timeline', 'ledger'].map((id) => (
+                  <button
+                    class="button"
+                    aria-pressed={activityView === id}
+                    onClick={() => setActivityView(id)}
+                  >
+                    {t(`collector.${id}`)}
+                  </button>
+                ))}
+              </nav>
+              {activityView === 'timeline' && <ActivityTimeline data={collectorData} />}
+            </>
+          )}
+          {tab === 'home' && (
             <>
               <div class="page-heading">
                 <div>
@@ -505,13 +587,17 @@ export default function App() {
                 <>
                   <Card class="connection-card">
                     <div class="connection-state">
-                      <Status kind={error ? 'error' : 'ok'}>{error ? t('app.connectionError') : t('app.connected')}</Status>
+                      <Status kind={error ? 'error' : 'ok'}>
+                        {error ? t('app.connectionError') : t('app.connected')}
+                      </Status>
                       <span>
                         {t('overview.service')} <b>{hello?.name ?? 'magpie'}</b> · {t('overview.version')}{' '}
                         <b class="mono">{hello?.version ?? '—'}</b>
                       </span>
                     </div>
-                    <span class="status last-updated">{t('overview.updated')} {dateTime(lastUpdated)}</span>
+                    <span class="status last-updated">
+                      {t('overview.updated')} {dateTime(lastUpdated)}
+                    </span>
                   </Card>
                   <div class="grid metrics-grid">
                     <Metric icon="activity" label={t('overview.requests')} value={fmt(usage?.calls)} />
@@ -548,12 +634,16 @@ export default function App() {
                       <QuotaCard provider={x.provider} window={x.window} usage={usage} />
                     ))}
                   </div>
-                  <KeyValueCard title={t('overview.limit')} subtitle={t('overview.limitSubtitle')} value={limitInfo} />
+                  <KeyValueCard
+                    title={t('overview.limit')}
+                    subtitle={t('overview.limitSubtitle')}
+                    value={limitInfo}
+                  />
                 </>
               )}
             </>
           )}
-          {tab === 'activity' && (
+          {tab === 'activity' && (!collector || activityView === 'ledger') && (
             <>
               <div class="page-heading">
                 <div>
@@ -600,7 +690,10 @@ export default function App() {
                     </div>
                     <TrendChart series={series} />
                   </Card>
-                  <Section title={t('activity.records')} action={<span class="muted">{ledger?.total ?? 0}</span>} />
+                  <Section
+                    title={t('activity.records')}
+                    action={<span class="muted">{ledger?.total ?? 0}</span>}
+                  />
                   <Ledger rows={rows} />
                   {offset < (ledger?.total ?? 0) && (
                     <button class="button load-more" onClick={() => void loadMore()}>
@@ -616,7 +709,16 @@ export default function App() {
               <div class="page-heading">
                 <div>
                   <p class="eyebrow">
-                    {t(({ routing: 'app.routingEyebrow', usage: 'app.usageEyebrow', providers: 'app.providersEyebrow', runtimes: 'app.runtimesEyebrow' } as const)[agentTab])}
+                    {t(
+                      (
+                        {
+                          routing: 'app.routingEyebrow',
+                          usage: 'app.usageEyebrow',
+                          providers: 'app.providersEyebrow',
+                          runtimes: 'app.runtimesEyebrow',
+                        } as const
+                      )[agentTab],
+                    )}
                   </p>
                   <h1>Agent</h1>
                   <p>{t('agent.subtitle')}</p>
@@ -665,7 +767,12 @@ export default function App() {
                 <ErrorBox message={routeError} retry={() => setTraceVersion((v) => v + 1)} />
               )}
               {agentTab === 'providers' && <ProvidersView client={web} revision={agentRevision} />}
-              {agentTab === 'runtimes' && <AgentPlaceholder />}
+              {agentTab === 'runtimes' &&
+                (collector ? (
+                  <RuntimesView data={collectorData} client={collector} />
+                ) : (
+                  <p>{t('collector.unconfigured')}</p>
+                ))}
             </>
           )}
           {tab === 'agent' && agentTab === 'usage' && (
@@ -675,9 +782,7 @@ export default function App() {
             <>
               <div class="page-heading">
                 <div>
-                  <p class="eyebrow">
-                    {t('settings.eyebrow')}
-                  </p>
+                  <p class="eyebrow">{t('settings.eyebrow')}</p>
                   <h1>{t('settings.title')}</h1>
                   <p>{t('settings.subtitle')}</p>
                 </div>
@@ -704,7 +809,12 @@ export default function App() {
                     <div class="profile-meta">
                       <strong>{p.name}</strong>
                       <span class="muted">
-                        {p.mode === 'mock' ? t('settings.mock') : p.mode === 'live' ? t('settings.proxy') : t('settings.direct')} · {t('settings.everySeconds', { seconds: p.refreshSec })}
+                        {p.mode === 'mock'
+                          ? t('settings.mock')
+                          : p.mode === 'live'
+                            ? t('settings.proxy')
+                            : t('settings.direct')}{' '}
+                        · {t('settings.everySeconds', { seconds: p.refreshSec })}
                       </span>
                       {p.gatewayUrl?.startsWith('http://') && (
                         <span class="badge badge-warn">
@@ -1045,7 +1155,13 @@ function KeyValueCard({ title, subtitle, value }: { title: string; subtitle: str
           <div>
             <dt>{keyLabel(k)}</dt>
             <dd class={/id|key/i.test(k) ? 'mono' : ''}>
-              {typeof v === 'number' ? fmt(v) : typeof v === 'boolean' ? (v ? t('app.yes') : t('app.no')) : String(v)}
+              {typeof v === 'number'
+                ? fmt(v)
+                : typeof v === 'boolean'
+                  ? v
+                    ? t('app.yes')
+                    : t('app.no')
+                  : String(v)}
             </dd>
           </div>
         ))}
@@ -1054,7 +1170,23 @@ function KeyValueCard({ title, subtitle, value }: { title: string; subtitle: str
   );
 }
 function keyLabel(k: string) {
-  const keys: Record<string, string> = { name: 'key.name', version: 'key.version', label: 'key.caller', callerKeyLabel: 'key.caller', caller_key_label: 'key.caller', requests_limit: 'key.requestsLimit', budget: 'key.budget', spent: 'key.spent', remaining: 'key.remaining', period: 'key.period', limit: 'key.limit', requests: 'key.requestsLimit', tokens: 'key.tokens', active: 'key.active', waiting: 'key.waiting' };
+  const keys: Record<string, string> = {
+    name: 'key.name',
+    version: 'key.version',
+    label: 'key.caller',
+    callerKeyLabel: 'key.caller',
+    caller_key_label: 'key.caller',
+    requests_limit: 'key.requestsLimit',
+    budget: 'key.budget',
+    spent: 'key.spent',
+    remaining: 'key.remaining',
+    period: 'key.period',
+    limit: 'key.limit',
+    requests: 'key.requestsLimit',
+    tokens: 'key.tokens',
+    active: 'key.active',
+    waiting: 'key.waiting',
+  };
   return keys[k] ? t(keys[k]) : k;
 }
 function Empty({ text }: { text: string }) {
@@ -1131,6 +1263,15 @@ function ProfileForm({
           />
         </label>
         <label>
+          {t('collector.collector')}
+          <input
+            type="url"
+            value={value.collectorUrl ?? ''}
+            onInput={(e) => patch({ collectorUrl: e.currentTarget.value || undefined })}
+            placeholder="https://collector.example.com"
+          />
+        </label>
+        <label>
           {t('settings.formInterval')}
           <select
             value={value.refreshSec}
@@ -1153,7 +1294,8 @@ function ProfileForm({
           onClick={() => {
             try {
               if (!value.name.trim()) throw new Error(t('settings.nameRequired'));
-              if (value.mode === 'direct' && !value.gatewayUrl) throw new Error(t('settings.gatewayRequired'));
+              if (value.mode === 'direct' && !value.gatewayUrl)
+                throw new Error(t('settings.gatewayRequired'));
               save(value);
             } catch (e) {
               setErr((e as Error).message);
@@ -1170,15 +1312,18 @@ function ProfileForm({
   );
 }
 function downloadProfiles(profiles: Profile[]) {
-  const safe = profiles.map(({ id, name, mode, gatewayUrl, webPort, webGuiUrl, refreshSec }) => ({
-    id,
-    name,
-    mode,
-    gatewayUrl,
-    webPort,
-    webGuiUrl,
-    refreshSec,
-  }));
+  const safe = profiles.map(
+    ({ id, name, mode, gatewayUrl, webPort, webGuiUrl, collectorUrl, refreshSec }) => ({
+      id,
+      name,
+      mode,
+      gatewayUrl,
+      webPort,
+      webGuiUrl,
+      collectorUrl,
+      refreshSec,
+    }),
+  );
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(safe, null, 2)], { type: 'application/json' }));
   a.download = 'magpie-profiles.json';

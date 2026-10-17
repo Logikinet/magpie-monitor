@@ -55,6 +55,6 @@ describe('locale formatters', () => {
     history.replaceState(null, '', '/?lang=en');
     expect(activeLocale()).toBe('en');
     history.replaceState(null, '', '/');
-    expect(activeLocale()).toBe(navigator.language.startsWith('en') ? 'en' : 'zh');
+    expect(activeLocale()).toBe('zh');
   });
 });

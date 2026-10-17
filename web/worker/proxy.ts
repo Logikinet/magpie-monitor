@@ -2,6 +2,8 @@ export interface Binding {
   fetch(request: Request): Promise<Response>;
 }
 export interface Env {
+  COLLECTOR_URL?: string;
+  COLLECTOR_KEY?: string;
   MAGPIE_GATEWAY: Binding;
   MAGPIE_WEB: Binding;
   GATEWAY_ORIGIN: string;
@@ -12,6 +14,7 @@ export interface Env {
   ACCESS_DISABLED?: string;
 }
 export interface Dependencies {
+  fetchCollector?: typeof fetch;
   fetchJwks?: typeof fetch;
   now?: () => number;
   timeoutMs?: number;
@@ -145,6 +148,44 @@ export async function proxy(request: Request, env: Env, deps: Dependencies = {})
   const url = new URL(request.url);
   // URL parsing normalizes literal dot segments; encoded separators and remaining dots are never accepted.
   if (/%|\\|\/\/|(?:^|\/)\.{1,2}(?:\/|$)/.test(url.pathname)) return error(404, 'not_found');
+  if (url.pathname.startsWith('/v1/collector/') || url.pathname.startsWith('/proxy/collector/')) {
+    const path = url.pathname.replace(/^\/proxy\/collector/, '');
+    if (
+      request.method !== 'GET' ||
+      !/^\/v1\/collector\/(hello|sys|services|chart|tmux|tmux\/capture|runtimes(?:\/[a-z0-9_-]+)?|tasks|activity|repos|tailscale)$/.test(
+        path,
+      )
+    )
+      return error(404, 'not_found');
+    if (!(await authorized(request, env, deps))) return error(401, 'access_required');
+    if (!env.COLLECTOR_URL || !env.COLLECTOR_KEY) return error(503, 'collector_unconfigured');
+    if (url.search.length > 2048) return error(400, 'query_too_long');
+    try {
+      const base = new URL(env.COLLECTOR_URL);
+      if (
+        !['http:', 'https:'].includes(base.protocol) ||
+        base.username ||
+        base.password ||
+        base.search ||
+        base.hash
+      )
+        return error(502, 'upstream_unreachable');
+      const headers = new Headers({ accept: 'application/json', 'X-Collector-Key': env.COLLECTOR_KEY });
+      const response = await (deps.fetchCollector ?? fetch)(new URL(path + url.search, base), {
+        headers,
+        redirect: 'error',
+        signal: AbortSignal.timeout(deps.timeoutMs ?? 15000),
+      });
+      return secureResponse(
+        new Response(response.body, {
+          status: response.status,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+    } catch {
+      return error(502, 'upstream_unreachable');
+    }
+  }
   const match = /^\/proxy\/(gateway|web)(\/.*)$/.exec(url.pathname);
   if (!match || !(match[1] === 'gateway' ? gateway : web).has(match[2])) return error(404, 'not_found');
   if (request.method === 'OPTIONS') return secureResponse(new Response(null, { status: 204 }));

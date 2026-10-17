@@ -1,5 +1,6 @@
 import { it, expect } from 'vitest';
 import { redact } from '../../src/core/redact';
+import { t } from '../../src/i18n';
 import { zhMessage, type MagpieError } from '../../src/core/errors';
 it('recursively masks sensitive fields without mutating source', () => {
   const source = {
@@ -28,8 +29,8 @@ it('masks bearer, cookie, URL params and recognizable key strings', () => {
 });
 it('provides safe actionable localized error messages', () => {
   expect(zhMessage({ kind: 'unauthorized' }, { api: 'web' })).toContain('MAGPIE_WEB_KEY');
-  expect(zhMessage({ kind: 'forbidden' })).toContain('local network sharing');
-  expect(zhMessage({ kind: 'cors' })).toContain('network sharing settings');
+  expect(zhMessage({ kind: 'forbidden' })).toBe(t('errors.forbidden'));
+  expect(zhMessage({ kind: 'cors' })).toBe(t('errors.cors'));
   expect(zhMessage({ kind: 'mixedContent' })).toContain('HTTPS');
   for (const kind of [
     'unauthorized',

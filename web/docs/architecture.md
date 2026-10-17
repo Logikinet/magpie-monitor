@@ -414,3 +414,30 @@ loop:
 11. **magpie 主机设置**：开启「Share on local network」、给面板单独建一把只读用途的 gateway key、设置 `MAGPIE_ADDR=127.0.0.1:<port>` 与固定 `MAGPIE_WEB_KEY`。（推荐默认：全部照做；面板只需要只读路由）
 
 > 说明：凡依赖 Cloudflare 产品当前行为或用户私有环境的事实，若未在本文与 API notes 中明确记录，一律视为「待验证」，实现前以最小样例验证。
+
+### Read-only collector dashboard
+
+Profiles may include an optional `collectorUrl` origin/base, validated and exported like
+`webGuiUrl`. Set it to this Worker's URL to use server-side authentication, or to a
+collector exposed by your own authenticated reverse proxy. The browser app appends
+`/v1/collector/…`; it never stores a collector action key. Direct connections must
+satisfy browser CORS and HTTPS requirements; the collector itself does not enable CORS.
+Mock profiles always use the sanitized local collector fixtures.
+
+The Worker accepts only the listed collector GET endpoints, including explicit pane
+capture and registered runtime detail. Configure `COLLECTOR_URL` and the
+`COLLECTOR_KEY` Worker secret (read key). The Worker replaces all client credentials,
+checks Cloudflare Access, refuses redirects, and returns no-store responses. Actions,
+snapshots and collector magpie aggregation paths are outside this allowlist.
+
+Navigation uses `#/home`, `#/activity`, `#/tmux`, `#/agent`, `#/svc`; settings is
+available from the header gear. Legacy hashes remain accepted. Collector activity is
+the default when configured; the request ledger remains its second sub-view.
+Missing host metrics and local runtime quotas stay unavailable rather than being
+filled with demo values. Terminal sheets capture every 2.5 seconds while visible,
+cancel on close, escape output before rendering ANSI colour, and preserve scroll
+position when reading earlier lines. No terminal writes are connected.
+
+Screenshot coverage is defined in `tests/e2e/screenshots.spec.ts` for all five
+categories and settings, light/dark, desktop/mobile. Run `npm run screenshots` in
+an environment permitted to bind a local preview server.

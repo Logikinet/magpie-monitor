@@ -7,7 +7,18 @@ export function AgentNav({ tab, choose }: { tab: AgentTab; choose: (tab: AgentTa
     <nav class="agent-subnav" aria-label="Agent">
       {(['routing', 'usage', 'providers', 'runtimes'] as const).map((id) => (
         <button aria-current={tab === id ? 'page' : undefined} onClick={() => choose(id)}>
-          {t(({ routing: 'agent.tabRouting', usage: 'agent.tabUsage', providers: 'agent.tabProviders', runtimes: 'agent.tabRuntimes' } as const)[id], {}, lang)}
+          {t(
+            (
+              {
+                routing: 'agent.tabRouting',
+                usage: 'agent.tabUsage',
+                providers: 'agent.tabProviders',
+                runtimes: 'agent.tabRuntimes',
+              } as const
+            )[id],
+            {},
+            lang,
+          )}
         </button>
       ))}
     </nav>
@@ -21,15 +32,21 @@ export function readPage() {
     legacy = hash.startsWith('cat='),
     [path, query] = hash.replace(/^\//, '').split('?'),
     params = new URLSearchParams(legacy ? hash : query);
-  const page = legacy ? params.get('cat') : path;
-  const atab = page === 'quotas' ? 'usage' : params.get('atab');
+  const original = legacy ? params.get('cat') : path;
+  const aliases: Record<string, string> = {
+    overview: 'home',
+    all: 'home',
+    goal: 'tmux',
+    log: 'svc',
+    network: 'svc',
+    manage: 'agent',
+    tools: 'agent',
+    quotas: 'agent',
+  };
+  const page = aliases[original ?? ''] ?? original;
+  const atab = original === 'quotas' ? 'usage' : params.get('atab');
   return {
-    tab:
-      page === 'quotas'
-        ? 'agent'
-        : ['overview', 'activity', 'agent', 'settings'].includes(page ?? '')
-          ? page!
-          : 'overview',
+    tab: ['home', 'activity', 'tmux', 'agent', 'svc', 'settings'].includes(page ?? '') ? page! : 'home',
     atab: (['routing', 'usage', 'providers', 'runtimes'].includes(atab ?? '') ? atab : 'routing') as AgentTab,
   };
 }

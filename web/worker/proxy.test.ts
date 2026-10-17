@@ -263,3 +263,57 @@ it.each(['/api/groups', '/api/providers', '/api/usage', '/api/usage/quotas', '/a
     expect(upstream).not.toHaveBeenCalled();
   },
 );
+
+describe('collector read proxy', () => {
+  it.each([
+    'hello',
+    'sys',
+    'services',
+    'chart',
+    'tmux',
+    'tmux/capture',
+    'runtimes',
+    'runtimes/codex',
+    'tasks',
+    'activity',
+    'repos',
+    'tailscale',
+  ])('forwards %s with only the server key', async (path) => {
+    const fetchCollector = vi.fn(async (_url: any, _init: any) => new Response('{}'));
+    const response = await proxy(
+      request(`/v1/collector/${path}?n=24`, { 'X-Collector-Key': 'client-secret' }),
+      { ...env, COLLECTOR_URL: 'https://collector.example.com', COLLECTOR_KEY: 'worker-secret' },
+      { fetchCollector },
+    );
+    expect(response.status).toBe(200);
+    const [url, init] = fetchCollector.mock.calls[0];
+    expect(String(url)).toBe(`https://collector.example.com/v1/collector/${path}?n=24`);
+    expect(init.headers.get('X-Collector-Key')).toBe('worker-secret');
+    expect(init.headers.has('Cookie')).toBe(false);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+  it.each([
+    '/v1/collector/actions/tmux-send',
+    '/v1/collector/actions/unit-stop',
+    '/v1/collector/snapshot',
+    '/v1/collector/magpie/usage',
+  ])('rejects unlisted %s', async (path) => {
+    expect((await proxy(request(path), env)).status).toBe(404);
+  });
+  it('rejects writes and requires both access and configuration', async () => {
+    expect((await proxy(request('/v1/collector/sys', {}, 'POST'), env)).status).toBe(404);
+    expect((await proxy(request('/v1/collector/sys'), env)).status).toBe(503);
+    expect((await proxy(request('/v1/collector/sys', {}, 'GET', 'example.com'), env)).status).toBe(401);
+  });
+});
+
+it('dispatches the public collector prefix through the Worker proxy', async () => {
+  const assets = vi.fn(async () => new Response('asset'));
+  const response = await worker.fetch(
+    request('/v1/collector/sys'),
+    { ...env, ASSETS: { fetch: assets } },
+    {} as ExecutionContext,
+  );
+  expect(response.status).toBe(503);
+  expect(assets).not.toHaveBeenCalled();
+});

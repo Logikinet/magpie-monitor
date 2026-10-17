@@ -17,7 +17,7 @@ export function detectLocale(): Locale {
   const saved = localStorage.getItem('mm-lang');
   if (saved && saved !== 'auto') return validLocale(saved) ?? 'zh';
   const query = new URLSearchParams(location.search).get('lang');
-  return validLocale(query) ?? validLocale(navigator.language) ?? 'zh';
+  return validLocale(query) ?? (saved === 'auto' ? validLocale(navigator.language) : undefined) ?? 'zh';
 }
 
 export function languageChoice(): LanguageChoice {

@@ -7,6 +7,7 @@ export interface Profile {
   gatewayUrl?: string;
   webPort?: number;
   webGuiUrl?: string;
+  collectorUrl?: string;
   refreshSec: number;
 }
 const storageKey = 'magpie.profiles';
@@ -46,6 +47,7 @@ export function validateProfile(value: unknown): Profile {
     gatewayUrl,
     webPort: p.webPort as number | undefined,
     webGuiUrl: url(p.webGuiUrl),
+    collectorUrl: url(p.collectorUrl),
   };
 }
 export function importProfiles(json: string): Profile[] {

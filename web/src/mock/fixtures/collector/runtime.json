@@ -1,0 +1,13 @@
+{
+  "id": "codex",
+  "name": "Codex",
+  "installed": true,
+  "version": "demo",
+  "procs": 1,
+  "proc_list": [],
+  "tasks": [],
+  "meta": {
+    "sessions_total": 2,
+    "sessions_24h": 1
+  }
+}

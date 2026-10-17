@@ -7,7 +7,7 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/proxy/*"],
+    "run_worker_first": ["/proxy/*", "/v1/collector/*"],
   },
   // Create private VPC services through your Tunnel, then replace these placeholders.
   // Keep magpie on loopback; never enable MAGPIE_TRUST_PROXY.
@@ -15,7 +15,9 @@
     { "binding": "MAGPIE_GATEWAY", "service_id": "<YOUR_GATEWAY_VPC_SERVICE_ID>" },
     { "binding": "MAGPIE_WEB", "service_id": "<YOUR_WEB_VPC_SERVICE_ID>" },
   ],
+  // Set COLLECTOR_KEY with wrangler secret; never put it in vars.
   "vars": {
+    "COLLECTOR_URL": "https://collector.example.com",
     // Protect the custom domain with Access; copy its team domain and application AUD.
     "ACCESS_TEAM_DOMAIN": "<team>.cloudflareaccess.com",
     "ACCESS_AUD": "<ACCESS_AUD_TAG>",
