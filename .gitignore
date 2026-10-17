@@ -1,0 +1,9 @@
+*.xcodeproj
+.build/
+DerivedData/
+xcuserdata/
+*.ipa
+Payload/
+.swiftpm/
+docs/.temp-installs.txt
+.DS_Store

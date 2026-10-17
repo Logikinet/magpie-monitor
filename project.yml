@@ -1,0 +1,39 @@
+name: magpie-ios
+options:
+  deploymentTarget:
+    iOS: "17.0"
+packages:
+  MagpieKit:
+    path: Packages/MagpieKit
+  SSHKit:
+    path: Packages/SSHKit
+  SwiftTerm:
+    url: https://github.com/migueldeicaza/SwiftTerm
+    from: 1.2.0
+targets:
+  magpie-ios:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - App/Sources
+      - App/Resources
+    dependencies:
+      - package: MagpieKit
+      - package: SSHKit
+      - package: SwiftTerm
+        product: SwiftTerm
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Magpie
+        LSApplicationQueriesSchemes:
+          - tailscale
+          - uuremote
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
