@@ -14,6 +14,13 @@ struct UsageView: View {
             return a == b ? $0.key < $1.key : a < b
         }.map { ($0.key, $0.value) }
     }
+    private func sortedGroups(_ values: [UsageGroup]) -> [UsageGroup] {
+        values.sorted { lhs, rhs in
+            let leftCalls: Int = lhs.totals.calls?.value ?? 0
+            let rightCalls: Int = rhs.totals.calls?.value ?? 0
+            return leftCalls > rightCalls
+        }
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Picker(String(localized: "周期"), selection: $store.period) {
@@ -53,7 +60,7 @@ struct UsageView: View {
                 }
             }.frame(height: 144)
             breakdown(String(localized: "按 Agent"), store.usage?.agents?.elements ?? [])
-            breakdown(String(localized: "按模型"), Array((store.usage?.models?.elements ?? []).sorted { ($0.totals.calls?.value ?? 0) > ($1.totals.calls?.value ?? 0) }.prefix(15)))
+            breakdown(String(localized: "按模型"), Array(sortedGroups(store.usage?.models?.elements ?? []).prefix(15)))
             breakdown(String(localized: "账号"), store.usage?.accounts?.elements ?? [], hideNames: masked)
         }.task(id: store.period) { await store.loadUsage() }
     }
@@ -73,7 +80,7 @@ struct UsageView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title).font(.headline)
             if values.isEmpty { Text(String(localized: "暂无用量数据")).foregroundStyle(DS.Palette.soft) }
-            ForEach(Array(values.sorted { ($0.totals.calls?.value ?? 0) > ($1.totals.calls?.value ?? 0) }.enumerated()), id: \.offset) { _, group in
+            ForEach(Array(sortedGroups(values).enumerated()), id: \.offset) { _, group in
                 VStack(alignment: .leading, spacing: 4) {
                     Text(hideNames ? String(localized: "账号已隐藏") : (group.name ?? group.model ?? group.id ?? "—"))
                     Text("\(group.provider ?? "") · \(group.totals.calls?.value.formatted() ?? "—")").font(.caption.monospacedDigit())

@@ -3,6 +3,13 @@ import MagpieKit
 
 struct ProvidersListView: View {
     let providers: [Provider]
+
+    private func currentAgents(_ provider: Provider) -> [ProviderAgent] {
+        (provider.agents?.elements ?? []).filter { agent in
+            agent.current == true
+        }
+    }
+
     var body: some View {
         VStack(spacing: 12) {
             if providers.isEmpty { Text(String(localized: "暂无服务商")) }
@@ -11,7 +18,7 @@ struct ProvidersListView: View {
                     Label(provider.name ?? provider.id ?? "—", systemImage: symbol(provider)).font(.headline)
                     Text(subline(provider)).font(.caption).foregroundStyle(DS.Palette.soft)
                     HStack(spacing: 8) {
-                        ForEach(Array((provider.agents?.elements ?? []).filter { $0.current == true }.enumerated()), id: \.offset) { _, agent in
+                        ForEach(Array(currentAgents(provider).enumerated()), id: \.offset) { _, agent in
                             Text(String((agent.name ?? agent.id ?? "?").prefix(1)).uppercased())
                                 .font(.caption.bold()).padding(8).background(DS.Palette.agent(agent.id ?? ""), in: Circle())
                                 .accessibilityLabel(agent.name ?? agent.id ?? "Agent")

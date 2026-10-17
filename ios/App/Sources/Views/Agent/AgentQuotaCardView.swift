@@ -26,6 +26,12 @@ struct AgentQuotaCardView: View {
             Text(date.formatted(date: .abbreviated, time: .shortened) + " · " + relative(date))
         }.font(.caption).foregroundStyle(DS.Palette.soft)
     }
+    private func progressColor(for percent: Double) -> Color {
+        let isCritical = used ? percent >= 85 : percent <= 15
+        if isCritical { return DS.Palette.quotaRed }
+        let isElevated = used ? percent >= 50 : percent <= 50
+        return isElevated ? DS.Palette.quotaOrange : DS.Palette.quotaGreen
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(masked ? String(localized: "账号已隐藏") : (quota.user ?? quota.name ?? "—")).font(.subheadline)
@@ -40,7 +46,7 @@ struct AgentQuotaCardView: View {
                     }.font(.subheadline.monospacedDigit())
                     if let percent {
                         ProgressView(value: percent, total: 100)
-                            .tint((used ? percent >= 85 : percent <= 15) ? DS.Palette.quotaRed : ((used ? percent >= 50 : percent <= 50) ? DS.Palette.quotaOrange : DS.Palette.quotaGreen))
+                            .tint(progressColor(for: percent))
                     }
                     if let amount = window.amount?.value {
                         Text("\(amount.formatted()) / \(window.limit?.value.formatted() ?? "—") \(window.unit ?? "")").font(.caption)

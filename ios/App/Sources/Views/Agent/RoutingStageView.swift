@@ -73,14 +73,14 @@ struct RoutingStageView: View {
             seatFilter = seatFilter == key ? nil : key
         } label: {
             VStack(alignment: .leading, spacing: 8) {
-                Label(masked ? (seat.name ?? String(localized: "账号已隐藏")) : (seat.who ?? seat.name ?? "—"), systemImage: on ? "checkmark.circle.fill" : "circle")
+                Label(seatTitle(seat), systemImage: on ? "checkmark.circle.fill" : "circle")
                     .font(.subheadline).fixedSize(horizontal: false, vertical: true)
                 Text([seat.plan, seat.model, seat.fallback == true ? String(localized: "备用") : nil].compactMap { $0 }.joined(separator: " · "))
                     .font(.caption.monospaced())
                 Text(RoutePresentation.status(seat, route: route, now: now)).font(.caption)
                 if let used = seat.used?.value, used.isFinite, seat.known == true {
                     ProgressView(value: min(100, max(0, 100 - used)), total: 100)
-                        .tint(on ? DS.Palette.green : DS.Palette.quotaGreen)
+                    .tint(on ? DS.Palette.green : DS.Palette.quotaGreen)
                 }
             }
             .foregroundStyle(on ? DS.Palette.green : DS.Palette.text)
@@ -93,6 +93,10 @@ struct RoutingStageView: View {
         .accessibilityHint(String(localized: "筛选此账号的请求，再次点击取消"))
         .accessibilityAddTraits(seatFilter == key ? .isSelected : [])
         .anchorPreference(key: RoutingAnchors.self, value: .bounds) { ["seat:" + key: $0] }
+    }
+    private func seatTitle(_ seat: Seat) -> String {
+        if masked { return seat.name ?? String(localized: "账号已隐藏") }
+        return seat.who ?? seat.name ?? "—"
     }
     var body: some View {
         Group {
