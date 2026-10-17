@@ -4,11 +4,14 @@
 
 面向 magpie LLM 网关的非官方监控客户端，包含原生 iOS 应用和 Web 仪表盘。
 
-- **iOS（SwiftUI，iOS 17+）**：概览、请求动态、配额与 Agent 路由；支持 SSH 服务管理和 Tmux 终端。
-- **Web（Preact + Vite）**：只读状态、请求、配额与 Agent 面板；支持代理、直连和模拟模式，附 Cloudflare Worker 模板。
+- **iOS（SwiftUI，iOS 17+）**：主机概览、活动、Agent 实时路由／用量／服务商／运行时、配额、服务和 Tmux；支持 SSH 采集与终端。
+- **Web（Preact + Vite）**：主机概览、活动、Agent 实时路由／用量／服务商／运行时、配额、服务和 Tmux；支持代理、直连和模拟模式，附 Cloudflare Worker 模板。
+- **Collector（Go）**：可选的只读主机采集 API，为 Web 与 iOS 提供主机、活动、服务和 Tmux 数据。
 - 两端均支持模拟数据演示与浅色／深色外观。
 
 配置与构建见 [iOS 指南](ios/README.md) 和 [Web 指南](web/README.md)。
+
+开发与接口文档：[本地开发](docs/dev-run.md) · [Collector API](docs/collector-api.md) · [Collector 运行说明](collector/README.md)。
 
 **iOS 截图（Mock 模拟数据）**
 
@@ -41,11 +44,14 @@ CI 按改动路径运行 iOS 测试／构建或 Web 测试／构建；手动运�
 
 Unofficial monitoring clients for the magpie LLM gateway, with a native iOS app and a Web dashboard.
 
-- **iOS (SwiftUI, iOS 17+)**: overview, request activity, quotas and Agent routes, plus SSH service management and a Tmux terminal.
-- **Web (Preact + Vite)**: read-only status, requests, quotas and Agent views, with proxy, direct and mock modes and a Cloudflare Worker template.
+- **iOS (SwiftUI, iOS 17+)**: host overview, activity, Agent live routing/usage/providers/runtimes, quotas, services and Tmux, with SSH collection and terminal access.
+- **Web (Preact + Vite)**: host overview, activity, Agent live routing/usage/providers/runtimes, quotas, services and Tmux, with proxy, direct and mock modes and a Cloudflare Worker template.
+- **Collector (Go)**: an optional read-only host data API for host, activity, services and Tmux views on Web and iOS.
 - Both clients support mock data demos and light/dark appearance. All screenshots above show **mock data**.
 
 See the [iOS guide](ios/README.md) and [Web guide](web/README.md) for setup and builds. The repository layout above separates both clients under `ios/` and `web/`, with shared CI and license files at the root.
+
+Development and API references: [local development](docs/dev-run.md) · [Collector API](docs/collector-api.md) · [Collector setup](collector/README.md).
 
 CI runs iOS tests/builds or Web tests/builds according to changed paths; manual runs execute all jobs. Main-branch pushes and manual runs also capture the applicable mock screenshots. Download the unsigned IPA from the `magpie-ios-ipa` artifact in GitHub Actions and sign it yourself before installation. Screenshot artifacts are `mock-screenshots` and `web-mock-screenshots`.
 

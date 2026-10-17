@@ -108,7 +108,7 @@
 - 开启共享时 magpie 默认改为监听 `0.0.0.0`；在 magpie 主机设置 `MAGPIE_ADDR=127.0.0.1:<port>` 可保持共享（要求 key）但监听仍只在回环（源码 lan.go 注释的「behind Tailscale Serve」用法），这样网关不会因此暴露到局域网/tailnet。
 
 ### Web GUI 认证（Cookie）
-- `/api/*` 由 runtime key 保护。magpie 源码里打开 `?k=<KEY>` 链接下发 cookie `magpie_web_<port>`（HttpOnly、SameSite=Lax、Path=/；固定 `MAGPIE_WEB_KEY` 时 MaxAge 400d，否则 session）。注意：`magpie-api-notes.md` 记为 `?key=`，源码为 `?k=`，**以源码为准**。
+- `/api/*` 由 runtime key 保护。magpie 源码里打开 `?k=<KEY>` 链接下发 cookie `magpie_web_<port>`（HttpOnly、SameSite=Lax、Path=/；固定 `MAGPIE_WEB_KEY` 时 MaxAge 400d，否则 session）。
 - 浏览器无法跨站携带该 `SameSite=Lax` cookie，也无法用 JS 设置 `Cookie` 头；因此由 Worker 在服务端把 `X-Magpie-Web-Key` 转成 `Cookie` 头（见 §3）。
 - key 轮换：magpie 重启后 runtime key 变化 → `/api/*` 返回 401/403 → 前端提示「建议在 magpie 设置固定 `MAGPIE_WEB_KEY`」，并请求用户重新复制 key。
 
@@ -235,27 +235,33 @@ Route          { seq,id,time,agent,parentSession?,session?,usage?[],kind?,model,
 - 普通请求超时 15s；长轮询见下。
 
 ### WebClient（经代理）
-- `GET /api/gateway/trace?after=<seq>&wait=1`、`/api/gateway/history?day=YYYY-MM-DD`。
+- `GET /api/gateway/trace?after=<seq>`（首个请求不带 `wait`）、`/api/gateway/history?day=YYYY-MM-DD`、`/api/gateway/route?id=<id>&day=<day>`、`/api/groups`、`/api/providers`、`/api/usage?period=<period>`、`/api/usage/quotas`。
 - 带 `X-Magpie-Web-Key`（Worker 转为 `Cookie: magpie_web_<port>=<key>`）；只在 Live 模式可用。
 - 401/403 → 触发 §4 的 key 重取提示，不自动重试业务请求。
+- 配额请求默认不带 `asked=1`，因为它会触发服务商用量读取；响应头 `X-Magpie-Reading: 1` 表示读取仍在进行，稍后再请求。
+
+### Worker 路由白名单
+
+Worker 仅转发显式列出的路径和方法：gateway 侧 GET/HEAD 为 `/v1/magpie/usage`, `/usage/requests`, `/quotas`, `/quotas/cards`, `/quotas/history`, `/route`, `/concurrency`, `/limit`；Web GUI 侧 GET/HEAD 为 `/api/hello`, `/api/gateway/trace`, `/api/gateway/history`, `/api/gateway/route`, `/api/groups`, `/api/providers`, `/api/usage`, `/api/usage/quotas`。配额代理会删除 `asked` 查询参数。未知路径和写方法返回 404。
+
+Collector 代理仅允许 GET `/v1/collector/{hello,sys,services,chart,tmux,tmux/capture,tasks,activity,repos,tailscale}` 与 `/v1/collector/runtimes`、注册运行时详情 `/v1/collector/runtimes/{id}`；不代理动作、snapshot 或 collector 的 magpie 聚合端点。认证、参数和接口契约见 [Collector API](../../docs/collector-api.md)。
 
 ### 长轮询循环（trace）
 状态机（纯函数，Linux 上可用 fake timers 测试）：
 ```
 init(after: 0)
 loop:
-  request trace?after=lastSeq&wait=1        // 服务端最长等 25s
-  on success(env): lastSeq = env.seq; yield routes; loop
-  on timeout/empty: backoff(delay); loop
-  on unauthorized: promptReauth(); backoff; loop
-  on networkError: exponentialBackoff(0.5s→30s, jitter); loop
+  request trace?after=lastSeq + (loaded ? "&wait=1" : "")  // 首个无 wait，后续最多 hold 25s
+  on success(env): if env.seq < lastSeq clear routes; lastSeq = env.seq; keep newest 60; yield routes
+  on mine=false: show offline; wait 5s; loop
+  on error: wait 3s; loop
   on cancelled: exit
 ```
 - **超时**：客户端请求超时设 **35s**（> 服务端 25s），避免误判超时。
 - **取消**：`AbortController` 绑定当前轮询；`visibilitychange` 隐藏、路由切换（切页）时 `abort()` 并释放连接。
 - **暂停**：页面隐藏 → 停止所有长轮询与短轮询；重新可见 → 重建循环。
 - **短轮询**：概览/动态/配额采用前台 20s 短轮询（可配置），后台一律停止。
-- **backoff**：指数退避 + 全抖动；401/403 先提示重认证，不参与业务重试。
+- **重试**：`mine=false` 显示离线并在 5s 后重试；请求错误在 3s 后重试。401/403 同时提示重新认证。
 
 ### 动态 Tab 分页
 `/usage/requests?offset=&limit=` 返回 `offset/total`；列表滚动到底加载下一页；`bucket/series` 用于顶部趋势（数据驱动，不硬编码）。

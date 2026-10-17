@@ -3,7 +3,7 @@ Two HTTP servers: GATEWAY (default 127.0.0.1:3425, Settings' Gateway port) and W
 
 ## Auth
 - Gateway: `Authorization: Bearer <gateway key>` or `x-api-key: <key>`. Remote (non-local) access only when magpie "Share on local network" is on AND key sent; else 403 JSON error. A "held" key (budget/models/accounts) sees only its own rows; summary /v1/magpie/usage refused for held keys.
-- Web GUI (/api/*): guarded by runtime key. Opening `?key=<KEY>` link sets cookie `magpie_web_<port>` (HttpOnly, SameSite=Lax, Path=/; MaxAge 400d if MAGPIE_WEB_KEY fixed, else session). Subsequent requests need that cookie. Key changes on restart unless MAGPIE_WEB_KEY fixed. App: store key in Keychain, do one GET with key to obtain cookie (or send Cookie header `magpie_web_<port>=<key>` directly), re-auth on 401/403.
+- Web GUI (/api/*): guarded by runtime key. Opening `?k=<KEY>` link sets cookie `magpie_web_<port>` (HttpOnly, SameSite=Lax, Path=/; MaxAge 400d if MAGPIE_WEB_KEY fixed, else session). Subsequent requests need that cookie. Key changes on restart unless MAGPIE_WEB_KEY fixed. App: store key in Keychain, do one GET with key to obtain cookie (or send Cookie header `magpie_web_<port>=<key>` directly), re-auth on 401/403.
 
 ## Gateway routes (GET unless noted)
 - /v1/magpie/usage?period= -> summary (same JSON as web /api/usage)
@@ -27,6 +27,14 @@ Two HTTP servers: GATEWAY (default 127.0.0.1:3425, Settings' Gateway port) and W
   Route {seq,id,time,agent,parentSession?,session?,usage?[],kind?,model,effort?,tier?,provider,group?,rule?,leadAccount?,subagent?,pinned?,order:[Weighed],...priced}
   Client loop: after=last seq; request timeout >25s (e.g. 35s); cancel Task on tab leave.
 - /api/gateway/history?day=YYYY-MM-DD -> {days, routes, cut}
+
+## Web GUI details used by the dashboards
+
+- `GET /api/groups` returns `{groups[], models[], pools[], deciders[], found, moved?}`. `GET /api/providers` returns provider metadata; masked credential values remain sensitive.
+- `GET /api/usage?period=<period>` returns usage summary. `GET /api/usage/quotas` returns quota data. Do not add `asked=1` by default: it triggers a provider usage read. `X-Magpie-Reading: 1` means a read is still running; ask again later.
+- `GET /api/gateway/route?id=<route-id>&day=<YYYY-MM-DD>` returns one route detail.
+- Trace starts with `GET /api/gateway/trace?after=0` without `wait`. Later requests use `wait=1`; the server may hold them for up to 25 seconds. `mine=false` means offline: show that state and retry in 5 seconds. Retry errors after 3 seconds. A lower returned `seq` means reset the accumulated data; retain only 60 routes and use the route with greatest `seq` as current.
+- The Worker allows only listed GET/HEAD magpie gateway routes and listed GET Web GUI routes, and removes `asked` on quota requests. Collector reads use `/v1/collector/*`; see [Collector API](../../docs/collector-api.md).
 
 ## iOS reference (semantic-craft/iOS-vibebuddy, MIT)
 - Uses XcodeGen `project.yml` (iOS 17, local SwiftPM package for shared Kit), builds with `xcodebuild ... CODE_SIGNING_ALLOWED=NO`.

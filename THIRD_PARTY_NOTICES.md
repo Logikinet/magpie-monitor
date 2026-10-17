@@ -16,9 +16,9 @@ The bundled license texts under `ios/App/Resources/Licenses/` are presented in t
 
 The web routing, groups, providers, and quota decoders were written against the JSON contracts in yetone/magpie commit `7660399` (MIT, copyright (c) 2026 yetone), including `internal/gui` and its gateway/provider types. No upstream implementation was copied.
 
-## Routing helpers
+## Routing adaptations
 
-`web/src/core/routing-model.ts` and `web/src/core/wire-geometry.ts` adapt semantics, the agent palette, and path construction from yetone/magpie, `internal/gui/assets/plugins/routing/client.js`, commit `7660399`.
+`web/src/core/routing-model.ts`, `web/src/core/wire-geometry.ts`, `web/src/views/agent/RoutingStage.tsx`, and `web/src/styles/routing.css` adapt routing semantics, stage layout, connection behavior, agent colors, path construction, and animations from yetone/magpie's `internal/gui/assets/plugins/routing/client.js` and `internal/gui/assets/plugins/routing/routing.css`, commit `7660399`. Copyright (c) 2026 yetone. The MIT license reproduced above applies to these adaptations.
 
 MIT License
 
@@ -41,7 +41,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-## Routing views
-
-`web/src/views/agent/RoutingStage.tsx` and `web/src/styles/routing.css` adapt the stage layout, connection behavior, and animations from yetone/magpie's MIT-licensed `internal/gui/assets/plugins/routing/{client.js,routing.css}`, commit `7660399`. Copyright (c) 2026 yetone. The MIT license reproduced above applies to these adaptations.
