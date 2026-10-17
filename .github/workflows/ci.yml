@@ -179,6 +179,132 @@ jobs:
           path: ios/docs/screenshots
           if-no-files-found: error
 
+  ios-demo:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Build simulator app
+        run: >-
+          xcodebuild
+          -skipPackagePluginValidation
+          -skipMacroValidation
+          -project magpie-ios.xcodeproj
+          -scheme magpie-ios
+          -configuration Release
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath "$GITHUB_WORKSPACE/ios/build"
+          CODE_SIGNING_ALLOWED=NO
+          build
+      - name: Record mock demo
+        shell: bash
+        run: |
+          set -euo pipefail
+          udid=$(xcrun simctl list devices available -j | python3 -c '
+          import json, re, sys
+          devices = json.load(sys.stdin)["devices"]
+          candidates = [
+              (tuple(map(int, re.findall(r"\d+", runtime))), device)
+              for runtime, entries in devices.items() if ".iOS-" in runtime
+              for device in entries if device["name"].startswith("iPhone")
+          ]
+          candidates.sort(key=lambda entry: entry[0], reverse=True)
+          preferred = [entry for entry in candidates if entry[1]["name"] == "iPhone 16 Pro"]
+          if not candidates:
+              sys.exit("No available iPhone simulator")
+          print((preferred or candidates)[0][1]["udid"])
+          ')
+          state=$(xcrun simctl list devices available -j | jq -r --arg udid "$udid" '.devices[][] | select(.udid == $udid) | .state')
+          if [[ "$state" != "Booted" ]]; then
+            xcrun simctl boot "$udid"
+          fi
+          xcrun simctl bootstatus "$udid" -b
+          xcrun simctl status_bar "$udid" override --time '9:41' --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
+          xcrun simctl ui "$udid" appearance light
+          xcrun simctl install "$udid" build/Build/Products/Release-iphonesimulator/magpie-ios.app
+          xcrun simctl io "$udid" recordVideo --codec=h264 --force demo-raw.mp4 &
+          rec_pid=$!
+          stop_recording() {
+            if [[ -n "${rec_pid:-}" ]] && kill -0 "$rec_pid" 2>/dev/null; then
+              kill -INT "$rec_pid" || true
+              wait "$rec_pid" || true
+              rec_pid=""
+            fi
+          }
+          trap stop_recording EXIT
+          bundle=io.github.logikinet.magpie-ios
+          show() {
+            local tab="$1"
+            local seconds="$2"
+            shift 2
+            xcrun simctl terminate "$udid" "$bundle" || true
+            xcrun simctl launch "$udid" "$bundle" -isMockMode YES -initialTab "$tab" "$@"
+            sleep "$seconds"
+          }
+          sleep 1
+          show 0 7
+          show 1 7
+          show 2 7
+          show 3 12 -agentTab routing
+          show 3 7 -agentTab usage
+          show 3 7 -agentTab providers
+          show 3 7 -agentTab runtimes
+          show 4 7
+          stop_recording
+          trap - EXIT
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            brew install ffmpeg
+          fi
+          encode_mp4() {
+            local crf="$1"
+            ffmpeg -y -i demo-raw.mp4 -an -c:v libx264 -preset medium -crf "$crf" -pix_fmt yuv420p -vf "scale=590:-2:flags=lanczos" -movflags +faststart ios-demo.mp4
+          }
+          encode_mp4 28
+          mp4_size=$(python3 -c 'import os; print(os.path.getsize("ios-demo.mp4"))')
+          if [[ "$mp4_size" -ge 10000000 ]]; then
+            encode_mp4 33
+          fi
+          encode_gif() {
+            local colors="$1"
+            ffmpeg -y -i demo-raw.mp4 -filter_complex "[0:v]trim=start=0.5:duration=20,setpts=PTS-STARTPTS,fps=10,scale=320:-1:flags=lanczos,split[s0][s1];[s0]palettegen=stats_mode=diff:max_colors=${colors}[p];[s1][p]paletteuse=dither=floyd_steinberg:diff_mode=rectangle" -loop 0 ios-demo.gif
+          }
+          colors=96
+          encode_gif "$colors"
+          gif_size=$(python3 -c 'import os; print(os.path.getsize("ios-demo.gif"))')
+          while [[ "$gif_size" -ge 5000000 && "$colors" -gt 32 ]]; do
+            colors=$((colors - 32))
+            encode_gif "$colors"
+            gif_size=$(python3 -c 'import os; print(os.path.getsize("ios-demo.gif"))')
+          done
+          python3 - <<'PY'
+          import os
+          limits = {"ios-demo.mp4": 10_000_000, "ios-demo.gif": 5_000_000}
+          for name, limit in limits.items():
+              size = os.path.getsize(name)
+              print(f"{name}: {size} bytes")
+              if size >= limit:
+                  raise SystemExit(f"{name} is {size} bytes, limit {limit}")
+          PY
+      - name: Upload iOS demo media
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-demo-media
+          path: |
+            ios/ios-demo.mp4
+            ios/ios-demo.gif
+          if-no-files-found: error
+
   web:
     needs: changes
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.web == 'true'

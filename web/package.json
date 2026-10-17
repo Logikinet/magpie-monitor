@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "screenshots": "npm run build && playwright test",
+    "demo:video": "npm run build && playwright test -c playwright.demo.config.ts",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.worker.json",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\" \"worker/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\" \"*.{ts,json,jsonc}\" README.md"
   },
