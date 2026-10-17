@@ -1,7 +1,6 @@
-  PID  PPID COMMAND         COMMAND
-    1     0 systemd         /sbin/init
-  612     1 dockerd         /usr/bin/dockerd -H fd://
-  884     1 tailscaled      /usr/sbin/tailscaled
- 1320     1 containerd      /usr/bin/containerd
- 2418  1320 magpie          /usr/local/bin/magpie serve
- 2751  1320 caddy           caddy run --config /etc/caddy/Caddyfile
+1 0 0.0 0.1 systemd /sbin/init
+612 1 0.2 1.4 dockerd /usr/bin/dockerd -H fd://
+884 1 0.1 0.3 tailscaled /usr/sbin/tailscaled
+1320 1 0.4 1.8 containerd /usr/bin/containerd
+2418 1320 2.7 4.2 magpie /usr/local/bin/magpie serve
+2751 1320 0.5 1.1 caddy caddy run --config /etc/caddy/Caddyfile

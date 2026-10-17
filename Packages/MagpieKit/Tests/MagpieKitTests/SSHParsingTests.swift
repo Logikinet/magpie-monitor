@@ -34,6 +34,20 @@ final class SSHParsingTests: XCTestCase {
         XCTAssertEqual(processes[1].arguments, "sshd: example [listener]")
     }
 
+    func testMockCommandFixturesAreParseable() throws {
+        let ports = SSHOutputParser.parsePorts(String(decoding: try MockFixtures.data(named: "ss.txt"), as: UTF8.self))
+        let containers = SSHOutputParser.parseDockerPS(String(decoding: try MockFixtures.data(named: "docker_ps.txt"), as: UTF8.self))
+        let units = SSHOutputParser.parseSystemdUnits(String(decoding: try MockFixtures.data(named: "systemctl.txt"), as: UTF8.self))
+        let processes = SSHOutputParser.parseProcesses(String(decoding: try MockFixtures.data(named: "ps.txt"), as: UTF8.self))
+        let sessions = SSHOutputParser.parseTmuxSessions(String(decoding: try MockFixtures.data(named: "tmux_ls.txt"), as: UTF8.self))
+
+        XCTAssertEqual(ports.count, 4)
+        XCTAssertEqual(containers.count, 4)
+        XCTAssertEqual(units.count, 5)
+        XCTAssertEqual(processes.count, 6)
+        XCTAssertEqual(sessions.count, 3)
+    }
+
     func testTmuxSessions() throws {
         let sessions = SSHOutputParser.parseTmuxSessions(try fixture("tmux_ls"))
         XCTAssertEqual(sessions.count, 2)

@@ -9,9 +9,15 @@ public enum MockFixtures {
         #endif
     }
 
-    public static func data(named name: String) throws -> Data {
-        let name = name.hasSuffix(".json") ? String(name.dropLast(5)) : name
-        guard let url = bundle.url(forResource: name, withExtension: "json", subdirectory: "MockData") else {
+    public static func data(named resource: String) throws -> Data {
+        let path = resource as NSString
+        let ext = path.pathExtension
+        let name = ext.isEmpty ? resource : path.deletingPathExtension
+        guard let url = bundle.url(
+            forResource: name,
+            withExtension: ext.isEmpty ? "json" : ext,
+            subdirectory: "MockData"
+        ) else {
             throw MagpieError.decoding("找不到模拟数据文件")
         }
         return try Data(contentsOf: url)

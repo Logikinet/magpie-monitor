@@ -17,10 +17,12 @@ public struct MockSSHRunner: SSHRunning {
              let value where value.hasPrefix("tmux list-sessions"): fixture = "tmux_ls"
         default: throw MagpieError.sshFailed("模拟模式不支持此命令。")
         }
-        guard let url = MockFixtures.bundle.url(
-            forResource: fixture, withExtension: "txt", subdirectory: "MockData"
-        ) else { throw MagpieError.sshFailed("找不到模拟 SSH 数据。") }
-        return try String(contentsOf: url, encoding: .utf8)
+        do {
+            let data = try MockFixtures.data(named: "\(fixture).txt")
+            return String(decoding: data, as: UTF8.self)
+        } catch {
+            throw MagpieError.sshFailed("找不到模拟 SSH 数据。")
+        }
     }
 
     public func disconnect() async {}

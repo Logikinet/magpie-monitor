@@ -1,3 +1,3 @@
-magpie: 3 windows (created Sat Oct 17 13:52:11 2026)
-api-review: 2 windows (created Sat Oct 17 12:26:03 2026)
-nightly-check: 1 windows (created Sat Oct 17 09:14:42 2026)
+magpie	3	1
+api-review	2	0
+nightly-check	1	0

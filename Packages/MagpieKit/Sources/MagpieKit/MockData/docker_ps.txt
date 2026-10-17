@@ -1,4 +1,4 @@
-a1b2c3d4e5f6	magpie	Up 3 days (healthy)	127.0.0.1:3425->3425/tcp
-b2c3d4e5f6a1	caddy	Up 3 days	80/tcp, 443/tcp
-c3d4e5f6a1b2	postgres	Up 3 days (healthy)	5432/tcp
-d4e5f6a1b2c3	redis	Up 3 days (healthy)	6379/tcp
+a1b2c3d4e5f6	magpie	ghcr.io/example/magpie:stable	running	Up 3 days (healthy)	127.0.0.1:3425->3425/tcp
+b2c3d4e5f6a1	caddy	caddy:2	running	Up 3 days	80/tcp, 443/tcp
+c3d4e5f6a1b2	postgres	postgres:16	running	Up 3 days (healthy)	127.0.0.1:5432->5432/tcp
+d4e5f6a1b2c3	redis	redis:7	running	Up 3 days (healthy)	127.0.0.1:6379->6379/tcp
