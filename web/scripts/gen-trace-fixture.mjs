@@ -83,3 +83,5 @@ trace.now = date(0);
 trace.totals = { requests: 40, rerouted: trace.routes.filter((r) => r.tries.length > 1).length, errors: 1 };
 const output = `${JSON.stringify(trace, null, 2)}\n`;
 await writeFile(webPath, output);
+
+await writeFile(resolve(root, "ios/Packages/MagpieKit/Sources/MagpieKit/MockData/trace.json"), output);

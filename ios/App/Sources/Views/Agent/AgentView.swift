@@ -40,7 +40,7 @@ struct AgentView: View {
                         Text(String(localized: "服务商")).tag("providers")
                         Text(String(localized: "运行时")).tag("runtimes")
                     }.pickerStyle(.segmented)
-                    if store.configurationMissing {
+                    if store.configurationMissing && tab != "runtimes" {
                         EmptyStateView(title: String(localized: "配置实时路由"), description: String(localized: "请在设置中填写 Web 地址和 runtime key。"), systemImage: "point.3.connected.trianglepath.dotted")
                     } else {
                         StatusBadge(kind: store.authFailed ? .error : (store.status == .live ? .ok : .neutral), text: store.statusText)
@@ -50,7 +50,7 @@ struct AgentView: View {
                         case "providers":
                             if let error = store.routingError { Text(error).foregroundStyle(DS.Palette.red) }
                             ProvidersListView(providers: store.providers)
-                        case "runtimes": EmptyStateView(title: String(localized: "运行时与环境"), description: String(localized: "连接 collector 后可查看运行环境。"), systemImage: "terminal")
+                        case "runtimes": RuntimesView(providers: store.providers)
                         default: routing
                         }
                     }
@@ -91,15 +91,16 @@ struct AgentView: View {
                     }
                     RoutingStageView(routes: store.routes, route: route, now: store.now, seatFilter: $store.seatFilter, masked: masked)
                 }.routingCard()
-                ScrollView(.horizontal) {
-                    HStack(spacing: 8) {
-                        ForEach(Array(store.routes.prefix(8).enumerated()), id: \.offset) { _, recent in
-                            Button { store.pin(recent) } label: {
-                                Text("\(recent.agent ?? "—") › \(recent.provider ?? "—") \(recent.time?.date?.formatted(.dateTime.hour().minute()) ?? "—")")
-                                    .font(.caption.monospaced()).padding(12).frame(minHeight: 44)
-                                    .background(DS.Palette.hover, in: Capsule())
-                            }.buttonStyle(.plain)
+                HorizontalChipRow {
+                    ForEach(Array(store.routes.prefix(8).enumerated()), id: \.offset) { _, recent in
+                        Button { store.pin(recent) } label: {
+                            Text(requestChip(recent))
+                                .font(.caption.monospaced())
+                                .padding(.horizontal, 12)
+                                .frame(minHeight: 44)
+                                .background(DS.Palette.hover, in: Capsule())
                         }
+                        .buttonStyle(.plain)
                     }
                 }
                 RoutingSummaryView(route: route).routingCard()
@@ -138,6 +139,10 @@ struct AgentView: View {
             RoutingAccountsView(providers: store.providers, quotas: store.usageQuotas, now: store.now, masked: $masked).routingCard()
             RoutingGroupsView(groups: store.groups).routingCard()
         }
+    }
+    private func requestChip(_ route: Route) -> String {
+        let clock = route.time?.date?.formatted(.dateTime.hour().minute()) ?? "—"
+        return "\(route.agent ?? "—") › \(route.provider ?? "—") \(clock)"
     }
     private var foot: some View {
         let counts = RoutingModel.footCounts(store.totals)

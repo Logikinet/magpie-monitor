@@ -97,12 +97,38 @@ final class WebClientTests: XCTestCase {
     }
 
     func testMockTraceNewestRouteIsRebasedNearNow() async throws {
+        let raw = try MagpieJSON.decoder.decode(TraceEnvelope.self, from: MockFixtures.data(named: "trace"))
+        let rawRoute = try XCTUnwrap(RoutingModel.currentRoute(in: raw.routes?.elements ?? []))
+        let rawStart = try XCTUnwrap(rawRoute.time?.date)
+        let rawTryStart = try XCTUnwrap(rawRoute.tries?.elements.first?.start?.date)
         let client = WebClient(baseURL: base, runtimeKey: nil, transport: try MockTransport.webFixtures(), port: 3430)
         let trace = try await client.trace(after: 0, wait: false)
+        try assertTraceRebased(trace, rawStart: rawStart, rawTryStart: rawTryStart)
+    }
+
+    func testDirectTraceFixtureIsRebasedOnInit() async throws {
+        let rawData = try MockFixtures.data(named: "trace")
+        let raw = try MagpieJSON.decoder.decode(TraceEnvelope.self, from: rawData)
+        let rawRoute = try XCTUnwrap(RoutingModel.currentRoute(in: raw.routes?.elements ?? []))
+        let transport = MockTransport(fixtures: ["/api/gateway/trace": rawData])
+        let url = try XCTUnwrap(URL(string: "https://example.ts.net/api/gateway/trace"))
+        let (data, response) = try await transport.send(URLRequest(url: url))
+        XCTAssertEqual(response.statusCode, 200)
+        let trace = try MagpieJSON.decoder.decode(TraceEnvelope.self, from: data)
+        try assertTraceRebased(trace, rawStart: try XCTUnwrap(rawRoute.time?.date), rawTryStart: try XCTUnwrap(rawRoute.tries?.elements.first?.start?.date))
+    }
+
+    private func assertTraceRebased(_ trace: TraceEnvelope, rawStart: Date, rawTryStart: Date) throws {
         let route = try XCTUnwrap(RoutingModel.currentRoute(in: trace.routes?.elements ?? []))
-        let age = Date().timeIntervalSince(try XCTUnwrap(route.time?.date))
-        XCTAssertGreaterThanOrEqual(age, 0)
-        XCTAssertLessThan(age, 60)
+        let start = try XCTUnwrap(route.time?.date)
+        let tryStart = try XCTUnwrap(route.tries?.elements.first?.start?.date)
+        let now = try XCTUnwrap(trace.now?.date)
+        let shift = start.timeIntervalSince(rawStart)
+        XCTAssertEqual(start.timeIntervalSinceNow, -8, accuracy: 2)
+        XCTAssertEqual(shift, Date().timeIntervalSince(rawStart) - 8, accuracy: 2)
+        XCTAssertEqual(tryStart.timeIntervalSince(rawTryStart), shift, accuracy: 0.05)
+        XCTAssertEqual(now.timeIntervalSince(start), 8, accuracy: 2)
+        XCTAssertEqual(route.tries?.elements.first?.done, false)
     }
 
 }

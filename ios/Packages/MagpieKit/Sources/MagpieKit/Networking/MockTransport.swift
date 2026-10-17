@@ -28,10 +28,7 @@ public actor MockTransport: HTTPTransport {
                          "/api/groups": "groups", "/api/providers": "providers",
                          "/api/usage": "usage", "/api/usage/quotas": "usage_quotas",
                          "/api/gateway/route": "web_route"]
-        var fixtures = try resources.mapValues { try MockFixtures.data(named: $0) }
-        if let trace = fixtures["/api/gateway/trace"] {
-            fixtures["/api/gateway/trace"] = try rebaseTrace(trace, now: Date())
-        }
+        let fixtures = try resources.mapValues { try MockFixtures.data(named: $0) }
         return MockTransport(fixtures: fixtures)
     }
 
@@ -45,17 +42,24 @@ public actor MockTransport: HTTPTransport {
     }
 
     private static func rebaseTrace(_ data: Data, now: Date) throws -> Data {
-        guard var root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let routes = root["routes"] as? [[String: Any]],
-              let latest = routes.max(by: { ($0["seq"] as? Int ?? 0) < ($1["seq"] as? Int ?? 0) }),
-              let routeTime = latest["time"] as? String else { return data }
+        // Anchor the newest route a few seconds in the past. Fixture clocks are absolute,
+        // so an unshifted start lands in the future and elapsed time clamps to 0.
         let formatter = ISO8601DateFormatter()
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let plainFormatter = ISO8601DateFormatter()
-        func parseDate(_ text: String) -> Date? {
-            formatter.date(from: text) ?? plainFormatter.date(from: text)
+        plainFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        func sequence(_ route: [String: Any]) -> Int {
+            return (route["seq"] as? NSNumber)?.intValue ?? 0
         }
-        guard let fixtureStart = parseDate(routeTime) else { return data }
+        func parseDate(_ text: String) -> Date? {
+            return formatter.date(from: text) ?? plainFormatter.date(from: text)
+        }
+        guard var root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let routes = root["routes"] as? [[String: Any]],
+              let latest = routes.max(by: { sequence($0) < sequence($1) }),
+              let routeTime = latest["time"] as? String,
+              let fixtureStart = parseDate(routeTime) else { return data }
         let offset = now.addingTimeInterval(-8).timeIntervalSince(fixtureStart)
         func shiftDates(_ value: Any, key: String? = nil) -> Any {
             if let array = value as? [Any] { return array.map { shiftDates($0, key: key) } }
@@ -64,7 +68,8 @@ public actor MockTransport: HTTPTransport {
                     (name, shiftDates(child, key: name))
                 })
             }
-            if let key, ["time", "start", "now", "until", "due", "renews", "usedRenews"].contains(key),
+            // `done` on a try is a Bool. Only ISO-8601 strings are moved.
+            if let key, ["time", "start", "done", "now", "until", "due", "renews", "usedRenews"].contains(key),
                let text = value as? String, let date = parseDate(text) {
                 return formatter.string(from: date.addingTimeInterval(offset))
             }
@@ -91,7 +96,11 @@ public actor MockTransport: HTTPTransport {
 
     public init(fixtures: [String: Data], delay: TimeInterval = 0,
                 errors: [String: MagpieError] = [:], statuses: [String: Int] = [:]) {
-        self.fixtures = fixtures
+        var prepared = fixtures
+        if let trace = prepared["/api/gateway/trace"], let shifted = try? Self.rebaseTrace(trace, now: Date()) {
+            prepared["/api/gateway/trace"] = shifted
+        }
+        self.fixtures = prepared
         self.delay = delay
         self.errors = errors
         self.statuses = statuses

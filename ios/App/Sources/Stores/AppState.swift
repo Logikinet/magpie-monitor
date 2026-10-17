@@ -60,6 +60,12 @@ final class AppState {
         return GatewayClient(baseURL: url, key: key, transport: transport)
     }
 
+    var collectorConfigured: Bool {
+        if isMockMode { return true }
+        guard let raw = currentProfile?.collectorURL, let url = URL(string: raw), url.scheme != nil else { return false }
+        return true
+    }
+
     func makeCollectorClient() -> CollectorClient? {
         if isMockMode {
             guard let transport = try? MockTransport.collectorFixtures(), let url = URL(string: "https://example.ts.net") else { return nil }

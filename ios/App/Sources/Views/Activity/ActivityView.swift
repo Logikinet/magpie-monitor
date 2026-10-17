@@ -5,6 +5,31 @@ import MagpieKit
 @MainActor
 struct ActivityView: View {
     @Environment(AppState.self) private var appState
+    @State private var selection = "timeline"
+    var body: some View {
+        VStack(spacing: 0) {
+            if appState.collectorConfigured {
+                Picker(String(localized: "活动视图"), selection: $selection) {
+                    Text(String(localized: "时间线")).tag("timeline")
+                    Text(String(localized: "请求账本")).tag("ledger")
+                }
+                .pickerStyle(.segmented)
+                .padding(16)
+                .accessibilityLabel(String(localized: "活动视图"))
+            }
+            if appState.collectorConfigured && selection == "timeline" {
+                CollectorActivityView()
+            } else {
+                ActivityLedgerView()
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+}
+
+@MainActor
+private struct ActivityLedgerView: View {
+    @Environment(AppState.self) private var appState
     @State private var store = ActivityStore()
     @State private var selectedRow: LedgerRow?
     @State private var isAtTop = true

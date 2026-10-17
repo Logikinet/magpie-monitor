@@ -68,7 +68,7 @@ struct CollectorOverviewView: View {
                     portal(String(localized: "会话"), rows: tmux?.records("sessions").prefix(4).map(tmuxSummary) ?? [])
                 }.buttonStyle(.plain)
                 NavigationLink {
-                    CollectorServicesView(services: services?.records("services") ?? [])
+                    CollectorServicesView(services: services?.records("services") ?? [], searchText: "", hostname: sys.string("hostname"))
                 } label: {
                     portal(String(localized: "服务"), rows: serviceTiles.map { "\($0.string("name") ?? "—") :\($0.number("port")?.formatted() ?? "—") · \(percent($0.object("res")?.number("cpu"))) · \($0.object("res")?.number("mem_mb")?.formatted() ?? "—") MB" })
                 }.buttonStyle(.plain)

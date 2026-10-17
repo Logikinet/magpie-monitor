@@ -34,19 +34,19 @@ struct CollectorTmuxView: View {
         List {
             Section {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))]) {
-                    stat(String(localized: "会话"), Double(sessions.count))
-                    stat(String(localized: "窗口"), sessions.reduce(0) { $0 + ($1.number("windows_count") ?? 0) })
-                    stat("Pane", topology.object("summary")?.number("panes_total"))
-                    stat(String(localized: "已附加 / 已分离"), "\(topology.object("summary")?.number("attached")?.formatted() ?? "—") / \(topology.object("summary")?.number("detached")?.formatted() ?? "—")")
-                    stat("Agent", topology.object("summary")?.number("agents"))
+                    stat(.sessions, whole(topology.object("summary")?.number("total") ?? Double(sessions.count)))
+                    stat(.windows, sessions.reduce(0) { $0 + ($1.number("windows_count") ?? 0) }.formatted(.number.precision(.fractionLength(0))))
+                    stat(.panes, topology.object("summary")?.number("panes_total")?.formatted(.number.precision(.fractionLength(0))) ?? "—")
+                    stat(.attached, "\(topology.object("summary")?.number("attached")?.formatted() ?? "—") / \(topology.object("summary")?.number("detached")?.formatted() ?? "—")")
+                    stat(.agents, topology.object("summary")?.number("agents")?.formatted(.number.precision(.fractionLength(0))) ?? "—")
                 }
-                ScrollView(.horizontal) {
-                    HStack {
-                        ForEach(filters, id: \.self) { item in
-                            Button { filter = item } label: { Text("\(title(item)) (\(sessions.filter { matches($0, item) }.count))") }
-                                .buttonStyle(.bordered).controlSize(.large).tint(filter == item ? DS.Palette.accent : .secondary)
-                                .accessibilityAddTraits(filter == item ? .isSelected : [])
-                        }
+                HorizontalChipRow {
+                    ForEach(filters, id: \.self) { item in
+                        Button { filter = item } label: { Text("\(title(item)) (\(sessions.filter { matches($0, item) }.count))") }
+                            .buttonStyle(.bordered)
+                            .frame(minHeight: 44)
+                            .tint(filter == item ? DS.Palette.accent : .secondary)
+                            .accessibilityAddTraits(filter == item ? .isSelected : [])
                     }
                 }
             }
@@ -59,15 +59,18 @@ struct CollectorTmuxView: View {
                         Text(matches(session, "attached") ? title("attached") : title("detached"))
                     }.font(.caption).foregroundStyle(.secondary)
                     if let attach = session.string("attach_cmd") { ShareLink(String(localized: "附加命令"), item: attach) }
-                    ScrollView(.horizontal) {
-                        HStack {
-                            ForEach(Array(session.records("windows").enumerated()), id: \.offset) { index, window in
-                                Button(window.string("name") ?? String(index)) { selectedWindows[session.string("name") ?? ""] = index }
-                                    .buttonStyle(.bordered).controlSize(.large)
-                            }
+                    let selected = selectedWindows[session.string("name") ?? ""] ?? 0
+                    HorizontalChipRow {
+                        ForEach(Array(session.records("windows").enumerated()), id: \.offset) { index, window in
+                            Button(window.string("name") ?? String(index)) { selectedWindows[session.string("name") ?? ""] = index }
+                                .buttonStyle(.bordered)
+                                .frame(minHeight: 44)
+                                .tint(selected == index ? DS.Palette.accent : .secondary)
+                                .accessibilityAddTraits(selected == index ? .isSelected : [])
                         }
                     }
                     ForEach(Array(panes(for: session).enumerated()), id: \.offset) { _, pane in
+                        CollectorTerminalPreview(pane: pane)
                         if let target = pane.string("target") ?? pane.string("pane") {
                             Button(String(localized: "查看终端") + " · " + target) {
                                 captureTarget = target
@@ -84,19 +87,45 @@ struct CollectorTmuxView: View {
             if let captureTarget { CollectorCaptureView(target: captureTarget) }
         }
     }
+    private func whole(_ value: Double) -> String {
+        return value.formatted(.number.precision(.fractionLength(0)))
+    }
     private func panes(for session: CollectorRecord) -> [CollectorRecord] {
         let windows = session.records("windows")
         let selected = selectedWindows[session.string("name") ?? ""] ?? 0
         if windows.indices.contains(selected) { return windows[selected].records("panes") }
         return topology.records("panes").filter { $0.string("session") == session.string("name") }
     }
-    private func stat(_ title: String, _ value: Double?) -> some View {
-        stat(title, value?.formatted() ?? "—")
+    private func stat(_ kind: TmuxStat, _ value: String) -> some View {
+        return VStack(alignment: .leading, spacing: 4) {
+            Text(kind.title).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(.headline.monospacedDigit()).foregroundStyle(kind.color)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(8)
+        .background(DS.Palette.panel, in: .rect(cornerRadius: 8))
+        .accessibilityElement(children: .combine)
     }
-    private func stat(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.headline)
-        }.frame(maxWidth: .infinity, alignment: .leading).padding(8).background(DS.Palette.panel, in: .rect(cornerRadius: 8))
+}
+
+private enum TmuxStat {
+    case sessions, windows, panes, attached, agents
+    var title: String {
+        switch self {
+        case .sessions: return String(localized: "会话")
+        case .windows: return String(localized: "窗口")
+        case .panes: return String(localized: "面板")
+        case .attached: return String(localized: "已附加 / 已分离")
+        case .agents: return "Agent"
+        }
+    }
+    var color: Color {
+        switch self {
+        case .windows: return DS.Palette.hex("38bdf8")
+        case .panes: return DS.Palette.hex("a78bfa")
+        case .attached: return DS.Palette.hex("4ade80")
+        case .agents: return DS.Palette.hex("fbbf24")
+        case .sessions: return DS.Palette.text
+        }
     }
 }

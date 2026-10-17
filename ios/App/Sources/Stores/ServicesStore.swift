@@ -51,6 +51,7 @@ struct ServiceOperation: Identifiable {
 @MainActor @Observable
 final class ServicesStore {
     private(set) var collectorServices: [CollectorRecord]?
+    private(set) var collectorHostname: String?
     private(set) var collectorError: String?
     private(set) var containers: [Container] = []
     private(set) var units: [ServiceUnit] = []
@@ -125,13 +126,17 @@ final class ServicesStore {
         defer { isRefreshing = false }
         if useCollector, let client = appState.makeCollectorClient() {
             do {
-                collectorServices = try await client.services().records("services")
+                let rows = try await client.services().records("services")
+                let name = try? await client.sys().string("hostname")
+                collectorHostname = name
+                collectorServices = rows
                 collectorError = nil
                 lastUpdated = Date()
                 return
             } catch { collectorError = message(for: error) }
         }
         collectorServices = nil
+        collectorHostname = nil
         do {
             let runner = try await appState.makeOverviewSSHRunner()
             do {

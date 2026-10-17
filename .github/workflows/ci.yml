@@ -162,7 +162,7 @@ jobs:
           xcrun simctl launch "$udid" io.github.logikinet.magpie-ios -isMockMode YES -initialTab 0
           sleep 6
           xcrun simctl io "$udid" screenshot docs/screenshots/mock-overview-dark.png
-          for agent_tab in routing usage providers; do
+          for agent_tab in routing usage providers runtimes; do
             xcrun simctl terminate "$udid" io.github.logikinet.magpie-ios
             xcrun simctl launch "$udid" io.github.logikinet.magpie-ios -isMockMode YES -initialTab 3 -agentTab "$agent_tab" -forceDark YES
             sleep 6

@@ -68,13 +68,18 @@ struct TmuxView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                if appState.makeCollectorClient() != nil {
-                    Button(useSSH ? String(localized: "Collector 视图") : String(localized: "SSH 控制")) {
-                        store.disconnect()
-                        useSSH.toggle()
-                        Task { await store.refresh(appState: appState, useCollector: !useSSH) }
+            if appState.collectorConfigured {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button(useSSH ? String(localized: "Collector 视图") : String(localized: "SSH 控制")) {
+                            store.disconnect()
+                            useSSH.toggle()
+                            Task { await store.refresh(appState: appState, useCollector: !useSSH) }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis").frame(minWidth: 44, minHeight: 44)
                     }
+                    .accessibilityLabel(String(localized: "更多操作"))
                 }
             }
         }

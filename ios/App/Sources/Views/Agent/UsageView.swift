@@ -23,15 +23,26 @@ struct UsageView: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Picker(String(localized: "周期"), selection: $store.period) {
-                Text(String(localized: "今天")).tag("today")
-                Text(String(localized: "7 天")).tag("7d")
-                Text(String(localized: "30 天")).tag("30d")
-                Text(String(localized: "全部")).tag("all")
-            }.pickerStyle(.segmented)
-            Toggle(String(localized: "显示已用"), isOn: $used)
-            Toggle(String(localized: "隐藏账号"), isOn: $masked)
-            Button(String(localized: "刷新"), systemImage: "arrow.clockwise") { Task { await store.loadUsage() } }.frame(minHeight: 44)
+            HStack(alignment: .center, spacing: 8) {
+                HorizontalChipRow {
+                    ForEach(["today", "7d", "30d", "all"], id: \.self) { period in
+                        Button(periodTitle(period)) { store.period = period }
+                            .buttonStyle(.bordered)
+                            .frame(minHeight: 44)
+                            .tint(store.period == period ? DS.Palette.accent : .secondary)
+                            .accessibilityAddTraits(store.period == period ? .isSelected : [])
+                    }
+                }
+                Menu {
+                    Toggle(String(localized: "显示已用"), isOn: $used)
+                    Toggle(String(localized: "隐藏账号"), isOn: $masked)
+                    Button(String(localized: "刷新"), systemImage: "arrow.clockwise") { Task { await store.loadUsage() } }
+                } label: {
+                    Image(systemName: "slider.horizontal.3").frame(minWidth: 44, minHeight: 44)
+                }
+                .accessibilityLabel(String(localized: "用量显示选项"))
+                .layoutPriority(1)
+            }
             if let date = store.usageUpdated[store.period] { Text(String(format: String(localized: "更新于 %@"), locale: Locale.current, String(describing: date.formatted(date: .omitted, time: .standard)))).font(.caption) }
             if let error = store.usageError { Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(DS.Palette.red) }
             if let error = store.routingError { Text(error).foregroundStyle(DS.Palette.red) }
@@ -63,6 +74,14 @@ struct UsageView: View {
             breakdown(String(localized: "按模型"), Array(sortedGroups(store.usage?.models?.elements ?? []).prefix(15)))
             breakdown(String(localized: "账号"), store.usage?.accounts?.elements ?? [], hideNames: masked)
         }.task(id: store.period) { await store.loadUsage() }
+    }
+    private func periodTitle(_ value: String) -> String {
+        switch value {
+        case "today": return String(localized: "今天")
+        case "7d": return String(localized: "7 天")
+        case "30d": return String(localized: "30 天")
+        default: return String(localized: "全部")
+        }
     }
     private func providerColor(_ provider: String) -> Color {
         switch provider {
