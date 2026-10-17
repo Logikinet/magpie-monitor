@@ -9,8 +9,10 @@ public enum SSHCommands {
 
     public static func startDockerContainer(_ name: String) throws -> String { try dockerAction("start", name) }
     public static func stopDockerContainer(_ name: String) throws -> String { try dockerAction("stop", name) }
+    public static func restartDockerContainer(_ name: String) throws -> String { try dockerAction("restart", name) }
     public static func startSystemdUnit(_ name: String, useSudo: Bool = false) throws -> String { try systemdAction("start", name, useSudo: useSudo) }
     public static func stopSystemdUnit(_ name: String, useSudo: Bool = false) throws -> String { try systemdAction("stop", name, useSudo: useSudo) }
+    public static func restartSystemdUnit(_ name: String, useSudo: Bool = false) throws -> String { try systemdAction("restart", name, useSudo: useSudo) }
 
     private static func dockerAction(_ action: String, _ name: String) throws -> String {
         "docker \(action) \(try quotedName(name))"
