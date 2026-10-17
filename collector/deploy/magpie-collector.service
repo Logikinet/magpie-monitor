@@ -1,0 +1,18 @@
+[Unit]
+Description=Magpie local collector
+After=default.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/magpie-collector -config %h/.config/magpie-collector/config.json
+EnvironmentFile=-%h/.config/magpie-collector/environment
+WorkingDirectory=%h/.local/state/magpie-collector
+StateDirectory=magpie-collector
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

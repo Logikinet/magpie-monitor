@@ -1,0 +1,1 @@
+{"Version":"1.80.0","BackendState":"Running","Self":{"ID":"fake-self","HostName":"devbox","DNSName":"devbox.example.ts.net.","TailscaleIPs":["100.64.0.1"],"Online":true},"Peer":{"fake-peer":{"ID":"fake-peer","HostName":"demo","Online":false,"CurAddr":"","TxBytes":12}},"User":{"1":{"LoginName":"demo-user@example.com"}},"PrivateKey":"secret"}

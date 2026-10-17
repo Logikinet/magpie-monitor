@@ -1,0 +1,1 @@
+devbox	0	0	%1	codex	/home/demo/devbox	123	1	80	24	main

@@ -1,0 +1,4 @@
+# demo
+MAILTO=demo-user@example.com
+0 * * * * /usr/bin/true
+@daily /usr/bin/true
