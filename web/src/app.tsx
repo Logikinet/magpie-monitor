@@ -23,13 +23,14 @@ import { Icon } from './ui/icons';
 import { RoutingView } from './views/agent/RoutingView';
 import { AgentNav, AgentPlaceholder, readPage, type AgentTab } from './views/agent/AgentNav';
 import type { decodeGroups } from './core/decode';
+import { detectLocale, languageChoice, setLanguage, t, type LanguageChoice } from './i18n';
 
 type Tab = 'overview' | 'activity' | 'agent' | 'settings';
 const nav: { id: Tab; label: string; icon: string }[] = [
-  { id: 'overview', label: '概览', icon: 'overview' },
-  { id: 'activity', label: '动态', icon: 'chart' },
-  { id: 'agent', label: 'Agent', icon: 'bot' },
-  { id: 'settings', label: '设置', icon: 'settings' },
+  { id: 'overview', label: 'nav.overview', icon: 'overview' },
+  { id: 'activity', label: 'nav.activity', icon: 'chart' },
+  { id: 'agent', label: 'nav.agent', icon: 'bot' },
+  { id: 'settings', label: 'nav.settings', icon: 'settings' },
 ];
 const fmt = fmtNumber;
 const money = fmtCost;
@@ -86,18 +87,18 @@ function Metric({
 function ErrorBox({ message, retry }: { message: string; retry: () => void }) {
   return (
     <div class="error-box">
-      <Status kind="error">加载失败</Status>
+      <Status kind="error">{t('app.loadFailed')}</Status>
       <p>{message}</p>
       <button class="button" onClick={retry}>
         <Icon name="refresh" />
-        重试
+        {t('app.retry')}
       </button>
     </div>
   );
 }
 function Skeletons() {
   return (
-    <div class="grid metrics-grid" aria-label="正在加载">
+    <div class="grid metrics-grid" aria-label={t('app.loading')}>
       <div class="skeleton" />
       <div class="skeleton" />
       <div class="skeleton" />
@@ -107,8 +108,8 @@ function Skeletons() {
 export function QuotaCard({ provider, window, usage }: { provider: string; window: QuotaSpan; usage?: any }) {
   const pct = Math.round(usedPercent(window));
   const danger = pct >= 100 ? 'error' : pct >= 80 ? 'warn' : 'ok';
-  const period = /^(weekly|week)$/i.test(window.name) ? '每周' : '5 小时';
-  const accessible = `${provider} ${period}，${quotaSubtitle(window, provider, usage)}，已使用 ${pct}%${window.limit ? `，上限 ${fmt(window.limit)} ${window.unit ?? ''}` : ''}`;
+  const period = /^(weekly|week)$/i.test(window.name) ? t('quota.week') : t('quota.fiveHours');
+  const accessible = `${provider} ${period}, ${quotaSubtitle(window, provider, usage)}, ${t('quota.used', { percent: pct })}${window.limit ? `, limit ${fmt(window.limit)} ${window.unit ?? ''}` : ''}`;
   return (
     <Card class={`quota-card quota-${danger}`} aria-label={accessible}>
       <div class="quota-head">
@@ -132,9 +133,9 @@ export function QuotaCard({ provider, window, usage }: { provider: string; windo
       </div>
       <div class="quota-foot">
         <span title={window.resetsAt ? fmtDate(window.resetsAt) : undefined}>
-          重置于 {relTime(window.resetsAt)}
+          {t('quota.reset', { time: relTime(window.resetsAt) })}
         </span>
-        <Status kind={danger}>{danger === 'ok' ? '正常' : danger === 'warn' ? '注意' : '已用尽'}</Status>
+        <Status kind={danger}>{danger === 'ok' ? t('quota.ok') : danger === 'warn' ? t('quota.warn') : t('quota.exhausted')}</Status>
       </div>
     </Card>
   );
@@ -152,6 +153,8 @@ export default function App() {
   );
   const profile = profiles.find((p) => p.id === activeId) ?? profiles[0] ?? defaultProfile;
   const [tab, setTab] = useState<Tab>(() => readPage().tab as Tab);
+  const [locale, setLocale] = useState(detectLocale);
+  const [language, setLanguageChoice] = useState<LanguageChoice>(languageChoice);
   const [agentTab, setAgentTab] = useState<AgentTab>(() => readPage().atab);
   const [routingGroups, setRoutingGroups] = useState<ReturnType<typeof decodeGroups>['groups']>([]);
   const [traceVersion, setTraceVersion] = useState(0);
@@ -247,6 +250,9 @@ export default function App() {
     else delete document.documentElement.dataset.theme;
     if (!params.has('theme')) localStorage.setItem('magpie.theme', theme);
   }, [theme]);
+  useEffect(() => {
+    document.documentElement.lang = locale === 'zh' ? 'zh-CN' : locale;
+  }, [locale]);
   useEffect(() => {
     const change = () => {
       const next = readPage();
@@ -381,7 +387,7 @@ export default function App() {
           </select>
         </div>
         <div class="header-state">
-          <Status kind={error ? 'error' : 'ok'}>{error ? '连接错误' : '连接正常'}</Status>
+          <Status kind={error ? 'error' : 'ok'}>{error ? t('app.connectionError') : t('app.connected')}</Status>
           {isMock && (
             <span
               class="badge badge-secondary"
@@ -390,13 +396,13 @@ export default function App() {
               aria-label="Mock data"
             >
               <Icon name="play-rect" />
-              模拟数据
+              {t('app.mock')}
             </span>
           )}
           {profile.mode === 'direct' && profile.gatewayUrl?.startsWith('http://') && (
             <span class="badge badge-warn">
               <Icon name="lock-open" />
-              不安全（HTTP）
+              {t('settings.insecure')}
             </span>
           )}
         </div>
@@ -404,6 +410,19 @@ export default function App() {
           <span class="mode-pill">{profile.mode === 'live' ? 'Live' : 'Direct'}</span>
         )}
         <div class="top-actions">
+          <label class="language-switch">
+            <span class="sr-only">{t('lang.label')}</span>
+            <select aria-label={t('lang.label')} value={language} onChange={(e) => {
+              const choice = (e.currentTarget as HTMLSelectElement).value as LanguageChoice;
+              setLanguageChoice(choice);
+              setLocale(setLanguage(choice));
+            }}>
+              <option value="auto">{t('lang.auto')}</option>
+              <option value="zh">{t('lang.zh')}</option>
+              <option value="en">{t('lang.en')}</option>
+              <option value="ja">{t('lang.ja')}</option>
+            </select>
+          </label>
           {profile.webGuiUrl && (
             <a
               class="button button-quiet external"
@@ -412,7 +431,7 @@ export default function App() {
               href={profile.webGuiUrl}
             >
               <Icon name="external-link" />
-              打开 magpie web
+              {t('app.openWeb')}
             </a>
           )}
           <button
@@ -423,7 +442,7 @@ export default function App() {
             }}
           >
             <Icon name="refresh" />
-            <span>刷新</span>
+            <span>{t('app.refresh')}</span>
           </button>
         </div>
       </header>
@@ -436,12 +455,12 @@ export default function App() {
               aria-current={tab === n.id ? 'page' : undefined}
             >
               <Icon name={n.icon} />
-              <span>{n.label}</span>
+              <span>{t(n.label)}</span>
             </a>
           ))}
         </nav>
         <div class="sidebar-foot">
-          <Status kind={error ? 'error' : 'ok'}>{error ? '连接错误' : '连接正常'}</Status>
+          <Status kind={error ? 'error' : 'ok'}>{error ? t('app.connectionError') : t('app.connected')}</Status>
           <small>{profile.name}</small>
         </div>
       </aside>
@@ -453,7 +472,7 @@ export default function App() {
             aria-current={tab === n.id ? 'page' : undefined}
           >
             <Icon name={n.icon} />
-            <span>{n.label}</span>
+            <span>{t(n.label)}</span>
           </a>
         ))}
       </nav>
@@ -464,8 +483,8 @@ export default function App() {
               <div class="page-heading">
                 <div>
                   <p class="eyebrow">MAGPIE MONITOR</p>
-                  <h1>概览</h1>
-                  <p>网关使用情况与运行状态</p>
+                  <h1>{t('overview.title')}</h1>
+                  <p>{t('overview.subtitle')}</p>
                 </div>
                 {profile.webGuiUrl && (
                   <a
@@ -475,7 +494,7 @@ export default function App() {
                     rel="noopener noreferrer"
                   >
                     <Icon name="external-link" />
-                    打开 magpie web
+                    {t('app.openWeb')}
                   </a>
                 )}
               </div>
@@ -486,32 +505,32 @@ export default function App() {
                 <>
                   <Card class="connection-card">
                     <div class="connection-state">
-                      <Status kind={error ? 'error' : 'ok'}>{error ? '连接错误' : '连接正常'}</Status>
+                      <Status kind={error ? 'error' : 'ok'}>{error ? t('app.connectionError') : t('app.connected')}</Status>
                       <span>
-                        服务 <b>{hello?.name ?? 'magpie'}</b> · 版本{' '}
+                        {t('overview.service')} <b>{hello?.name ?? 'magpie'}</b> · {t('overview.version')}{' '}
                         <b class="mono">{hello?.version ?? '—'}</b>
                       </span>
                     </div>
-                    <span class="status last-updated">最后更新 {dateTime(lastUpdated)}</span>
+                    <span class="status last-updated">{t('overview.updated')} {dateTime(lastUpdated)}</span>
                   </Card>
                   <div class="grid metrics-grid">
-                    <Metric icon="activity" label="今日请求" value={fmt(usage?.calls)} />
+                    <Metric icon="activity" label={t('overview.requests')} value={fmt(usage?.calls)} />
                     <Metric
                       icon="gauge"
-                      label="今日 token"
+                      label={t('overview.tokens')}
                       value={usage?.tokens === undefined ? '—' : fmtTokens(usage.tokens)}
-                      hint="输入 + 输出"
+                      hint={t('overview.inputOutput')}
                     />
-                    <Metric label="今日费用" value={money(usage?.cost)} />
-                    <Metric label="错误数" value={fmt(usage?.errors)} />
+                    <Metric label={t('overview.cost')} value={money(usage?.cost)} />
+                    <Metric label={t('overview.errors')} value={fmt(usage?.errors)} />
                     <Metric
-                      label="并发"
+                      label={t('overview.concurrency')}
                       value={`${fmt(concurrency?.active?.length ?? concurrency?.requests)} / ${fmt(concurrency?.waiting)}`}
-                      hint="运行中 / 等待中"
+                      hint={t('overview.runningWaiting')}
                     />
                   </div>
                   <Section
-                    title="配额概览"
+                    title={t('overview.quota')}
                     action={
                       <button
                         class="text-button"
@@ -520,7 +539,7 @@ export default function App() {
                           chooseAgentTab('usage');
                         }}
                       >
-                        查看全部 <span aria-hidden="true">→</span>
+                        {t('overview.viewAll')} <span aria-hidden="true">→</span>
                       </button>
                     }
                   />
@@ -529,7 +548,7 @@ export default function App() {
                       <QuotaCard provider={x.provider} window={x.window} usage={usage} />
                     ))}
                   </div>
-                  <KeyValueCard title="限额信息" subtitle="网关当前限制配置" value={limitInfo} />
+                  <KeyValueCard title={t('overview.limit')} subtitle={t('overview.limitSubtitle')} value={limitInfo} />
                 </>
               )}
             </>
@@ -543,14 +562,14 @@ export default function App() {
                       ? 'REQUEST LEDGER'
                       : '请求记录'}
                   </p>
-                  <h1>动态</h1>
-                  <p>请求趋势与路由记录</p>
+                  <h1>{t('activity.title')}</h1>
+                  <p>{t('activity.subtitle')}</p>
                 </div>
                 <div class="segmented">
                   {[
-                    ['day', '今天'],
-                    ['7d', '7 天'],
-                    ['30d', '30 天'],
+                    ['day', t('activity.today')],
+                    ['7d', t('activity.days7')],
+                    ['30d', t('activity.days30')],
                   ].map(([key, label]) => (
                     <button
                       class={period === key ? 'selected' : ''}
@@ -572,20 +591,20 @@ export default function App() {
                   <Card class="chart-card">
                     <div class="section-title">
                       <div>
-                        <h2>请求趋势</h2>
+                        <h2>{t('activity.trend')}</h2>
                         <p class="chart-subtitle">
-                          {fmt(ledger?.total ?? usage?.calls ?? rows.length)} 个请求
+                          {t('chart.requests', { count: fmt(ledger?.total ?? usage?.calls ?? rows.length) })}
                         </p>
                       </div>
-                      <span class="muted">{series.length} 个时间段</span>
+                      <span class="muted">{series.length} {locale === 'en' ? 'periods' : locale === 'ja' ? '期間' : '个时间段'}</span>
                     </div>
                     <TrendChart series={series} />
                   </Card>
-                  <Section title="请求记录" action={<span class="muted">{ledger?.total ?? 0} 条</span>} />
+                  <Section title={t('activity.records')} action={<span class="muted">{ledger?.total ?? 0}</span>} />
                   <Ledger rows={rows} />
                   {offset < (ledger?.total ?? 0) && (
                     <button class="button load-more" onClick={() => void loadMore()}>
-                      加载更多
+                      {t('activity.loadMore')}
                     </button>
                   )}
                 </>
@@ -605,7 +624,7 @@ export default function App() {
                     } as const)[agentTab][new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'zh']}
                   </p>
                   <h1>Agent</h1>
-                  <p>路由、用量与运行环境</p>
+                  <p>{t('agent.subtitle')}</p>
                 </div>
               </div>
               <AgentNav tab={agentTab} choose={chooseAgentTab} />

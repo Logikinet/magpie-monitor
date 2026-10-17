@@ -26,10 +26,10 @@ it('masks bearer, cookie, URL params and recognizable key strings', () => {
   ])
     expect(redact(text)).not.toContain('sensitive-demo');
 });
-it('provides safe actionable Chinese error messages', () => {
+it('provides safe actionable localized error messages', () => {
   expect(zhMessage({ kind: 'unauthorized' }, { api: 'web' })).toContain('MAGPIE_WEB_KEY');
-  expect(zhMessage({ kind: 'forbidden' })).toContain('Share on local network');
-  expect(zhMessage({ kind: 'cors' })).toContain('Network and sharing → Web pages');
+  expect(zhMessage({ kind: 'forbidden' })).toContain('local network sharing');
+  expect(zhMessage({ kind: 'cors' })).toContain('network sharing settings');
   expect(zhMessage({ kind: 'mixedContent' })).toContain('HTTPS');
   for (const kind of [
     'unauthorized',

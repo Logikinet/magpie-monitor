@@ -35,3 +35,16 @@ for (const view of views) {
     });
   }
 }
+
+test('agent routing · en', async ({ page }, testInfo) => {
+  await page.goto('/?mock=1&theme=dark&lang=en#/agent?atab=routing');
+  await expect(page.getByTestId('view-agent')).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(1500);
+  await page.screenshot({
+    path: `docs/screenshots/agent-routing-en-${testInfo.project.name}.png`,
+    fullPage: testInfo.project.name === 'desktop',
+    animations: 'disabled',
+  });
+});

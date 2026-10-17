@@ -1,8 +1,7 @@
-export type Locale = 'zh' | 'en' | 'ja';
-export const activeLocale = (): Locale => {
-  const lang = typeof location === 'undefined' ? '' : new URLSearchParams(location.search).get('lang');
-  return lang === 'en' || lang === 'ja' ? lang : 'zh';
-};
+import { detectLocale } from '../i18n';
+import type { Locale } from '../i18n';
+export type { Locale };
+export const activeLocale = detectLocale;
 export const fmtNumber = (n: unknown, digits = 0, locale: Locale = activeLocale()) =>
   typeof n === 'number' && Number.isFinite(n)
     ? new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(n)

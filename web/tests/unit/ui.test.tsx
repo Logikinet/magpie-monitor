@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { render } from 'preact';
 import App, { QuotaCard } from '../../src/app';
+import { t } from '../../src/i18n';
 import type { QuotaSpan } from '../../src/core/decode';
 
 const root = document.createElement('div');
@@ -24,7 +25,7 @@ describe('quota UI', () => {
   });
   it('shows the mock mode badge', () => {
     render(<App />, root);
-    expect(root.querySelector('[data-testid="mock-badge"]')?.textContent).toContain('模拟数据');
+    expect(root.querySelector('[data-testid="mock-badge"]')?.textContent).toContain(t('app.mock'));
   });
 });
 

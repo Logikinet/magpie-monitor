@@ -11,33 +11,34 @@ export type MagpieError = {
     | 'aborted';
   status?: number;
 };
-export function zhMessage(
+import { t } from '../i18n';
+export function errorMessage(
   err: MagpieError,
   ctx: {
     api?: 'gateway' | 'web';
     mode?: string;
   } = {},
 ) {
-  if (err.kind === 'unauthorized' && ctx.api === 'web')
-    return 'runtime key 已失效，请重新输入；建议固定 MAGPIE_WEB_KEY。';
+  if (err.kind === 'unauthorized' && ctx.api === 'web') return t('errors.unauthorizedWeb');
   switch (err.kind) {
     case 'unauthorized':
-      return '认证失败，请检查 gateway key。';
+      return t('errors.unauthorized');
     case 'forbidden':
-      return '访问被拒绝，请开启 Share on local network 并检查 gateway key。';
+      return t('errors.forbidden');
     case 'cors':
-      return '请将当前网页来源列入 magpie 设置 → Network and sharing → Web pages。';
+      return t('errors.cors');
     case 'mixedContent':
-      return 'HTTPS 页面无法调用 HTTP 网关，请使用 HTTPS 网关地址。';
+      return t('errors.mixedContent');
     case 'timeout':
-      return '请求超时，请稍后重试。';
+      return t('errors.timeout');
     case 'decoding':
-      return '服务器数据格式无法读取。';
+      return t('errors.decoding');
     case 'aborted':
-      return '请求已取消。';
+      return t('errors.aborted');
     case 'badStatus':
-      return '服务器返回异常状态，请稍后重试。';
+      return t('errors.badStatus');
     default:
-      return '无法连接服务器，请检查地址与网络。';
+      return t('errors.network');
   }
 }
+export const zhMessage = errorMessage;
