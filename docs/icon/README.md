@@ -1,1 +1,1 @@
-此图标为原创手写 SVG：以黑白喜鹊、蓝绿色翼尾和翼内的几何终端提示符表现应用主题，采用不透明方形背景并为 iOS 图标裁切保留留白。图标与本仓库采用相同的 MIT 许可证，详见 [LICENSE](../../LICENSE)。
+Original design: a minimal geometric “M” monogram whose last stroke flows into a magpie tail, deep teal on ivory. The icon uses the same MIT license as the repository; see [LICENSE](../../LICENSE).
