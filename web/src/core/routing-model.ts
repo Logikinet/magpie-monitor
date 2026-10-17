@@ -222,7 +222,7 @@ export function footSummary(route: Route | null, totals?: TraceEnvelope['totals'
     ms: number(route?.ms),
     tokens: number(route?.tokens),
     output: number(route?.out),
-    firstText: number(route?.firstText),
+    firstText: number(route?.ttft) ?? number(route?.tries?.find((tr) => tr.served === route.served)?.ttft),
     tokensPerSecond: outputSpeed(route),
     cacheHitPercent:
       cacheRead !== null && input !== null && cacheRead + input > 0

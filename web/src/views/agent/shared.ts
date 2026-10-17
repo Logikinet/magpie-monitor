@@ -1,4 +1,6 @@
 import type { Route } from '../../core/decode';
+import { formatDuration } from '../../core/format';
+export { formatDuration } from '../../core/format';
 export type Lang = 'zh' | 'en';
 export const language = (): Lang => (new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'zh');
 export const value = (v: unknown, suffix = '') =>
@@ -13,6 +15,10 @@ export const clock = (s?: string) =>
 export const elapsedSeconds = (s?: string) => {
   const start = s ? Date.parse(s) : NaN;
   return Number.isFinite(start) ? Math.max(0, Math.floor((Date.now() - start) / 1000)) : null;
+};
+export const formatElapsed = (s?: string, now = Date.now()) => {
+  const start = s ? Date.parse(s) : NaN;
+  return Number.isFinite(start) ? formatDuration(Math.max(0, now - start)) : '—';
 };
 const text = {
   zh: { smart: '智能分配', order: '依序尝试', rotate: '轮流分配', usage: '按用量分配' },

@@ -145,6 +145,7 @@ export class MockTransport implements Transport {
     } = {},
   ) {}
   private fixtures() {
+    const now = (this.options.now?.() ?? new Date()).getTime();
     const all = Object.fromEntries(
       Object.entries(fixtures).map(([key, value]) => [key, structuredClone(value)]),
     ) as Record<string, any>;
@@ -161,9 +162,29 @@ export class MockTransport implements Transport {
       }
       Object.values(value).forEach(visit);
     };
-    for (const key of ['ledger', 'usage', 'trace', 'route']) visit(all[`../mock/fixtures/${key}.json`]);
-    const now = (this.options.now?.() ?? new Date()).getTime(),
-      offset = now - 60_000 - Math.max(...recordTimes);
+    for (const key of ['ledger', 'usage', 'route']) visit(all[`../mock/fixtures/${key}.json`]);
+    const trace = all['../mock/fixtures/trace.json'] as any;
+    const newest = trace.routes.reduce((a: any, b: any) => Number(a.seq) > Number(b.seq) ? a : b, trace.routes[0]);
+    const latestStart = Date.parse(newest.time);
+    const traceOffset = now - 8_000 - latestStart;
+    const shiftTrace = (value: any): void => {
+      if (!value || typeof value !== 'object') return;
+      if (Array.isArray(value)) { value.forEach(shiftTrace); return; }
+      for (const [key, item] of Object.entries(value)) {
+        if (
+          typeof item === 'string' &&
+          /^(time|start|now|until|due|renews|usedRenews|day)$/.test(key) &&
+          Number.isFinite(Date.parse(item))
+        ) {
+          const shifted = Date.parse(item) + traceOffset;
+          value[key] = key === 'day' ? new Date(shifted).toISOString().slice(0, 10) : new Date(shifted).toISOString();
+        }
+        else shiftTrace(item);
+      }
+    };
+    shiftTrace(trace);
+    trace.now = new Date(now).toISOString();
+    const offset = now - 60_000 - Math.max(...recordTimes);
     const shift = (value: any): void => {
       if (!value || typeof value !== 'object') return;
       if (Array.isArray(value)) {
@@ -184,7 +205,7 @@ export class MockTransport implements Transport {
         } else shift(item);
       }
     };
-    Object.values(all).forEach(shift);
+    Object.entries(all).filter(([key]) => !key.endsWith('/trace.json')).forEach(([, value]) => shift(value));
     return all;
   }
   async request(req: Request) {
@@ -214,9 +235,7 @@ export class MockTransport implements Transport {
       return {
         status: 200,
         json: {
-          days: [
-            new Date((this.options.now?.() ?? new Date()).getTime() - 60_000).toISOString().slice(0, 10),
-          ],
+          days: [...new Set((shifted['../mock/fixtures/trace.json'] as any).routes.map((route: any) => route.time.slice(0, 10)))],
           routes: (
             shifted['../mock/fixtures/trace.json'] as {
               routes: unknown[];
@@ -251,7 +270,7 @@ export class MockTransport implements Transport {
             ...source,
             seq: this.seq,
             id: this.seq + 3500,
-            time: new Date((this.options.now?.() ?? new Date()).getTime() - 60_000).toISOString(),
+            time: new Date((this.options.now?.() ?? new Date()).getTime() - 8_000).toISOString(),
             session: `sess-demo-${String(this.seq).slice(-3)}`,
           },
         ];

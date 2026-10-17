@@ -1,4 +1,5 @@
 import type { Route } from '../../core/decode';
+import { formatDuration } from '../../core/format';
 import { agentHue, requestsForAccount } from '../../core/routing-model';
 import { clock, value, word, type Lang } from './shared';
 const text = {
@@ -62,7 +63,7 @@ export function RequestList({
                 </small>
               </span>
               <small>
-                {value(r.ms, ' ms')} · {value(r.tokens, ' tk')} · {r.priced ? value(r.cost, ' USD') : '—'}
+                {formatDuration(r.ms)} · {value(r.tokens, ' tk')} · {r.priced ? value(r.cost, ' USD') : '—'}
               </small>
             </button>
           </li>

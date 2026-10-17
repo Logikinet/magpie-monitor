@@ -28,7 +28,42 @@ public actor MockTransport: HTTPTransport {
                          "/api/groups": "groups", "/api/providers": "providers",
                          "/api/usage": "usage", "/api/usage/quotas": "usage_quotas",
                          "/api/gateway/route": "web_route"]
-        return MockTransport(fixtures: try resources.mapValues { try MockFixtures.data(named: $0) })
+        var fixtures = try resources.mapValues { try MockFixtures.data(named: $0) }
+        if let trace = fixtures["/api/gateway/trace"] {
+            fixtures["/api/gateway/trace"] = try rebaseTrace(trace, now: Date())
+        }
+        return MockTransport(fixtures: fixtures)
+    }
+
+    private static func rebaseTrace(_ data: Data, now: Date) throws -> Data {
+        guard var root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let routes = root["routes"] as? [[String: Any]],
+              let latest = routes.max(by: { ($0["seq"] as? Int ?? 0) < ($1["seq"] as? Int ?? 0) }),
+              let routeTime = latest["time"] as? String else { return data }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plainFormatter = ISO8601DateFormatter()
+        func parseDate(_ text: String) -> Date? {
+            formatter.date(from: text) ?? plainFormatter.date(from: text)
+        }
+        guard let fixtureStart = parseDate(routeTime) else { return data }
+        let offset = now.addingTimeInterval(-8).timeIntervalSince(fixtureStart)
+        func shiftDates(_ value: Any, key: String? = nil) -> Any {
+            if let array = value as? [Any] { return array.map { shiftDates($0, key: key) } }
+            if let object = value as? [String: Any] {
+                return Dictionary(uniqueKeysWithValues: object.map { name, child in
+                    (name, shiftDates(child, key: name))
+                })
+            }
+            if let key, ["time", "start", "now", "until", "due", "renews", "usedRenews"].contains(key),
+               let text = value as? String, let date = parseDate(text) {
+                return formatter.string(from: date.addingTimeInterval(offset))
+            }
+            return value
+        }
+        root = shiftDates(root) as? [String: Any] ?? root
+        root["now"] = formatter.string(from: now)
+        return try JSONSerialization.data(withJSONObject: root)
     }
 
     /// Scripted responses are consumed in order, then fixture routing resumes.

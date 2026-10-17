@@ -1,6 +1,7 @@
 import type { Route } from '../../core/decode';
 import { newestRoutes, outputSpeed, matchSeat } from '../../core/routing-model';
-import { clock, elapsedSeconds, strategy, value, word, type Lang } from './shared';
+import { formatDuration } from '../../core/format';
+import { clock, formatElapsed, strategy, value, word, type Lang } from './shared';
 const text = {
   zh: { recent: '最近请求', responding: '回答中', hit: '命中', input: '输入', output: '输出', duration: '耗时', elapsed: '已用', first: '首字', speed: '速度', status: '状态' },
   en: {
@@ -72,9 +73,9 @@ export function MobilePipeline({
       <p>
         {t.hit}: <span class="pii">{(selectedTry && matchSeat(route.order, selectedTry)?.who) ?? selectedTry?.id ?? '—'}</span>
         {route.done === false
-          ? ` · ${t.status} ${t.responding} · ${t.elapsed} ${value(elapsedSeconds(route.time), 's')}`
-          : ` · ${t.status} ${value(route.status)} · ${t.duration} ${value(route.ms, ' ms')}`}
-        {route.ttft !== undefined && <> · {t.first} {value(route.ttft, ' ms')}</>}
+          ? ` · ${t.status} ${t.responding} · ${t.elapsed} ${formatElapsed(route.time)}`
+          : ` · ${t.status} ${value(route.status)} · ${t.duration} ${formatDuration(route.ms)}`}
+        {(route.ttft ?? route.tries?.find((tr) => tr.served === route.served)?.ttft) !== undefined && <> · {t.first} {formatDuration(route.ttft ?? route.tries?.find((tr) => tr.served === route.served)?.ttft)}</>}
         {route.done !== false && outputSpeed(route) !== null && <> · {t.speed} {value(outputSpeed(route), ' tok/s')}</>}
         {route.done !== false && <>
           {Array.isArray(route.usage) && route.usage.length && (route.usage as { in?: number }[]).every((u) => u.in !== undefined) && <> · {t.input} {(route.usage as { in: number }[]).reduce((n, u) => n + u.in, 0).toLocaleString()}</>}

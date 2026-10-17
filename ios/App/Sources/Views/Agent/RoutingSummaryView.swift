@@ -24,7 +24,9 @@ struct RoutingSummaryView: View {
             if route.done != false {
                 Text("耗时：\(RoutePresentation.milliseconds(route.ms?.value)) · Token：\(route.tokens?.value.formatted() ?? "—")")
             }
-            if let ttft = route.ttft?.value { Text("首字：\(RoutePresentation.milliseconds(ttft))") }
+            if let ttft = route.ttft?.value ?? route.tries?.elements.first(where: { $0.served == route.served })?.ttft?.value {
+                Text("首字：\(RoutePresentation.milliseconds(ttft))")
+            }
             if route.done != false, let output = route.out?.value { Text("输出 Token：\(output.formatted())") }
             if route.done != false, speed != "—" { Text("速度：\(speed)") }
         }.font(.caption.monospaced()).accessibilityElement(children: .combine)

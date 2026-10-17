@@ -1,5 +1,6 @@
 import type { Route } from '../../core/decode';
 import { failedTry, latencyBreakdown } from '../../core/routing-model';
+import { formatDuration } from '../../core/format';
 import { value, word, type Lang } from './shared';
 const text = {
   zh: {
@@ -76,17 +77,20 @@ export function RoutingLog({
               <span>
                 {i + 1}. {word(tr.id)} · {word(tr.model)}
               </span>
-              <small>
-                {tr.fail ?? tr.error ?? (tr.status === undefined ? '—' : String(tr.status))} ·{' '}
-                {value(tr.ms, ' ms')}
-              </small>
+              {(tr.fail || tr.error || tr.status !== undefined || tr.ms !== undefined) && (
+                <small>
+                  {tr.fail ?? tr.error ?? (tr.status === undefined ? '' : `HTTP ${tr.status}`)}
+                  {(tr.fail || tr.error || tr.status !== undefined) && tr.ms !== undefined ? ' · ' : ''}
+                  {tr.ms !== undefined ? formatDuration(tr.ms) : ''}
+                </small>
+              )}
             </li>
           ))
         ) : (
           <li>{t.empty}</li>
         )}
       </ol>
-      <div class="rt-latency" aria-label={`${t.total} ${value(b.total, ' ms')}`}>
+      <div class="rt-latency" aria-label={`${t.total} ${formatDuration(b.total)}`}>
         {segments.map(
           (v, i) =>
             v !== null && (
@@ -113,7 +117,7 @@ export function RoutingLog({
         }).map(([k, v]) => (
           <div>
             <dt>{k}</dt>
-            <dd>{value(v, ' ms')}</dd>
+            <dd>{formatDuration(v)}</dd>
           </div>
         ))}
       </dl>

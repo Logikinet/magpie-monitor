@@ -96,4 +96,13 @@ final class WebClientTests: XCTestCase {
         XCTAssertEqual(requests[4].url?.query, "day=2026-10-17&id=10038")
     }
 
+    func testMockTraceNewestRouteIsRebasedNearNow() async throws {
+        let client = WebClient(baseURL: base, runtimeKey: nil, transport: try MockTransport.webFixtures(), port: 3430)
+        let trace = try await client.trace(after: 0, wait: false)
+        let route = try XCTUnwrap(RoutingModel.currentRoute(in: trace.routes?.elements ?? []))
+        let age = Date().timeIntervalSince(try XCTUnwrap(route.time?.date))
+        XCTAssertGreaterThanOrEqual(age, 0)
+        XCTAssertLessThan(age, 60)
+    }
+
 }

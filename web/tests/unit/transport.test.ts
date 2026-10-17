@@ -2,9 +2,22 @@ import { afterEach, it, expect, vi } from 'vitest';
 import { ProxyTransport, DirectTransport, MockTransport } from '../../src/core/transport';
 import { GatewayClient } from '../../src/core/gateway-client';
 import { WebClient } from '../../src/core/web-client';
+import { formatDuration } from '../../src/core/format';
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
+});
+it('rebases the newest mock route to the current time and formats scaled durations', async () => {
+  const now = new Date('2026-10-17T12:00:00.000Z');
+  const result = await new MockTransport({ now: () => now }).request({
+    api: 'web',
+    path: '/api/gateway/trace',
+  });
+  const trace = result.json as { now: string; routes: { seq: number; time: string }[] };
+  const newest = trace.routes.reduce((a, b) => (a.seq > b.seq ? a : b));
+  expect(Date.parse(trace.now) - Date.parse(newest.time)).toBeLessThan(60_000);
+  expect(formatDuration(21_661_000)).toBe('6h 1m');
+  expect(formatDuration(2_285)).toBe('2.3 s');
 });
 const response = (_url: RequestInfo | URL, _init?: RequestInit) =>
   Promise.resolve(new Response(JSON.stringify({ name: 'magpie', seq: 1, routes: [] })));

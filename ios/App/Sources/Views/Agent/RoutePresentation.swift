@@ -11,10 +11,21 @@ enum RoutePresentation {
         default: value ?? "—"
         }
     }
-    static func milliseconds(_ value: Int?) -> String { value.map { "\($0.formatted()) ms" } ?? "—" }
+    static func milliseconds(_ value: Int?) -> String {
+        value.map { duration(milliseconds: Double($0)) } ?? "—"
+    }
+    static func duration(milliseconds: Double) -> String {
+        guard milliseconds.isFinite, milliseconds >= 0 else { return "—" }
+        if milliseconds < 1_000 { return "\(Int(milliseconds.rounded()).formatted()) ms" }
+        let seconds = milliseconds / 1_000
+        if seconds < 60 { return seconds.formatted(.number.precision(.fractionLength(1))) + " 秒" }
+        let minutes = Int(seconds) / 60
+        if minutes < 60 { return "\(minutes) 分 \(Int(seconds) % 60) 秒" }
+        return "\(minutes / 60) 小时 \(minutes % 60) 分"
+    }
     static func elapsed(_ start: Date?, now: Date = .now) -> String {
         guard let start else { return "—" }
-        return "\(max(0, Int(now.timeIntervalSince(start))).formatted()) 秒"
+        return duration(milliseconds: max(0, now.timeIntervalSince(start) * 1_000))
     }
     static func failed(_ route: Route) -> Bool {
         route.error?.isEmpty == false || (route.status?.value ?? 0) >= 400 || (route.tries?.elements ?? []).contains { ($0.status?.value ?? 0) >= 400 }

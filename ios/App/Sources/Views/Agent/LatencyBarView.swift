@@ -4,9 +4,10 @@ import MagpieKit
 struct LatencyBarView: View {
     let route: Route
     private var segments: [(String, Int?, Color)] {
-        let first = route.firstText?.value ?? route.ttft?.value
+        let ttft = route.ttft?.value ?? route.tries?.elements.first(where: { $0.served == route.served })?.ttft?.value
+        let first = route.firstText?.value ?? ttft
         let stream = (route.ms?.value).flatMap { total in first.flatMap { total >= $0 && $0 >= 0 ? total - $0 : nil } }
-        return [("首 token", route.ttft?.value, DS.Palette.blue),
+        return [("首 token", ttft, DS.Palette.blue),
                 ("首文字", route.firstText?.value, DS.Palette.orange),
                 ("流式输出", stream, DS.Palette.green)]
     }
