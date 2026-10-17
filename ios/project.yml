@@ -1,5 +1,7 @@
 name: magpie-ios
 options:
+  developmentLanguage: zh-Hans
+  knownRegions: [zh-Hans, en, ja]
   bundleIdPrefix: io.github.logikinet
   deploymentTarget:
     iOS: "17.0"

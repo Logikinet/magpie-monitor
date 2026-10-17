@@ -213,22 +213,46 @@
     {
       "provider": "anthropic",
       "input": 31000,
-      "output": 11000
+      "output": 11000,
+      "model": "demo-model-1",
+      "calls": 10,
+      "timed": 2,
+      "ttft_ms": 400,
+      "decode_ms": 2000,
+      "decode_out": 500
     },
     {
       "provider": "openai",
       "input": 47000,
-      "output": 21000
+      "output": 21000,
+      "model": "demo-model-2",
+      "calls": 9,
+      "timed": 2,
+      "ttft_ms": 400,
+      "decode_ms": 2000,
+      "decode_out": 500
     },
     {
       "provider": "google",
       "input": 62000,
-      "output": 29000
+      "output": 29000,
+      "model": "demo-model-3",
+      "calls": 8,
+      "timed": 2,
+      "ttft_ms": 400,
+      "decode_ms": 2000,
+      "decode_out": 500
     },
     {
       "provider": "openrouter",
       "input": 19000,
-      "output": 8000
+      "output": 8000,
+      "model": "demo-model-4",
+      "calls": 7,
+      "timed": 2,
+      "ttft_ms": 400,
+      "decode_ms": 2000,
+      "decode_out": 500
     }
   ],
   "timed": 20,

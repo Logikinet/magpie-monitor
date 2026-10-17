@@ -6,9 +6,16 @@ import SSHKit
 @MainActor @Observable
 final class TmuxStore {
     enum ConnectionState: String {
-        case connecting = "连接中"
-        case connected = "已连接"
-        case disconnected = "已断开"
+        var title: String {
+            switch self {
+            case .connecting: String(localized: "连接中")
+            case .connected: String(localized: "已连接")
+            case .disconnected: String(localized: "已断开")
+            }
+        }
+        case connecting
+        case connected
+        case disconnected
     }
 
     private(set) var sessions: [TmuxSession] = []
@@ -43,7 +50,7 @@ final class TmuxStore {
             }
         } catch {
             guard token == attempt, !Task.isCancelled else { return }
-            self.error = message(error, fallback: "无法读取会话；若尚无 tmux 服务，可选择新建会话。")
+            self.error = message(error, fallback: String(localized: "无法读取会话；若尚无 tmux 服务，可选择新建会话。"))
         }
     }
 
@@ -67,7 +74,7 @@ final class TmuxStore {
             }
             self.runner = runner
             guard let connection = runner as? SSHConnection else {
-                throw MagpieError.sshFailed("当前连接不支持交互终端。")
+                throw MagpieError.sshFailed(String(localized: "当前连接不支持交互终端。"))
             }
             // Shell quoting protects remote session names, including spaces and apostrophes.
             let quoted = "'" + target.replacingOccurrences(of: "'", with: "'\\''") + "'"
@@ -85,14 +92,14 @@ final class TmuxStore {
             state = .connected
         } catch {
             guard token == attempt else { return }
-            self.error = message(error, fallback: "终端连接失败，请检查 SSH 和 tmux 后重连。")
+            self.error = message(error, fallback: String(localized: "终端连接失败，请检查 SSH 和 tmux 后重连。"))
             disconnect()
         }
     }
 
     func ended(_ channel: SSHPTYChannel, error: Error?) {
         guard self.channel === channel else { return }
-        self.error = error.map { message($0, fallback: "终端连接已中断，请手动重连。") }
+        self.error = error.map { message($0, fallback: String(localized: "终端连接已中断，请手动重连。")) }
         disconnect()
     }
 
@@ -120,6 +127,6 @@ final class TmuxStore {
     }
 
     private func message(_ error: Error, fallback: String) -> String {
-        (error as? MagpieError)?.localizedChinese ?? fallback
+        (error as? MagpieError).map { ErrorMessages.chinese(for: $0) } ?? fallback
     }
 }

@@ -17,7 +17,7 @@ struct AgentRouteRow: View {
                 .font(.subheadline.monospaced()).foregroundStyle(RoutePresentation.failed(route) ? DS.Palette.red : DS.Palette.text)
             Text("\(RoutePresentation.milliseconds(route.ms?.value)) · \(route.tokens?.value.formatted() ?? "—") tk · \(route.cost?.value.formatted(.currency(code: "USD").precision(.fractionLength(3...6))) ?? "—")")
                 .font(.caption.monospaced()).foregroundStyle(DS.Palette.soft)
-            if RoutePresentation.failed(route) { Label("含失败记录", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(DS.Palette.red) }
+            if RoutePresentation.failed(route) { Label(String(localized: "含失败记录"), systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(DS.Palette.red) }
         }
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         .padding(16).background(DS.Palette.panel, in: RoundedRectangle(cornerRadius: DS.Radius.node))

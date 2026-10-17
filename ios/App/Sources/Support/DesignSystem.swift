@@ -102,12 +102,12 @@ enum DS {
 
         var label: String {
             switch self {
-            case .ok: "正常"
-            case .warning: "注意"
-            case .error: "错误"
-            case .neutral: "未知"
-            case .insecure: "不安全（HTTP）"
-            case .mock: "模拟数据"
+            case .ok: String(localized: "正常")
+            case .warning: String(localized: "注意")
+            case .error: String(localized: "错误")
+            case .neutral: String(localized: "未知")
+            case .insecure: String(localized: "不安全（HTTP）")
+            case .mock: String(localized: "模拟数据")
             }
         }
     }
@@ -227,7 +227,7 @@ struct QuotaGauge: View {
             }
             ProgressView(value: fraction)
                 .tint(percentage >= 100 ? .orange : .accentColor)
-            Text(subtitle ?? "已用 \(Int(safeUsed.rounded()))%")
+            Text(subtitle ?? String(format: String(localized: "已用 %@%%"), locale: Locale.current, String(describing: Int(safeUsed.rounded()))))
                 .font(.footnote.monospacedDigit())
                 .foregroundStyle(.secondary)
         }
@@ -237,8 +237,8 @@ struct QuotaGauge: View {
             in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
         )
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(title)配额")
-        .accessibilityValue("\(subtitle ?? "已用 \(Int(safeUsed.rounded()))%")，\(percentage)%")
+        .accessibilityLabel(String(format: String(localized: "%@配额"), locale: Locale.current, String(describing: title)))
+        .accessibilityValue("\(subtitle ?? String(localized: "已用") + " " + (safeUsed / 100).formatted(.percent.precision(.fractionLength(0))))，\(percentage)%")
     }
 }
 
@@ -250,7 +250,7 @@ struct MockBadge: View {
     var body: some View { StatusBadge(kind: .mock, text: "Mock data") }
 }
 
-#Preview("状态") {
+#Preview(String(localized: "状态")) {
     VStack(alignment: .leading, spacing: DS.Spacing.small) {
         StatusBadge(kind: .ok)
         StatusBadge(kind: .warning)
@@ -261,24 +261,24 @@ struct MockBadge: View {
     .padding()
 }
 
-#Preview("指标卡片") {
-    MetricCard(title: "活动请求", value: "1,284", caption: "过去 24 小时", systemImage: "arrow.left.arrow.right")
+#Preview(String(localized: "指标卡片")) {
+    MetricCard(title: String(localized: "活动请求"), value: "1,284", caption: String(localized: "过去 24 小时"), systemImage: "arrow.left.arrow.right")
         .padding()
 }
 
-#Preview("区块标题") {
-    SectionHeader(title: "配额", subtitle: "按周期查看使用情况")
+#Preview(String(localized: "区块标题")) {
+    SectionHeader(title: String(localized: "配额"), subtitle: String(localized: "按周期查看使用情况"))
         .padding()
 }
 
-#Preview("空状态") {
-    EmptyStateView(title: "暂无数据", description: "连接服务器后会显示监控信息。")
+#Preview(String(localized: "空状态")) {
+    EmptyStateView(title: String(localized: "暂无数据"), description: String(localized: "连接服务器后会显示监控信息。"))
 }
 
-#Preview("配额") {
+#Preview(String(localized: "配额")) {
     VStack(spacing: DS.Spacing.medium) {
-        QuotaGauge(title: "5 小时", used: 42, limit: 100)
-        QuotaGauge(title: "每周", used: 720, limit: 1000)
+        QuotaGauge(title: String(localized: "5 小时"), used: 42, limit: 100)
+        QuotaGauge(title: String(localized: "每周"), used: 720, limit: 1000)
     }
     .padding()
 }

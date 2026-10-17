@@ -47,14 +47,14 @@ struct RoutingStageView: View {
             }
         }
     }
-    private var seatNodes: some View {
+    var seatNodes: some View {
         VStack(alignment: .leading, spacing: 12) {
             ForEach(RoutingModel.groupedSeats(seats), id: \.key) { group in
                 VStack(alignment: .leading, spacing: 8) {
                     Text([group.provider, group.model].compactMap { $0 }.joined(separator: " · "))
                         .font(.caption.monospaced()).foregroundStyle(DS.Palette.soft)
                     if group.needsSubheader {
-                        Text("\(group.seats.count) 个账号 · \(group.seats.filter { $0.rest == nil }.count) 个可用")
+                        Text(String(format: String(localized: "%@ 个账号 · %@ 个可用"), locale: Locale.current, String(describing: group.seats.count), String(describing: group.seats.filter { $0.rest == nil }.count)))
                             .font(.caption).foregroundStyle(DS.Palette.dim)
                     }
                     ForEach(Array(group.seats.enumerated()), id: \.offset) { _, seat in
@@ -62,7 +62,7 @@ struct RoutingStageView: View {
                     }
                 }
             }
-            if seats.isEmpty { Text("暂无候选节点").foregroundStyle(DS.Palette.dim) }
+            if seats.isEmpty { Text(String(localized: "暂无候选节点")).foregroundStyle(DS.Palette.dim) }
         }
     }
     private func seatNode(_ seat: Seat) -> some View {
@@ -73,9 +73,9 @@ struct RoutingStageView: View {
             seatFilter = seatFilter == key ? nil : key
         } label: {
             VStack(alignment: .leading, spacing: 8) {
-                Label(masked ? (seat.name ?? "账号已隐藏") : (seat.who ?? seat.name ?? "—"), systemImage: on ? "checkmark.circle.fill" : "circle")
+                Label(masked ? (seat.name ?? String(localized: "账号已隐藏")) : (seat.who ?? seat.name ?? "—"), systemImage: on ? "checkmark.circle.fill" : "circle")
                     .font(.subheadline).fixedSize(horizontal: false, vertical: true)
-                Text([seat.plan, seat.model, seat.fallback == true ? "备用" : nil].compactMap { $0 }.joined(separator: " · "))
+                Text([seat.plan, seat.model, seat.fallback == true ? String(localized: "备用") : nil].compactMap { $0 }.joined(separator: " · "))
                     .font(.caption.monospaced())
                 Text(RoutePresentation.status(seat, route: route, now: now)).font(.caption)
                 if let used = seat.used?.value, used.isFinite, seat.known == true {
@@ -90,19 +90,17 @@ struct RoutingStageView: View {
             .opacity(state == .rest ? 0.55 : 1)
         }
         .buttonStyle(.plain)
-        .accessibilityHint("筛选此账号的请求，再次点击取消")
+        .accessibilityHint(String(localized: "筛选此账号的请求，再次点击取消"))
         .accessibilityAddTraits(seatFilter == key ? .isSelected : [])
         .anchorPreference(key: RoutingAnchors.self, value: .bounds) { ["seat:" + key: $0] }
     }
     var body: some View {
         Group {
             if compact {
-                VStack(spacing: 24) {
-                    agentNodes
+                HStack(spacing: 8) {
+                    compactNode(route.agent ?? "—", detail: route.model ?? "—", anchor: "agent:" + (route.agent ?? "—"))
                     hub
-                    Label([route.provider, route.served ?? route.model].compactMap { $0 }.joined(separator: " · "), systemImage: "arrow.down.circle")
-                        .font(.subheadline.monospaced()).foregroundStyle(DS.Palette.green)
-                    seatNodes
+                    compactNode(route.provider ?? "—", detail: route.served ?? route.model ?? "—", anchor: "served")
                 }
             } else {
                 HStack(alignment: .center, spacing: 40) {
@@ -123,6 +121,9 @@ struct RoutingStageView: View {
                                 wire(from: geometry[anchor], to: hubRect, live: route.agent == agent, phase: phase)
                             }
                         }
+                        if compact, let served = anchors["served"] {
+                            wire(from: hubRect, to: geometry[served], live: true, phase: phase)
+                        }
                         if !compact {
                             ForEach(Array(seats.enumerated()), id: \.offset) { _, seat in
                                 if let anchor = anchors["seat:" + RoutingModel.seatKey(id: seat.id ?? "", model: seat.model)] {
@@ -135,6 +136,14 @@ struct RoutingStageView: View {
                 }
             }.allowsHitTesting(false).accessibilityHidden(true)
         }
+    }
+    private func compactNode(_ title: String, detail: String, anchor: String) -> some View {
+        VStack(spacing: 8) {
+            Text(title).font(.subheadline.bold())
+            Text(detail).font(.caption).foregroundStyle(DS.Palette.soft)
+        }.frame(maxWidth: .infinity, minHeight: 80).padding(8)
+            .background(DS.Palette.elev, in: RoundedRectangle(cornerRadius: DS.Radius.node))
+            .anchorPreference(key: RoutingAnchors.self, value: .bounds) { [anchor: $0] }
     }
     private func wire(from source: CGRect, to target: CGRect, live: Bool, phase: Double) -> some View {
         Path { path in

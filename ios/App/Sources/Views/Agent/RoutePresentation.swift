@@ -4,10 +4,10 @@ import MagpieKit
 enum RoutePresentation {
     static func strategy(_ value: String?) -> String {
         switch value {
-        case "order": "顺序"
-        case "rotate": "轮转"
-        case "usage": "按用量"
-        case nil, "": "智能"
+        case "order": String(localized: "顺序")
+        case "rotate": String(localized: "轮转")
+        case "usage": String(localized: "按用量")
+        case nil, "": String(localized: "智能")
         default: value ?? "—"
         }
     }
@@ -18,10 +18,10 @@ enum RoutePresentation {
         guard milliseconds.isFinite, milliseconds >= 0 else { return "—" }
         if milliseconds < 1_000 { return "\(Int(milliseconds.rounded()).formatted()) ms" }
         let seconds = milliseconds / 1_000
-        if seconds < 60 { return seconds.formatted(.number.precision(.fractionLength(1))) + " 秒" }
+        if seconds < 60 { return seconds.formatted(.number.precision(.fractionLength(1))) + String(localized: " 秒") }
         let minutes = Int(seconds) / 60
-        if minutes < 60 { return "\(minutes) 分 \(Int(seconds) % 60) 秒" }
-        return "\(minutes / 60) 小时 \(minutes % 60) 分"
+        if minutes < 60 { return String(format: String(localized: "%@ 分 %@ 秒"), locale: Locale.current, String(describing: minutes), String(describing: Int(seconds) % 60)) }
+        return String(format: String(localized: "%@ 小时 %@ 分"), locale: Locale.current, String(describing: minutes / 60), String(describing: minutes % 60))
     }
     static func elapsed(_ start: Date?, now: Date = .now) -> String {
         guard let start else { return "—" }
@@ -32,17 +32,17 @@ enum RoutePresentation {
     }
     static func status(_ seat: Seat, route: Route?, now: Date) -> String {
         switch RoutingModel.status(of: seat, in: route, now: now) {
-        case .trying: return "回答中"
-        case .answered: return "已回答"
+        case .trying: return String(localized: "回答中")
+        case .answered: return String(localized: "已回答")
         case .resting(let why, let until):
-            let countdown = until.map { " · \(Int(max(0, $0.timeIntervalSince(now)))) 秒" } ?? ""
-            return "休息中" + (why.map { " · " + $0 } ?? "") + countdown
+            let countdown = until.map { String(format: String(localized: " · %@ 秒"), locale: Locale.current, String(describing: Int(max(0, $0.timeIntervalSince(now))))) } ?? ""
+            return String(localized: "休息中") + (why.map { " · " + $0 } ?? "") + countdown
         case .remaining(let percent, let days):
-            return "剩余 \(percent.formatted(.number.precision(.fractionLength(0))))%" + (days.map { " · \($0) 天后重置" } ?? "")
+            return String(format: String(localized: "剩余 %@%%"), locale: Locale.current, String(describing: percent.formatted(.number.precision(.fractionLength(0))))) + (days.map { String(format: String(localized: " · %@ 天后重置"), locale: Locale.current, String(describing: $0)) } ?? "")
         case .credits(let amount, let limit, let unit):
             return amount.formatted() + (limit.map { "/\($0.formatted())" } ?? "") + " " + (unit ?? "")
-        case .singleKey: return "独立 key"
-        case .ready: return "就绪"
+        case .singleKey: return String(localized: "独立 key")
+        case .ready: return String(localized: "就绪")
         }
     }
 }

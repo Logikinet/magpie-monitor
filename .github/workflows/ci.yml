@@ -19,6 +19,7 @@ jobs:
     outputs:
       ios: ${{ steps.filter.outputs.ios }}
       web: ${{ steps.filter.outputs.web }}
+      collector: ${{ steps.filter.outputs.collector }}
     steps:
       - uses: actions/checkout@v5
       - uses: dorny/paths-filter@v3
@@ -29,6 +30,9 @@ jobs:
           filters: |
             ios:
               - 'ios/**'
+              - '.github/workflows/ci.yml'
+            collector:
+              - 'collector/**'
               - '.github/workflows/ci.yml'
             web:
               - 'web/**'
@@ -158,6 +162,16 @@ jobs:
           xcrun simctl launch "$udid" io.github.logikinet.magpie-ios -isMockMode YES -initialTab 0
           sleep 6
           xcrun simctl io "$udid" screenshot docs/screenshots/mock-overview-dark.png
+          for agent_tab in routing usage providers; do
+            xcrun simctl terminate "$udid" io.github.logikinet.magpie-ios
+            xcrun simctl launch "$udid" io.github.logikinet.magpie-ios -isMockMode YES -initialTab 3 -agentTab "$agent_tab" -forceDark YES
+            sleep 6
+            case "$agent_tab" in
+              routing) filename=mock-agent-dark.png ;;
+              *) filename="mock-agent-${agent_tab}.png" ;;
+            esac
+            xcrun simctl io "$udid" screenshot "docs/screenshots/$filename"
+          done
       - name: Upload mock screenshots
         uses: actions/upload-artifact@v4
         with:
@@ -205,3 +219,19 @@ jobs:
           name: web-mock-screenshots
           path: web/docs/screenshots
           if-no-files-found: error
+
+  collector:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.collector == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: collector
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+          cache: false
+      - run: go vet ./...
+      - run: go test ./...

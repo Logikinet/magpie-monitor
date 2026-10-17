@@ -34,13 +34,13 @@ struct ContextWaffleView: View {
     }
     private func title(_ kind: String) -> String {
         switch kind {
-        case "all": "全部"
-        case "system": "系统"
-        case "tools": "工具"
-        case "files": "文件"
-        case "results": "结果"
-        case "chat": "对话"
-        case "memory": "记忆"
+        case "all": String(localized: "全部")
+        case "system": String(localized: "系统")
+        case "tools": String(localized: "工具")
+        case "files": String(localized: "文件")
+        case "results": String(localized: "结果")
+        case "chat": String(localized: "对话")
+        case "memory": String(localized: "记忆")
         default: kind
         }
     }
@@ -63,10 +63,10 @@ struct ContextWaffleView: View {
     var body: some View {
         let values = cells
         return VStack(alignment: .leading, spacing: 12) {
-            Text("上下文窗口").font(.headline)
-            Text("已用 \(route.prompt?.tokens?.value.formatted() ?? "—") / \(route.prompt?.window?.value.formatted() ?? "—") token")
+            Text(String(localized: "上下文窗口")).font(.headline)
+            Text(String(format: String(localized: "已用 %@ / %@ token"), locale: Locale.current, String(describing: route.prompt?.tokens?.value.formatted() ?? "—"), String(describing: route.prompt?.window?.value.formatted() ?? "—")))
                 .font(.subheadline.monospaced())
-            Text("缓存命中：\(cacheHit) · 对话轮数：\(route.prompt?.turns?.value.formatted() ?? "—")").font(.caption.monospaced()).foregroundStyle(DS.Palette.soft)
+            Text(String(format: String(localized: "缓存命中：%@ · 对话轮数：%@"), locale: Locale.current, String(describing: cacheHit), String(describing: route.prompt?.turns?.value.formatted() ?? "—"))).font(.caption.monospaced()).foregroundStyle(DS.Palette.soft)
             if let capacity, !parts.isEmpty {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 1.5), count: sizeClass == .compact ? 20 : 40), spacing: 1.5) {
                     ForEach(0..<400, id: \.self) { index in
@@ -74,8 +74,8 @@ struct ContextWaffleView: View {
                     }
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("上下文分布，容量 \(capacity) token")
-            } else { Text("暂无上下文分布").foregroundStyle(DS.Palette.dim) }
+                .accessibilityLabel(String(format: String(localized: "上下文分布，容量 %@ token"), locale: Locale.current, String(describing: capacity)))
+            } else { Text(String(localized: "暂无上下文分布")).foregroundStyle(DS.Palette.dim) }
             ScrollView(.horizontal) {
                 HStack(spacing: 8) {
                     ForEach(["all"] + kinds, id: \.self) { kind in
@@ -102,7 +102,7 @@ struct ContextWaffleView: View {
                 }.font(.caption)
             }
             if items.count > 10 {
-                Button(expanded ? "收起条目" : "显示全部 \(items.count) 项") { expanded.toggle() }.frame(minHeight: 44)
+                Button(expanded ? String(localized: "收起条目") : String(format: String(localized: "显示全部 %@ 项"), locale: Locale.current, String(describing: items.count))) { expanded.toggle() }.frame(minHeight: 44)
             }
             Text([route.session, route.folder].compactMap { $0 }.joined(separator: " › "))
                 .font(.caption.monospaced()).foregroundStyle(DS.Palette.dim).textSelection(.enabled)

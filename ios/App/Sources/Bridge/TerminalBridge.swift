@@ -17,7 +17,7 @@ struct TerminalBridge: UIViewRepresentable {
         let view = TerminalView(frame: .zero)
         view.terminalDelegate = context.coordinator
         view.inputAccessoryView = context.coordinator.accessory
-        view.accessibilityLabel = isDemo ? "模拟终端" : "远程 tmux 终端"
+        view.accessibilityLabel = isDemo ? String(localized: "模拟终端") : String(localized: "远程 tmux 终端")
         configure(view)
         context.coordinator.bind(channel, view: view)
         if isDemo {

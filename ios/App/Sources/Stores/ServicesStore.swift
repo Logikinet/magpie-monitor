@@ -4,15 +4,23 @@ import MagpieKit
 import SSHKit
 
 enum ServicesCategory: String, CaseIterable, Identifiable, Hashable {
-    case containers = "容器"
+    case containers
+    var title: String { self == .containers ? String(localized: "容器") : "systemd" }
     case systemd = "systemd"
     var id: String { rawValue }
 }
 
 enum ServiceAction: String, CaseIterable, Identifiable, Hashable {
-    case start = "启动"
-    case stop = "停止"
-    case restart = "重启"
+    var title: String {
+        switch self {
+        case .start: String(localized: "启动")
+        case .stop: String(localized: "停止")
+        case .restart: String(localized: "重启")
+        }
+    }
+    case start
+    case stop
+    case restart
     var id: String { rawValue }
 }
 
@@ -25,11 +33,11 @@ struct ServiceEntry: Identifiable, Equatable {
 
     var status: (kind: DS.StatusKind, title: String) {
         let value = state.lowercased()
-        if ["running", "active"].contains(value) { return (.ok, "运行中") }
-        if ["restarting", "activating", "deactivating"].contains(value) { return (.warning, "处理中") }
-        if ["exited", "dead", "inactive"].contains(value) { return (.neutral, "已停止") }
-        if ["failed"].contains(value) { return (.error, "失败") }
-        return (.neutral, state.isEmpty ? "未知" : state)
+        if ["running", "active"].contains(value) { return (.ok, String(localized: "运行中")) }
+        if ["restarting", "activating", "deactivating"].contains(value) { return (.warning, String(localized: "处理中")) }
+        if ["exited", "dead", "inactive"].contains(value) { return (.neutral, String(localized: "已停止")) }
+        if ["failed"].contains(value) { return (.error, String(localized: "失败")) }
+        return (.neutral, state.isEmpty ? String(localized: "未知") : state)
     }
 }
 
@@ -103,7 +111,7 @@ final class ServicesStore {
         do {
             return ServiceOperation(entry: entry, action: action, command: try command(for: entry, action: action))
         } catch {
-            self.error = "服务名称无法用于安全命令，请刷新列表后重试。"
+            self.error = String(localized: "服务名称无法用于安全命令，请刷新列表后重试。")
             return nil
         }
     }
@@ -151,7 +159,7 @@ final class ServicesStore {
             case .start, .restart: mockStates[operation.entry.id] = operation.entry.category == .containers ? "running" : "active"
             case .stop: mockStates[operation.entry.id] = operation.entry.category == .containers ? "exited" : "inactive"
             }
-            notice = "模拟操作：未连接 SSH。\n\(operation.command)"
+            notice = String(format: String(localized: "模拟操作：未连接 SSH。\\n%@"), locale: Locale.current, String(describing: operation.command))
             await refresh(appState: appState)
             return
         }

@@ -73,7 +73,7 @@ final class AppState {
     func makeOverviewSSHRunner() async throws -> any SSHRunning {
         try Task.checkCancellation()
         if isMockMode { return MockSSHRunner() }
-        guard let profile = currentProfile else { throw MagpieError.sshFailed("请先选择服务器配置。") }
+        guard let profile = currentProfile else { throw MagpieError.sshFailed(String(localized: "请先选择服务器配置。")) }
         let read: (SecretField) -> String? = { [secretStore] field in
             try? secretStore.read(account: field.account(profileID: profile.id))
         }
@@ -96,7 +96,7 @@ final class AppState {
             do { try await secretStore.set(fingerprint, account: SecretField.hostKey.account(profileID: profile.id)) } catch {
                 await connection.disconnect()
                 persistenceError = ErrorMessages.chinese(for: error)
-                throw MagpieError.sshFailed("无法保存 SSH 主机指纹，请检查设备钥匙串后重试。")
+                throw MagpieError.sshFailed(String(localized: "无法保存 SSH 主机指纹，请检查设备钥匙串后重试。"))
             }
         }
         return connection
@@ -127,7 +127,7 @@ final class AppState {
             try store.load()
             profiles = store.profiles
             selectedID = store.selectedID
-        } catch { persistenceError = "无法读取服务器配置。" }
+        } catch { persistenceError = String(localized: "无法读取服务器配置。") }
     }
     private func save() {
         var store = ProfileStore(fileURL: fileURL)
@@ -136,6 +136,6 @@ final class AppState {
         do {
             try store.save()
             persistenceError = nil
-        } catch { persistenceError = "无法保存服务器配置。" }
+        } catch { persistenceError = String(localized: "无法保存服务器配置。") }
     }
 }

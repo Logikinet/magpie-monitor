@@ -7,14 +7,14 @@ struct LatencyBarView: View {
         let ttft = route.ttft?.value ?? route.tries?.elements.first(where: { $0.served == route.served })?.ttft?.value
         let first = route.firstText?.value ?? ttft
         let stream = (route.ms?.value).flatMap { total in first.flatMap { total >= $0 && $0 >= 0 ? total - $0 : nil } }
-        return [("首 token", ttft, DS.Palette.blue),
-                ("首文字", route.firstText?.value, DS.Palette.orange),
-                ("流式输出", stream, DS.Palette.green)]
+        return [(String(localized: "首 token"), ttft, DS.Palette.blue),
+                (String(localized: "首文字"), route.firstText?.value, DS.Palette.orange),
+                (String(localized: "流式输出"), stream, DS.Palette.green)]
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("延迟").font(.headline)
-            Text("总耗时：\(RoutePresentation.milliseconds(route.ms?.value))").font(.subheadline.monospaced())
+            Text(String(localized: "延迟")).font(.headline)
+            Text(String(format: String(localized: "总耗时：%@"), locale: Locale.current, String(describing: RoutePresentation.milliseconds(route.ms?.value)))).font(.subheadline.monospaced())
             // TTFT and firstText overlap: show independent measurements rather than invented phases.
             ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
                 VStack(alignment: .leading, spacing: 4) {

@@ -87,7 +87,7 @@ final class WebClientTests: XCTestCase {
         XCTAssertEqual(groups.groups?.elements.count, 1)
         XCTAssertEqual(providers.providers?.elements.count, 1)
         XCTAssertEqual(usage.totals?.calls?.value, 30)
-        XCTAssertEqual(quotas.elements.count, 1)
+        XCTAssertEqual(quotas.elements.count, 4)
         XCTAssertEqual(route.id?.value, 10038)
         let requests = await transport.requests
         XCTAssertEqual(requests.map { $0.httpMethod }, Array(repeating: "GET", count: 5))

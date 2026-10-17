@@ -7,7 +7,7 @@ struct ProfileToolbar: ViewModifier {
         content.toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Menu {
-                    if appState.profiles.isEmpty { Text("尚无服务器配置") }
+                    if appState.profiles.isEmpty { Text(String(localized: "尚无服务器配置")) }
                     ForEach(appState.profiles) { profile in
                         Button {
                             appState.select(profile.id)
@@ -22,13 +22,13 @@ struct ProfileToolbar: ViewModifier {
                     Button {
                         showingSettings = true
                     } label: {
-                        Label("管理服务器…", systemImage: "gearshape")
+                        Label(String(localized: "管理服务器…"), systemImage: "gearshape")
                     }
                 } label: {
-                    Label(appState.currentProfile?.name ?? "选择服务器", systemImage: "server.rack")
+                    Label(appState.currentProfile?.name ?? String(localized: "选择服务器"), systemImage: "server.rack")
                         .lineLimit(1).frame(maxWidth: 170)
                 }
-                .accessibilityLabel("服务器：\(appState.currentProfile?.name ?? "未选择")")
+                .accessibilityLabel(String(format: String(localized: "服务器：%@"), locale: Locale.current, String(describing: appState.currentProfile?.name ?? "未选择")))
             }
             ToolbarItem(placement: .topBarTrailing) {
                 VStack(alignment: .trailing, spacing: DS.Spacing.xSmall) {
@@ -42,7 +42,7 @@ struct ProfileToolbar: ViewModifier {
                 } label: {
                     Image(systemName: "gearshape")
                 }
-                .accessibilityLabel("设置")
+                .accessibilityLabel(String(localized: "设置"))
             }
         }
         .sheet(isPresented: $showingSettings) { SettingsView() }

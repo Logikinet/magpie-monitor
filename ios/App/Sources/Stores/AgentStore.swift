@@ -4,6 +4,26 @@ import MagpieKit
 
 @MainActor @Observable
 final class AgentStore {
+    var period = "today"
+    private(set) var usageCache: [String: UsageSummary] = [:]
+    private(set) var usageUpdated: [String: Date] = [:]
+    private(set) var usageError: String?
+    var usage: UsageSummary? { usageCache[period] }
+    @ObservationIgnored private var webClient: WebClient?
+    func loadUsage() async {
+        guard let webClient else { return }
+        let token = generation
+        let requested = period
+        do {
+            let value = try await webClient.usage(period: requested)
+            guard token == generation, !Task.isCancelled else { return }
+            usageCache[requested] = value
+            usageUpdated[requested] = value.fetchedAt?.date ?? Date()
+            if requested == period { usageError = nil }
+        } catch {
+            if token == generation, requested == period { usageError = String(localized: "用量读取失败") }
+        }
+    }
     private(set) var groups: [RoutingGroup] = []
     private(set) var providers: [Provider] = []
     private(set) var usageQuotas: [Quota] = []
@@ -38,19 +58,22 @@ final class AgentStore {
     }
 
     var statusText: String {
-        if authFailed { return "认证失败" }
+        if authFailed { return String(localized: "认证失败") }
         switch status {
-        case .connecting: return "连接中"
-        case .live: return "实时"
-        case .backingOff(let delay): return "重试中 \(Int(ceil(delay)))s"
-        case .unauthorized: return "认证失败"
-        case .stopped: return "已暂停"
+        case .connecting: return String(localized: "连接中")
+        case .live: return String(localized: "实时")
+        case .backingOff(let delay): return String(format: String(localized: "重试中 %@s"), locale: Locale.current, String(describing: Int(ceil(delay))))
+        case .unauthorized: return String(localized: "认证失败")
+        case .stopped: return String(localized: "已暂停")
         }
     }
 
     func start(appState: AppState) {
         stop()
         if profile != appState.currentProfile || mockMode != appState.isMockMode {
+            usageCache = [:]
+            usageUpdated = [:]
+            usageError = nil
             routes = []
             groups = []
             providers = []
@@ -72,8 +95,9 @@ final class AgentStore {
         let gateway: GatewayClient?
         if appState.isMockMode {
             let transport = MockTransport(fixtures: [
+                "/api/usage": (try? MockFixtures.data(named: "usage")) ?? Data(),
                 "/api/groups": (try? MockFixtures.data(named: "groups")) ?? Data(),
-                "/api/providers": (try? MockFixtures.data(named: "providers")) ?? Data(),
+                "/api/providers": (try? MockFixtures.data(named: "providers_usage")) ?? Data(),
                 "/api/usage/quotas": (try? MockFixtures.data(named: "usage_quotas")) ?? Data(),
                 "/api/gateway/trace": (try? MockFixtures.data(named: "trace")) ?? Data(),
                 "/v1/magpie/concurrency": (try? MockFixtures.data(named: "concurrency")) ?? Data(),
@@ -89,6 +113,7 @@ final class AgentStore {
             web = key?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? appState.makeWebClient() : nil
             gateway = appState.makeGatewayClient()
         }
+        webClient = web
         configurationMissing = web == nil
         guard appState.isActive, let web else { return }
         if poller == nil { poller = TracePoller(source: web) }
@@ -113,6 +138,7 @@ final class AgentStore {
         }
         refreshTask = Task { [weak self] in
             while !Task.isCancelled {
+                await self?.loadUsage()
                 await self?.refreshRouting(web, generation: token)
                 await self?.refresh(gateway, generation: token)
                 do { try await Task.sleep(for: .seconds(interval)) } catch { return }
@@ -156,22 +182,22 @@ final class AgentStore {
         var errors: [String] = []
         switch results.0 {
         case .success(let value): groups = value.groups?.elements ?? []
-        case .failure(let error): errors.append(MagpieError.map(error).localizedChinese)
+        case .failure(let error): errors.append(ErrorMessages.chinese(for: error))
         }
         switch results.1 {
         case .success(let value): providers = value.providers?.elements ?? []
-        case .failure(let error): errors.append(MagpieError.map(error).localizedChinese)
+        case .failure(let error): errors.append(ErrorMessages.chinese(for: error))
         }
         switch results.2 {
         case .success(let value): usageQuotas = value.elements
-        case .failure(let error): errors.append(MagpieError.map(error).localizedChinese)
+        case .failure(let error): errors.append(ErrorMessages.chinese(for: error))
         }
         routingError = errors.isEmpty ? nil : errors.joined(separator: "；")
     }
 
     private func refresh(_ client: GatewayClient?, generation token: UUID) async {
         guard let client else {
-            concurrencyError = "请在设置中配置网关地址和密钥。"
+            concurrencyError = String(localized: "请在设置中配置网关地址和密钥。")
             quotaError = concurrencyError
             return
         }
@@ -183,13 +209,13 @@ final class AgentStore {
         case .success(let value):
             concurrency = value
             concurrencyError = nil
-        case .failure(let error): concurrencyError = MagpieError.map(error).localizedChinese
+        case .failure(let error): concurrencyError = ErrorMessages.chinese(for: error)
         }
         switch quotaResult {
         case .success(let value):
             cards = value.data.elements
             quotaError = nil
-        case .failure(let error): quotaError = MagpieError.map(error).localizedChinese
+        case .failure(let error): quotaError = ErrorMessages.chinese(for: error)
         }
     }
 

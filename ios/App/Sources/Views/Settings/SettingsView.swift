@@ -20,7 +20,7 @@ struct SettingsView: View {
                 if let error = appState.persistenceError {
                     Section { Text(error).foregroundStyle(.red).font(.footnote) }
                 }
-                Section("服务器") {
+                Section(String(localized: "服务器")) {
                     ForEach(appState.profiles) { profile in
                         HStack {
                             Button {
@@ -42,7 +42,7 @@ struct SettingsView: View {
                                 editing = profile
                             } label: {
                                 Image(systemName: "pencil").frame(minWidth: 44, minHeight: 44)
-                            }.accessibilityLabel("编辑\(profile.name)")
+                            }.accessibilityLabel(String(format: String(localized: "编辑%@"), locale: Locale.current, String(describing: profile.name)))
                         }
                     }.onDelete { offsets in
                         let ids = offsets.compactMap { appState.profiles.indices.contains($0) ? appState.profiles[$0].id : nil }
@@ -51,30 +51,30 @@ struct SettingsView: View {
                     Button {
                         adding = true
                     } label: {
-                        Label("添加服务器", systemImage: "plus")
+                        Label(String(localized: "添加服务器"), systemImage: "plus")
                     }
                 }
-                Section("显示与刷新") {
-                    Toggle("模拟数据模式", isOn: Bindable(appState).isMockMode)
-                    Text("开启后使用本地示例数据，不连接服务器或 SSH。页面会持续显示 Mock data 徽章。")
+                Section(String(localized: "显示与刷新")) {
+                    Toggle(String(localized: "模拟数据模式"), isOn: Bindable(appState).isMockMode)
+                    Text(String(localized: "开启后使用本地示例数据，不连接服务器或 SSH。页面会持续显示 Mock data 徽章。"))
                         .font(.footnote).foregroundStyle(.secondary)
                     if let profile = appState.currentProfile {
-                        Picker("刷新间隔", selection: refreshBinding(profile)) {
-                            ForEach(intervals, id: \.self) { Text("\(Int($0)) 秒").tag($0) }
+                        Picker(String(localized: "刷新间隔"), selection: refreshBinding(profile)) {
+                            ForEach(intervals, id: \.self) { Text(String(format: String(localized: "%@ 秒"), locale: Locale.current, String(describing: Int($0)))).tag($0) }
                         }
                     }
                 }
-                Section("SSH 主机指纹") {
-                    if appState.profiles.isEmpty { Text("添加服务器后可管理指纹。").foregroundStyle(.secondary) }
+                Section(String(localized: "SSH 主机指纹")) {
+                    if appState.profiles.isEmpty { Text(String(localized: "添加服务器后可管理指纹。")).foregroundStyle(.secondary) }
                     ForEach(appState.profiles) { profile in
                         HStack {
                             VStack(alignment: .leading) {
                                 Text(profile.name)
-                                Text(fingerprints[profile.id] ?? "未记录指纹").font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(
+                                Text(fingerprints[profile.id] ?? String(localized: "未记录指纹")).font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(
                                     2)
                             }
                             Spacer()
-                            Button("清除指纹", role: .destructive) {
+                            Button(String(localized: "清除指纹"), role: .destructive) {
                                 Task {
                                     do {
                                         try await appState.secretStore.delete(account: SecretField.hostKey.account(profileID: profile.id))
@@ -85,25 +85,32 @@ struct SettingsView: View {
                         }
                     }
                 }
-                Section("连接应用") {
-                    Button("打开 Tailscale") { openApp(scheme: "tailscale://", label: "Tailscale") }
-                    Button("打开 UU Remote") { openApp(scheme: "uuremote://", label: "UU Remote") }
+                Section(String(localized: "语言")) {
+                    Text(String(localized: "可在 iOS 设置的 Magpie 页面选择应用语言。"))
+                        .font(.footnote).foregroundStyle(.secondary)
+                    Button(String(localized: "打开应用设置")) {
+                        if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                    }
                 }
-                Section("关于") {
+                Section(String(localized: "连接应用")) {
+                    Button(String(localized: "打开 Tailscale")) { openApp(scheme: "tailscale://", label: "Tailscale") }
+                    Button(String(localized: "打开 UU Remote")) { openApp(scheme: "uuremote://", label: "UU Remote") }
+                }
+                Section(String(localized: "关于")) {
                     LabeledContent(
-                        "版本",
+                        String(localized: "版本"),
                         value:
                             """
                             \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0")\
                              (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"))
                             """
                     )
-                    Button("开源许可") { showLicense = true }
+                    Button(String(localized: "开源许可")) { showLicense = true }
                 }
             }
-            .navigationTitle("设置")
+            .navigationTitle(String(localized: "设置"))
             .task { await loadFingerprints() }
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(String(localized: "完成")) { dismiss() } } }
             .sheet(isPresented: $adding) { ProfileEditView(initial: nil, onSave: persist) }
             .sheet(item: $editing) { profile in ProfileEditView(initial: profile, onSave: persist) }
             .sheet(isPresented: $showLicense) {
@@ -112,13 +119,13 @@ struct SettingsView: View {
                         NavigationLink("magpie — MIT License") { LicenseTextView(resource: "LICENSE-magpie") }
                         NavigationLink("SwiftTerm — MIT License") { LicenseTextView(resource: "LICENSE-SwiftTerm") }
                         NavigationLink("Citadel — MIT License") { LicenseTextView(resource: "LICENSE-Citadel") }
-                    }.navigationTitle("许可与致谢").toolbar {
-                        ToolbarItem(placement: .confirmationAction) { Button("完成") { showLicense = false } }
+                    }.navigationTitle(String(localized: "许可与致谢")).toolbar {
+                        ToolbarItem(placement: .confirmationAction) { Button(String(localized: "完成")) { showLicense = false } }
                     }
                 }
             }
-            .alert("无法打开应用", isPresented: Binding(get: { alertMessage != nil }, set: { if !$0 { alertMessage = nil } })) {
-                Button("好", role: .cancel) {}
+            .alert(String(localized: "无法打开应用"), isPresented: Binding(get: { alertMessage != nil }, set: { if !$0 { alertMessage = nil } })) {
+                Button(String(localized: "好"), role: .cancel) {}
             } message: {
                 Text(alertMessage ?? "")
             }
@@ -152,7 +159,7 @@ struct SettingsView: View {
     }
     private func openApp(scheme: String, label: String) {
         guard let url = URL(string: scheme), UIApplication.shared.canOpenURL(url) else {
-            alertMessage = "未检测到\(label)，请先安装后再试。"
+            alertMessage = String(format: String(localized: "未检测到%@，请先安装后再试。"), locale: Locale.current, String(describing: label))
             return
         }
         openURL(url)
@@ -166,7 +173,7 @@ private struct LicenseTextView: View {
             let url = Bundle.main.url(forResource: resource, withExtension: "txt", subdirectory: "Licenses")
                 ?? Bundle.main.url(forResource: resource, withExtension: "txt"),
             let contents = try? String(contentsOf: url, encoding: .utf8)
-        else { return "无法读取许可文本。" }
+        else { return String(localized: "无法读取许可文本。") }
         return contents
     }
     var body: some View {

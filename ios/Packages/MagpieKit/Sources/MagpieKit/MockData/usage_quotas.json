@@ -16,6 +16,23 @@
           "tokens": 2000,
           "cost": 0.04
         }
+      },
+      {
+        "name": "5h",
+        "used": 55,
+        "resetsAt": "2026-10-17T18:00:00Z",
+        "holds": {
+          "since": "2026-10-17T13:00:00Z",
+          "tokens": 4200,
+          "cost": 0.12
+        }
+      },
+      {
+        "name": "Credits",
+        "amount": 12,
+        "limit": 100,
+        "unit": "credits",
+        "used": 88
       }
     ],
     "resets": {
@@ -60,5 +77,81 @@
       "perDay": 2,
       "runsOut": "2026-10-21T08:00:00Z"
     }
+  },
+  {
+    "provider": "demo-claude",
+    "name": "Demo Claude",
+    "user": "demo-secondary@example.com",
+    "plan": "Demo",
+    "windows": [
+      {
+        "name": "7d",
+        "used": 92
+      }
+    ],
+    "resets": {
+      "count": 2,
+      "until": "2026-11-01T00:00:00Z",
+      "each": [
+        {
+          "until": "2026-11-01T00:00:00Z",
+          "window": "weekly"
+        }
+      ]
+    },
+    "daily": {
+      "since": "2026-10-17T00:00:00Z",
+      "days": [
+        {
+          "day": "2026-10-17",
+          "used": 25
+        }
+      ]
+    },
+    "checkin": {
+      "user": "demo-user@example.com",
+      "day": "2026-10-17",
+      "at": "2026-10-17T00:00:00Z",
+      "outcome": "ok",
+      "credit": 2,
+      "streak": 3
+    },
+    "balance": "$4.00",
+    "balanceTrend": {
+      "points": [
+        {
+          "at": "2026-10-16T08:00:00Z",
+          "amount": 10
+        },
+        {
+          "at": "2026-10-17T08:00:00Z",
+          "amount": 8
+        }
+      ],
+      "perDay": 2,
+      "runsOut": "2026-10-21T08:00:00Z"
+    }
+  },
+  {
+    "provider": "openrouter",
+    "name": "Demo Router",
+    "user": "demo-user@example.com",
+    "windows": [
+      {
+        "name": "Credits",
+        "unlimited": true
+      }
+    ],
+    "error": "Demo quota unavailable"
+  },
+  {
+    "provider": "deepseek",
+    "name": "Demo API",
+    "windows": [
+      {
+        "name": "Credits"
+      }
+    ],
+    "balance": "$3.50"
   }
 ]

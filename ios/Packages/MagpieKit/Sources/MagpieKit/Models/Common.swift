@@ -149,6 +149,7 @@ public struct UsageTotals: Decodable {
 }
 
 public struct UsageSummary: Decodable {
+    public let fetchedAt: MagpieDate?
     public let bucket: String?
     public let period: String?
     public let since: MagpieDate?
@@ -161,6 +162,7 @@ public struct UsageSummary: Decodable {
 
     private enum CodingKeys: String, CodingKey {
         case bucket, period, since, series, callerKeys, models, agents, accounts
+        case fetchedAt = "fetched_at"
         case calls, errors, retried, loops, input, output, cost, unpriced, tokens, reasoning
         case cacheRead = "cache_read"
         case cacheWrite = "cache_write"
@@ -168,6 +170,7 @@ public struct UsageSummary: Decodable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        fetchedAt = try container.decodeIfPresent(MagpieDate.self, forKey: .fetchedAt)
         bucket = try container.decodeIfPresent(String.self, forKey: .bucket)
         period = try container.decodeIfPresent(String.self, forKey: .period)
         since = try container.decodeIfPresent(MagpieDate.self, forKey: .since)

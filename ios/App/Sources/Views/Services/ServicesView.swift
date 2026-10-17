@@ -20,8 +20,8 @@ struct ServicesView: View {
     var body: some View {
         List {
             Section {
-                Picker("服务类型", selection: $category) {
-                    ForEach(ServicesCategory.allCases) { item in Text(item.rawValue).tag(item) }
+                Picker(String(localized: "服务类型"), selection: $category) {
+                    ForEach(ServicesCategory.allCases) { item in Text(item.title).tag(item) }
                 }
                 .pickerStyle(.segmented)
                 .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
@@ -29,8 +29,8 @@ struct ServicesView: View {
 
             if category == .systemd {
                 Section {
-                    Toggle("systemctl 使用 sudo -n", isOn: $store.useSudo)
-                    Text("仅保存于当前服务器配置。sudo -n 不会等待输入密码。")
+                    Toggle(String(localized: "systemctl 使用 sudo -n"), isOn: $store.useSudo)
+                    Text(String(localized: "仅保存于当前服务器配置。sudo -n 不会等待输入密码。"))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -38,7 +38,7 @@ struct ServicesView: View {
 
             if appState.isMockMode {
                 Section {
-                    Label("模拟数据；服务操作仅在本机模拟，不会连接 SSH。", systemImage: "play.rectangle")
+                    Label(String(localized: "模拟数据；服务操作仅在本机模拟，不会连接 SSH。"), systemImage: "play.rectangle")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -50,18 +50,18 @@ struct ServicesView: View {
             {
                 Section {
                     ContentUnavailableView {
-                        Label("无法读取服务", systemImage: "wifi.exclamationmark")
+                        Label(String(localized: "无法读取服务"), systemImage: "wifi.exclamationmark")
                     } description: {
                         Text(message)
                     } actions: {
-                        Button("重试") { Task { await store.refresh(appState: appState) } }
+                        Button(String(localized: "重试")) { Task { await store.refresh(appState: appState) } }
                     }
                 }
             } else if entries.isEmpty {
                 Section {
                     EmptyStateView(
-                        title: searchText.isEmpty ? "暂无\(category.rawValue)" : "没有匹配的服务",
-                        description: searchText.isEmpty ? "下拉刷新以重新读取服务器状态。" : "尝试其他名称或关键词。",
+                        title: searchText.isEmpty ? String(format: String(localized: "暂无%@"), locale: Locale.current, String(describing: category.title)) : String(localized: "没有匹配的服务"),
+                        description: searchText.isEmpty ? String(localized: "下拉刷新以重新读取服务器状态。") : String(localized: "尝试其他名称或关键词。"),
                         systemImage: category == .containers ? "shippingbox" : "gearshape.2"
                     )
                 }
@@ -82,10 +82,10 @@ struct ServicesView: View {
                     }
                 } header: {
                     HStack {
-                        Text(category.rawValue)
+                        Text(category.title)
                         Spacer()
                         if store.isRefreshing {
-                            ProgressView().controlSize(.small).accessibilityLabel("正在刷新")
+                            ProgressView().controlSize(.small).accessibilityLabel(String(localized: "正在刷新"))
                         } else if let updated = store.lastUpdated {
                             Text(updated, style: .relative).textCase(nil)
                         }
@@ -110,9 +110,9 @@ struct ServicesView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .searchable(text: $searchText, prompt: "搜索容器或服务")
+        .searchable(text: $searchText, prompt: String(localized: "搜索容器或服务"))
         .refreshable { await store.refresh(appState: appState) }
-        .navigationTitle("服务")
+        .navigationTitle(String(localized: "服务"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -120,26 +120,26 @@ struct ServicesView: View {
                 } label: {
                     Image(systemName: "arrow.clockwise")
                 }
-                .accessibilityLabel("刷新服务")
+                .accessibilityLabel(String(localized: "刷新服务"))
                 .disabled(store.isRefreshing)
             }
         }
         .confirmationDialog(
-            "确认\(pendingOperation?.action.rawValue ?? "服务操作")？",
+            String(format: String(localized: "确认%@？"), locale: Locale.current, String(describing: pendingOperation?.action.title ?? String(localized: "服务操作"))),
             isPresented: $isConfirming,
             titleVisibility: .visible
         ) {
             if let operation = pendingOperation {
                 if operation.action == .stop {
-                    Button(operation.action.rawValue, role: .destructive) { execute(operation) }
+                    Button(operation.action.title, role: .destructive) { execute(operation) }
                 } else {
-                    Button(operation.action.rawValue) { execute(operation) }
+                    Button(operation.action.title) { execute(operation) }
                 }
             }
-            Button("取消", role: .cancel) { pendingOperation = nil }
+            Button(String(localized: "取消"), role: .cancel) { pendingOperation = nil }
         } message: {
             if let operation = pendingOperation {
-                Text("\(operation.entry.name)\n将执行：\n\(operation.command)")
+                Text(String(format: String(localized: "%@\\n将执行：\\n%@"), locale: Locale.current, String(describing: operation.entry.name), String(describing: operation.command)))
             }
         }
         .task(id: "\(appState.currentProfile?.id.uuidString ?? "mock")-\(appState.isMockMode)-\(appState.isActive)") {
@@ -161,7 +161,7 @@ struct ServicesView: View {
                 isConfirming = true
             }
         } label: {
-            Label(action.rawValue, systemImage: symbol(for: action))
+            Label(action.title, systemImage: symbol(for: action))
         }
         .disabled(store.inFlightIDs.contains(entry.id))
     }
@@ -194,7 +194,7 @@ private struct ServiceRow: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: DS.Spacing.small)
                 if isLoading {
-                    ProgressView().controlSize(.small).accessibilityLabel("正在操作")
+                    ProgressView().controlSize(.small).accessibilityLabel(String(localized: "正在操作"))
                 } else {
                     StatusBadge(kind: entry.status.kind, text: entry.status.title)
                 }

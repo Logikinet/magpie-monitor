@@ -10,9 +10,9 @@ enum ActivityPeriod: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .today: "今天"
-        case .sevenDays: "近 7 天"
-        case .thirtyDays: "近 30 天"
+        case .today: String(localized: "今天")
+        case .sevenDays: String(localized: "近 7 天")
+        case .thirtyDays: String(localized: "近 30 天")
         }
     }
 }
@@ -68,7 +68,7 @@ final class ActivityStore {
 
     private func loadPage(appState: AppState, replace: Bool) async {
         guard let client = appState.makeGatewayClient() else {
-            error = "请先选择服务器配置。"
+            error = String(localized: "请先选择服务器配置。")
             return
         }
         let token = generation
@@ -103,7 +103,7 @@ final class ActivityStore {
             lastUpdated = Date()
         } catch {
             guard token == generation, !Task.isCancelled else { return }
-            self.error = (error as? MagpieError)?.localizedChinese ?? "读取请求记录失败，请检查连接后重试。"
+            self.error = (error as? MagpieError).map { ErrorMessages.chinese(for: $0) } ?? String(localized: "读取请求记录失败，请检查连接后重试。")
         }
     }
 

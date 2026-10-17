@@ -28,12 +28,12 @@ final class TerminalKeyboardAccessory: UIInputView {
             stack.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor),
         ])
         let keys: [(String, String, [UInt8])] = [
-            ("Esc", "退出键", [27]), ("Tab", "制表键", [9]),
-            ("Ctrl", "控制键，点按切换锁定", []),
-            ("↑", "上方向键", [27, 91, 65]), ("↓", "下方向键", [27, 91, 66]),
-            ("←", "左方向键", [27, 91, 68]), ("→", "右方向键", [27, 91, 67]),
-            ("|", "竖线", [124]), ("/", "斜线", [47]), ("-", "连字符", [45]),
-            ("~", "波浪号", [126]), ("⌃b", "tmux 前缀，控制键加 b", [2]),
+            ("Esc", String(localized: "退出键"), [27]), ("Tab", String(localized: "制表键"), [9]),
+            ("Ctrl", String(localized: "控制键，点按切换锁定"), []),
+            ("↑", String(localized: "上方向键"), [27, 91, 65]), ("↓", String(localized: "下方向键"), [27, 91, 66]),
+            ("←", String(localized: "左方向键"), [27, 91, 68]), ("→", String(localized: "右方向键"), [27, 91, 67]),
+            ("|", String(localized: "竖线"), [124]), ("/", String(localized: "斜线"), [47]), ("-", String(localized: "连字符"), [45]),
+            ("~", String(localized: "波浪号"), [126]), ("⌃b", String(localized: "tmux 前缀，控制键加 b"), [2]),
         ]
         for (title, label, bytes) in keys {
             let button = UIButton(type: .system)
@@ -51,13 +51,13 @@ final class TerminalKeyboardAccessory: UIInputView {
                     if title == "Ctrl" {
                         self.controlEnabled.toggle()
                         button?.isSelected = self.controlEnabled
-                        button?.accessibilityValue = self.controlEnabled ? "已锁定" : "未锁定"
+                        button?.accessibilityValue = self.controlEnabled ? String(localized: "已锁定") : String(localized: "未锁定")
                         button?.backgroundColor = self.controlEnabled ? .tertiarySystemFill : .clear
                     } else {
                         self.send?(self.modified(bytes))
                     }
                 }, for: .touchUpInside)
-            if title == "Ctrl" { button.accessibilityValue = "未锁定" }
+            if title == "Ctrl" { button.accessibilityValue = String(localized: "未锁定") }
             stack.addArrangedSubview(button)
         }
     }

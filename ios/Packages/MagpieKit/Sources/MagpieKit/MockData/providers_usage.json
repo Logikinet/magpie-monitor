@@ -1,0 +1,84 @@
+{
+  "providers": [
+    {
+      "id": "demo-claude",
+      "name": "Demo Claude",
+      "icon": "generic",
+      "preset": "demo",
+      "host": "example.ts.net",
+      "key": {
+        "set": true,
+        "masked": "demo-\u2022\u2022\u2022\u2022"
+      },
+      "account": {
+        "user": "demo-user@example.com",
+        "plan": "Demo",
+        "logins": [
+          {
+            "user": "demo-user@example.com",
+            "plan": "Demo",
+            "agent": "claude",
+            "active": true,
+            "on": true,
+            "seen": "2026-10-17T08:00:00Z"
+          }
+        ]
+      },
+      "models": [
+        {
+          "id": "demo-sonnet",
+          "name": "Demo Sonnet",
+          "on": true,
+          "context": 128000
+        }
+      ],
+      "agents": [
+        {
+          "id": "claude",
+          "name": "Claude",
+          "current": true
+        }
+      ],
+      "off": false,
+      "chosen": [
+        "demo-sonnet"
+      ],
+      "fallback": [
+        "demo-codex"
+      ],
+      "active_models_count": 1
+    },
+    {
+      "id": "fake-signed-in",
+      "name": "Demo Account",
+      "host": "example.ts.net",
+      "account": {
+        "user": "demo-user@example.com"
+      },
+      "models": []
+    },
+    {
+      "id": "fake-key",
+      "name": "Demo API",
+      "icon": "key",
+      "host": "example.ts.net",
+      "key": {
+        "set": true,
+        "masked": "demo-\u2022\u2022\u2022\u2022"
+      },
+      "models": [
+        {
+          "id": "demo-model"
+        }
+      ]
+    },
+    {
+      "id": "fake-free",
+      "name": "Demo Free",
+      "icon": "generic",
+      "host": "example.ts.net",
+      "models": [],
+      "off": true
+    }
+  ]
+}

@@ -42,7 +42,7 @@ struct ActivityView: View {
                 } label: {
                     Image(systemName: "arrow.clockwise")
                 }
-                .accessibilityLabel("刷新请求记录")
+                .accessibilityLabel(String(localized: "刷新请求记录"))
                 .disabled(store.isLoading)
             }
         }
@@ -71,19 +71,19 @@ struct ActivityView: View {
 
     private var controls: some View {
         HStack(spacing: DS.Spacing.small) {
-            Picker("统计周期", selection: $store.period) {
+            Picker(String(localized: "统计周期"), selection: $store.period) {
                 ForEach(ActivityPeriod.allCases) { period in Text(period.title).tag(period) }
             }
             .pickerStyle(.segmented)
-            if store.isLoading { ProgressView().accessibilityLabel("正在加载") }
+            if store.isLoading { ProgressView().accessibilityLabel(String(localized: "正在加载")) }
         }
     }
 
     private var trendSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.mediumSmall) {
-            SectionHeader(title: "请求趋势", subtitle: "按服务器返回的时间分桶")
+            SectionHeader(title: String(localized: "请求趋势"), subtitle: String(localized: "按服务器返回的时间分桶"))
             if store.series.isEmpty {
-                Text("暂无趋势数据").font(.subheadline).foregroundStyle(.secondary)
+                Text(String(localized: "暂无趋势数据")).font(.subheadline).foregroundStyle(.secondary)
             } else {
                 let points = Array(store.series.enumerated())
                 let hasDates = points.allSatisfy { $0.element.time?.date != nil }
@@ -95,19 +95,19 @@ struct ActivityView: View {
                     """
                     if hasDates, let date = point.time?.date {
                         BarMark(
-                            x: .value("时间", date, unit: store.bucket == "hour" ? .hour : .day),
-                            y: .value("请求数", point.calls?.value ?? 0)
+                            x: .value(String(localized: "时间"), date, unit: store.bucket == "hour" ? .hour : .day),
+                            y: .value(String(localized: "请求数"), point.calls?.value ?? 0)
                         )
                         .foregroundStyle(.tint)
-                        .accessibilityLabel(point.label ?? "时间段 \(index + 1)")
+                        .accessibilityLabel(point.label ?? String(format: String(localized: "时间段 %@"), locale: Locale.current, String(describing: index + 1)))
                         .accessibilityValue(value)
                     } else {
                         BarMark(
-                            x: .value("时间", point.label ?? "\(index)"),
-                            y: .value("请求数", point.calls?.value ?? 0)
+                            x: .value(String(localized: "时间"), point.label ?? "\(index)"),
+                            y: .value(String(localized: "请求数"), point.calls?.value ?? 0)
                         )
                         .foregroundStyle(.tint)
-                        .accessibilityLabel(point.label ?? "时间段 \(index + 1)")
+                        .accessibilityLabel(point.label ?? String(format: String(localized: "时间段 %@"), locale: Locale.current, String(describing: index + 1)))
                         .accessibilityValue(value)
                     }
                 }
@@ -132,9 +132,9 @@ struct ActivityView: View {
                         }
                     }
                 }
-                .chartYAxisLabel("请求数")
+                .chartYAxisLabel(String(localized: "请求数"))
                 .frame(height: 180)
-                .accessibilityLabel("请求趋势图")
+                .accessibilityLabel(String(localized: "请求趋势图"))
             }
         }
         .padding(DS.Spacing.medium)
@@ -143,19 +143,19 @@ struct ActivityView: View {
 
     private var metrics: some View {
         LazyVGrid(columns: columns, alignment: .leading, spacing: DS.Spacing.mediumSmall) {
-            MetricCard(title: "请求", value: store.calls.formatted(), systemImage: "arrow.left.arrow.right")
-            MetricCard(title: "输入令牌", value: store.inputTokens.formatted(), systemImage: "arrow.down.left")
-            MetricCard(title: "输出令牌", value: store.outputTokens.formatted(), systemImage: "arrow.up.right")
-            MetricCard(title: "费用", value: store.cost.formatted(.number.precision(.fractionLength(0...4))), systemImage: "creditcard")
+            MetricCard(title: String(localized: "请求"), value: store.calls.formatted(), systemImage: "arrow.left.arrow.right")
+            MetricCard(title: String(localized: "输入令牌"), value: store.inputTokens.formatted(), systemImage: "arrow.down.left")
+            MetricCard(title: String(localized: "输出令牌"), value: store.outputTokens.formatted(), systemImage: "arrow.up.right")
+            MetricCard(title: String(localized: "费用"), value: store.cost.formatted(.number.precision(.fractionLength(0...4))), systemImage: "creditcard")
         }
     }
 
     private var filters: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.small) {
-            SectionHeader(title: "筛选")
-            filterPicker("全部 Agent", selection: $store.agentFilter, options: store.agentOptions.map { ($0.id, $0.name) })
-            filterPicker("全部提供方", selection: $store.providerFilter, options: store.providerOptions.map { ($0.id, $0.name) })
-            filterPicker("全部模型", selection: $store.modelFilter, options: store.modelOptions.map { ($0, $0) })
+            SectionHeader(title: String(localized: "筛选"))
+            filterPicker(String(localized: "全部 Agent"), selection: $store.agentFilter, options: store.agentOptions.map { ($0.id, $0.name) })
+            filterPicker(String(localized: "全部提供方"), selection: $store.providerFilter, options: store.providerOptions.map { ($0.id, $0.name) })
+            filterPicker(String(localized: "全部模型"), selection: $store.modelFilter, options: store.modelOptions.map { ($0, $0) })
         }
     }
 
@@ -175,9 +175,9 @@ struct ActivityView: View {
 
     private var requestList: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.small) {
-            SectionHeader(title: "请求记录", subtitle: "共 \(store.total.formatted()) 条")
+            SectionHeader(title: String(localized: "请求记录"), subtitle: String(format: String(localized: "共 %@ 条"), locale: Locale.current, String(describing: store.total.formatted())))
             if store.rows.isEmpty {
-                EmptyStateView(title: "暂无请求记录", description: "调整周期或筛选条件后重试。", systemImage: "tray")
+                EmptyStateView(title: String(localized: "暂无请求记录"), description: String(localized: "调整周期或筛选条件后重试。"), systemImage: "tray")
             } else {
                 LazyVStack(spacing: 0) {
                     ForEach(Array(store.rows.enumerated()), id: \.offset) { index, row in
@@ -205,11 +205,11 @@ struct ActivityView: View {
 
     private func unavailable(_ message: String) -> some View {
         ContentUnavailableView {
-            Label("无法读取动态", systemImage: "exclamationmark.triangle")
+            Label(String(localized: "无法读取动态"), systemImage: "exclamationmark.triangle")
         } description: {
             Text(message)
         } actions: {
-            Button("重试") { Task { await store.refresh(appState: appState) } }
+            Button(String(localized: "重试")) { Task { await store.refresh(appState: appState) } }
         }
     }
 }
@@ -220,30 +220,30 @@ private struct ActivityRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.small) {
             HStack(alignment: .firstTextBaseline) {
-                Text(row.agentName ?? row.agent ?? "未知智能体").font(.headline).lineLimit(1)
+                Text(row.agentName ?? row.agent ?? String(localized: "未知智能体")).font(.headline).lineLimit(1)
                 Spacer(minLength: DS.Spacing.small)
                 Text(row.time?.date ?? Date.distantPast, format: .dateTime.month(.abbreviated).day().hour().minute())
                     .font(.footnote).foregroundStyle(.secondary).monospacedDigit()
             }
-            Text(row.model ?? "未知模型").font(.subheadline.monospaced()).textSelection(.enabled).lineLimit(2)
+            Text(row.model ?? String(localized: "未知模型")).font(.subheadline.monospaced()).textSelection(.enabled).lineLimit(2)
             HStack(spacing: DS.Spacing.mediumSmall) {
-                Text(row.providerName ?? row.provider ?? "未知提供方")
+                Text(row.providerName ?? row.provider ?? String(localized: "未知提供方"))
                 Spacer(minLength: 0)
-                Text("入 \(row.input?.value ?? 0) · 出 \(row.output?.value ?? 0)").monospacedDigit()
+                Text(String(format: String(localized: "入 %@ · 出 %@"), locale: Locale.current, String(describing: row.input?.value ?? 0), String(describing: row.output?.value ?? 0))).monospacedDigit()
                 Text((row.cost?.value ?? 0).formatted(.number.precision(.fractionLength(0...4))))
                     .monospacedDigit()
             }
             .font(.footnote).foregroundStyle(.secondary)
             HStack(spacing: DS.Spacing.mediumSmall) {
-                if row.swapped == true { StatusBadge(kind: .warning, text: "已切换") }
-                if row.routed == true { StatusBadge(kind: .neutral, text: "已路由") }
-                if row.error != nil || (row.status?.value ?? 0) >= 400 { StatusBadge(kind: .error, text: "错误") }
+                if row.swapped == true { StatusBadge(kind: .warning, text: String(localized: "已切换")) }
+                if row.routed == true { StatusBadge(kind: .neutral, text: String(localized: "已路由")) }
+                if row.error != nil || (row.status?.value ?? 0) >= 400 { StatusBadge(kind: .error, text: String(localized: "错误")) }
             }
         }
         .padding(.vertical, DS.Spacing.medium)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityHint("查看请求详情")
+        .accessibilityHint(String(localized: "查看请求详情"))
     }
 }
 
@@ -256,17 +256,17 @@ private struct ActivityRowDetail: View {
     let row: LedgerRow
     private var fields: [(String, String)] {
         [
-            ("时间", row.time?.rawString ?? "未知"), ("操作", row.operation ?? "未知"),
-            ("Agent", row.agentName ?? row.agent ?? "未知"), ("图标", row.icon ?? "未知"),
-            ("模型", row.model ?? "未知"), ("请求模型", row.requested ?? "未知"),
-            ("响应模型", row.served ?? "未知"), ("提供方", row.providerName ?? row.provider ?? "未知"),
-            ("主机", row.host ?? "未知"), ("状态码", row.status.map { "\($0.value)" } ?? "未知"),
-            ("输入令牌", "\(row.input?.value ?? 0)"), ("输出令牌", "\(row.output?.value ?? 0)"),
-            ("缓存读取", "\(row.cacheRead?.value ?? 0)"), ("缓存写入", "\(row.cacheWrite?.value ?? 0)"),
-            ("费用", (row.cost?.value ?? 0).formatted()), ("已计价", row.priced == true ? "是" : "否"),
-            ("已切换", row.swapped == true ? "是" : "否"), ("已路由", row.routed == true ? "是" : "否"),
-            ("错误", row.error ?? row.errorType ?? "无"), ("会话", row.session ?? "未知"),
-            ("请求 ID", row.requestID ?? "未知"), ("来源", row.source ?? "未知"),
+            (String(localized: "时间"), row.time?.rawString ?? String(localized: "未知")), (String(localized: "操作"), row.operation ?? String(localized: "未知")),
+            ("Agent", row.agentName ?? row.agent ?? String(localized: "未知")), (String(localized: "图标"), row.icon ?? String(localized: "未知")),
+            (String(localized: "模型"), row.model ?? String(localized: "未知")), (String(localized: "请求模型"), row.requested ?? String(localized: "未知")),
+            (String(localized: "响应模型"), row.served ?? String(localized: "未知")), (String(localized: "提供方"), row.providerName ?? row.provider ?? String(localized: "未知")),
+            (String(localized: "主机"), row.host ?? String(localized: "未知")), (String(localized: "状态码"), row.status.map { "\($0.value)" } ?? String(localized: "未知")),
+            (String(localized: "输入令牌"), "\(row.input?.value ?? 0)"), (String(localized: "输出令牌"), "\(row.output?.value ?? 0)"),
+            (String(localized: "缓存读取"), "\(row.cacheRead?.value ?? 0)"), (String(localized: "缓存写入"), "\(row.cacheWrite?.value ?? 0)"),
+            (String(localized: "费用"), (row.cost?.value ?? 0).formatted()), (String(localized: "已计价"), row.priced == true ? String(localized: "是") : String(localized: "否")),
+            (String(localized: "已切换"), row.swapped == true ? String(localized: "是") : String(localized: "否")), (String(localized: "已路由"), row.routed == true ? String(localized: "是") : String(localized: "否")),
+            (String(localized: "错误"), row.error ?? row.errorType ?? String(localized: "无")), (String(localized: "会话"), row.session ?? String(localized: "未知")),
+            (String(localized: "请求 ID"), row.requestID ?? String(localized: "未知")), (String(localized: "来源"), row.source ?? String(localized: "未知")),
         ]
     }
 
@@ -278,7 +278,7 @@ private struct ActivityRowDetail: View {
                 }
             }
         }
-        .navigationTitle("请求详情")
+        .navigationTitle(String(localized: "请求详情"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }

@@ -21,6 +21,11 @@ public struct Provider: Decodable, Sendable {
     public let key: ProviderKey?
     public let account: ProviderAccount?
     public let agents: LossyArray<ProviderAgent>?
+    public let activeModelsCount: FlexibleInt?
+    enum CodingKeys: String, CodingKey {
+        case id, name, icon, preset, host, website, routing, affinity, exposed, unlisted, noModels, ready, models, key, account, agents, off, chosen, fallback
+        case activeModelsCount = "active_models_count"
+    }
     public let off: Bool?
     public let chosen: LossyArray<String>?
     public let fallback: LossyArray<String>?

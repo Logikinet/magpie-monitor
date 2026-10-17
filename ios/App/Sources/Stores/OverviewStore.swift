@@ -15,9 +15,9 @@ struct OverviewQuota: Identifiable {
         guard let tokenUsage else { return nil }
         let count = TokenFormatter.compact(tokenUsage.count, locale: Locale(identifier: "zh_CN"))
         switch tokenUsage.source {
-        case .window: return "已消耗 \(count) token"
-        case .today: return "今日已消耗 \(count) token"
-        case .sevenDays: return "近 7 天已消耗 \(count) token"
+        case .window: return String(format: String(localized: "已消耗 %@ token"), locale: Locale.current, String(describing: count))
+        case .today: return String(format: String(localized: "今日已消耗 %@ token"), locale: Locale.current, String(describing: count))
+        case .sevenDays: return String(format: String(localized: "近 7 天已消耗 %@ token"), locale: Locale.current, String(describing: count))
         }
     }
 }
@@ -78,22 +78,22 @@ final class OverviewStore {
             let usages = (await todayUsage, await weeklyUsage)
             var items: [OverviewQuota] = []
             for quota in result.data.elements {
-                let windows = [(quota.fiveHourWindow, "5 小时"), (quota.weeklyWindow, "每周")]
+                let windows = [(quota.fiveHourWindow, String(localized: "5 小时")), (quota.weeklyWindow, String(localized: "每周"))]
                 for (span, title) in windows {
                     guard let span else { continue }
                     guard span.unlimited != true else { continue }
                     if let used = span.usedPercentage {
                         let providerID = quota.provider ?? ""
-                        let periodUsage = title == "每周" ? (try? usages.1.get()) : (try? usages.0.get())
+                        let periodUsage = title == String(localized: "每周") ? (try? usages.1.get()) : (try? usages.0.get())
                         items.append(
                             OverviewQuota(
                                 id: "\(providerID.isEmpty ? quota.name ?? "provider" : providerID)-\(title)",
-                                provider: quota.name ?? quota.provider ?? "提供方", window: title, used: used, limit: 100,
+                                provider: quota.name ?? quota.provider ?? String(localized: "提供方"), window: title, used: used, limit: 100,
                                 tokenUsage: TokenUsage.value(
                                     window: span,
                                     provider: providerID,
                                     usage: periodUsage,
-                                    approximateSource: title == "每周" ? .sevenDays : .today)))
+                                    approximateSource: title == String(localized: "每周") ? .sevenDays : .today)))
                     }
                 }
             }

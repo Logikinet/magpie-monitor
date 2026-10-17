@@ -15,18 +15,18 @@ struct TmuxView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.small) {
                     HStack {
-                        StatusBadge(kind: statusKind, text: store.state.rawValue)
+                        StatusBadge(kind: statusKind, text: store.state.title)
                         Spacer()
-                        if store.isLoading { ProgressView().accessibilityLabel("正在读取会话") }
+                        if store.isLoading { ProgressView().accessibilityLabel(String(localized: "正在读取会话")) }
                     }
                     if appState.isMockMode {
-                        Text("终端演示 · 连接已停用")
+                        Text(String(localized: "终端演示 · 连接已停用"))
                             .font(.subheadline).foregroundStyle(.secondary)
                     } else {
-                        Picker("会话", selection: $store.selectedSession) {
-                            Text("新建会话").tag("")
+                        Picker(String(localized: "会话"), selection: $store.selectedSession) {
+                            Text(String(localized: "新建会话")).tag("")
                             ForEach(store.sessions, id: \.name) { session in
-                                Text("\(session.name) · \(session.windows) 个窗口").tag(session.name)
+                                Text(String(format: String(localized: "%@ · %@ 个窗口"), locale: Locale.current, String(describing: session.name), String(describing: session.windows))).tag(session.name)
                             }
                         }
                         .disabled(store.state != .disconnected)
@@ -53,8 +53,8 @@ struct TmuxView: View {
             .overlay {
                 if !appState.isMockMode, store.channel == nil {
                     EmptyStateView(
-                        title: store.state == .connecting ? "正在连接终端" : "选择会话后连接",
-                        description: "连接中断后，请点按重连。", systemImage: "terminal"
+                        title: store.state == .connecting ? String(localized: "正在连接终端") : String(localized: "选择会话后连接"),
+                        description: String(localized: "连接中断后，请点按重连。"), systemImage: "terminal"
                     )
                     .allowsHitTesting(false)
                 }
@@ -73,21 +73,21 @@ struct TmuxView: View {
 
     @ViewBuilder private var controls: some View {
         if store.state == .disconnected {
-            Button("连接", systemImage: "terminal") {
+            Button(String(localized: "连接"), systemImage: "terminal") {
                 Task { await store.connect(appState: appState) }
             }
             .buttonStyle(.borderedProminent)
             .disabled(store.isLoading)
-            Button("重连", systemImage: "arrow.clockwise") {
+            Button(String(localized: "重连"), systemImage: "arrow.clockwise") {
                 Task { await store.connect(appState: appState, reconnect: true) }
             }
             .buttonStyle(.bordered)
             .disabled(store.isLoading)
         } else {
-            Button("断开", systemImage: "xmark.circle") { store.disconnect() }
+            Button(String(localized: "断开"), systemImage: "xmark.circle") { store.disconnect() }
                 .buttonStyle(.bordered)
         }
-        Button("刷新会话", systemImage: "arrow.triangle.2.circlepath") {
+        Button(String(localized: "刷新会话"), systemImage: "arrow.triangle.2.circlepath") {
             Task { await store.refresh(appState: appState) }
         }
         .buttonStyle(.bordered)

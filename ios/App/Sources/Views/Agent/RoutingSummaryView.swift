@@ -12,23 +12,23 @@ struct RoutingSummaryView: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("服务商：\(route.provider ?? "—") · 模型：\(route.served ?? route.model ?? "—")").font(.headline.monospaced())
+            Text(String(format: String(localized: "服务商：%@ · 模型：%@"), locale: Locale.current, String(describing: route.provider ?? "—"), String(describing: route.served ?? route.model ?? "—"))).font(.headline.monospaced())
             if route.done == false {
                 let start = route.tries?.elements.first?.start?.date
-                Label("回答中 · 已用 \(RoutePresentation.elapsed(start))", systemImage: "ellipsis.bubble")
+                Label(String(format: String(localized: "回答中 · 已用 %@"), locale: Locale.current, String(describing: RoutePresentation.elapsed(start))), systemImage: "ellipsis.bubble")
                     .foregroundStyle(DS.Palette.green)
             } else if let status = route.status?.value {
                 Label("HTTP \(status)", systemImage: status >= 400 ? "exclamationmark.triangle" : "checkmark.circle")
                     .foregroundStyle(status >= 400 ? DS.Palette.red : DS.Palette.green)
-            } else { Text("状态：—") }
+            } else { Text(String(localized: "状态：—")) }
             if route.done != false {
-                Text("耗时：\(RoutePresentation.milliseconds(route.ms?.value)) · Token：\(route.tokens?.value.formatted() ?? "—")")
+                Text(String(format: String(localized: "耗时：%@ · Token：%@"), locale: Locale.current, String(describing: RoutePresentation.milliseconds(route.ms?.value)), String(describing: route.tokens?.value.formatted() ?? "—")))
             }
             if let ttft = route.ttft?.value ?? route.tries?.elements.first(where: { $0.served == route.served })?.ttft?.value {
-                Text("首字：\(RoutePresentation.milliseconds(ttft))")
+                Text(String(format: String(localized: "首字：%@"), locale: Locale.current, String(describing: RoutePresentation.milliseconds(ttft))))
             }
-            if route.done != false, let output = route.out?.value { Text("输出 Token：\(output.formatted())") }
-            if route.done != false, speed != "—" { Text("速度：\(speed)") }
+            if route.done != false, let output = route.out?.value { Text(String(format: String(localized: "输出 Token：%@"), locale: Locale.current, String(describing: output.formatted()))) }
+            if route.done != false, speed != "—" { Text(String(format: String(localized: "速度：%@"), locale: Locale.current, String(describing: speed))) }
         }.font(.caption.monospaced()).accessibilityElement(children: .combine)
     }
 }
