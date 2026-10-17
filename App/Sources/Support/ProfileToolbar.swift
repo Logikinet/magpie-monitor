@@ -32,8 +32,8 @@ struct ProfileToolbar: ViewModifier {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 VStack(alignment: .trailing, spacing: DS.Spacing.xSmall) {
-                    if appState.isMockMode { MockBadge() }
-                    if appState.currentProfile?.isInsecure == true { InsecureBadge() }
+                    if appState.isMockMode { MockBadge().labelStyle(.titleAndIcon) }
+                    if appState.currentProfile?.isInsecure == true { InsecureBadge().labelStyle(.titleAndIcon) }
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {

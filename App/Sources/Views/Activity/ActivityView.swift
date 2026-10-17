@@ -85,25 +85,51 @@ struct ActivityView: View {
             if store.series.isEmpty {
                 Text("暂无趋势数据").font(.subheadline).foregroundStyle(.secondary)
             } else {
-                Chart(Array(store.series.enumerated()), id: \.offset) { index, point in
-                    BarMark(x: .value("时间", point.label ?? "\(index)"), y: .value("请求数", point.calls?.value ?? 0))
+                let points = Array(store.series.enumerated())
+                let hasDates = points.allSatisfy { $0.element.time?.date != nil }
+                Chart(points, id: \.offset) { index, point in
+                    let value = """
+                    \(point.calls?.value ?? 0) 次请求，\
+                    \(point.tokens?.value ?? 0) 个令牌，\
+                    费用 \(point.cost?.value ?? 0, format: .number.precision(.fractionLength(4)))
+                    """
+                    if hasDates, let date = point.time?.date {
+                        BarMark(
+                            x: .value("时间", date, unit: store.bucket == "hour" ? .hour : .day),
+                            y: .value("请求数", point.calls?.value ?? 0)
+                        )
                         .foregroundStyle(.tint)
                         .accessibilityLabel(point.label ?? "时间段 \(index + 1)")
-                        .accessibilityValue(
-                            """
-                            \(point.calls?.value ?? 0) 次请求，\
-                            \(point.tokens?.value ?? 0) 个令牌，\
-                            费用 \(point.cost?.value ?? 0, format: .number.precision(.fractionLength(4)))
-                            """
+                        .accessibilityValue(value)
+                    } else {
+                        BarMark(
+                            x: .value("时间", point.label ?? "\(index)"),
+                            y: .value("请求数", point.calls?.value ?? 0)
                         )
+                        .foregroundStyle(.tint)
+                        .accessibilityLabel(point.label ?? "时间段 \(index + 1)")
+                        .accessibilityValue(value)
+                    }
                 }
                 .chartXAxis {
-                    AxisMarks(values: store.series.enumerated().compactMap { index, point in
-                        index.isMultiple(of: max(1, (store.series.count + 3) / 4)) ? point.label : nil
-                    }) { _ in
-                        AxisGridLine()
-                        AxisTick()
-                        AxisValueLabel()
+                    if hasDates {
+                        AxisMarks(values: .automatic(desiredCount: 4)) { _ in
+                            AxisGridLine()
+                            AxisTick()
+                            if store.bucket == "hour" {
+                                AxisValueLabel(format: .dateTime.hour())
+                            } else {
+                                AxisValueLabel(format: .dateTime.month().day())
+                            }
+                        }
+                    } else {
+                        AxisMarks(values: store.series.enumerated().compactMap { index, point in
+                            index.isMultiple(of: max(1, (store.series.count + 3) / 4)) ? point.label : nil
+                        }) { _ in
+                            AxisGridLine()
+                            AxisTick()
+                            AxisValueLabel()
+                        }
                     }
                 }
                 .chartYAxisLabel("请求数")

@@ -21,6 +21,7 @@ enum ActivityPeriod: String, CaseIterable, Identifiable {
 final class ActivityStore {
     private(set) var rows: [LedgerRow] = []
     private(set) var series: [SeriesPoint] = []
+    private(set) var bucket: String?
     private(set) var total = 0
     private(set) var offset = 0
     private(set) var calls = 0
@@ -51,6 +52,7 @@ final class ActivityStore {
         defer { if generation == token { isLoading = false } }
         rows = []
         series = []
+        bucket = nil
         total = 0
         offset = 0
         await loadPage(appState: appState, replace: true)
@@ -81,6 +83,7 @@ final class ActivityStore {
             if replace {
                 rows = incoming
                 series = page.series?.elements ?? []
+                bucket = page.bucket
                 agentOptions = page.agents?.elements ?? []
                 providerOptions = page.providers?.elements ?? []
                 modelOptions = Array(Set(incoming.compactMap(\.model).filter { !$0.isEmpty })).sorted()
