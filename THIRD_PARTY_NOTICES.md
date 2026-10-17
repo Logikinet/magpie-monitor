@@ -41,3 +41,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Routing views
+
+`web/src/views/agent/RoutingStage.tsx` and `web/src/styles/routing.css` adapt the stage layout, connection behavior, and animations from yetone/magpie's MIT-licensed `internal/gui/assets/plugins/routing/{client.js,routing.css}`, commit `7660399`. Copyright (c) 2026 yetone. The MIT license reproduced above applies to these adaptations.

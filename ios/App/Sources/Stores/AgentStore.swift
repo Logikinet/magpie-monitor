@@ -4,6 +4,17 @@ import MagpieKit
 
 @MainActor @Observable
 final class AgentStore {
+    private(set) var groups: [RoutingGroup] = []
+    private(set) var providers: [Provider] = []
+    private(set) var usageQuotas: [Quota] = []
+    private(set) var routingError: String?
+    private(set) var now = Date()
+    private(set) var pinnedID: Int?
+    var seatFilter: String?
+    var currentRoute: Route? { RoutingModel.currentRoute(in: routes, pinnedID: pinnedID) }
+    func pin(_ route: Route) { pinnedID = route.id?.value }
+    func unpin() { pinnedID = nil }
+    @ObservationIgnored private var tickerTask: Task<Void, Never>?
     private(set) var routes: [Route] = []
     private(set) var totals: TraceTotals?
     private(set) var status: PollStatus = .stopped
@@ -21,6 +32,7 @@ final class AgentStore {
     @ObservationIgnored private var poller: TracePoller?
 
     deinit {
+        tickerTask?.cancel()
         traceTask?.cancel()
         refreshTask?.cancel()
     }
@@ -40,6 +52,12 @@ final class AgentStore {
         stop()
         if profile != appState.currentProfile || mockMode != appState.isMockMode {
             routes = []
+            groups = []
+            providers = []
+            usageQuotas = []
+            routingError = nil
+            pinnedID = nil
+            seatFilter = nil
             totals = nil
             concurrency = nil
             cards = []
@@ -54,6 +72,9 @@ final class AgentStore {
         let gateway: GatewayClient?
         if appState.isMockMode {
             let transport = MockTransport(fixtures: [
+                "/api/groups": (try? MockFixtures.data(named: "groups")) ?? Data(),
+                "/api/providers": (try? MockFixtures.data(named: "providers")) ?? Data(),
+                "/api/usage/quotas": (try? MockFixtures.data(named: "usage_quotas")) ?? Data(),
                 "/api/gateway/trace": (try? MockFixtures.data(named: "trace")) ?? Data(),
                 "/v1/magpie/concurrency": (try? MockFixtures.data(named: "concurrency")) ?? Data(),
                 "/v1/magpie/quotas/cards": (try? MockFixtures.data(named: "quota_cards")) ?? Data(),
@@ -80,12 +101,19 @@ final class AgentStore {
             await poller.run { [weak self] event in
                 await self?.receive(event, generation: token)
                 // Fixtures return immediately instead of waiting on the server.
-                if mock { try? await Task.sleep(for: .seconds(1)) }
+                if mock, case .envelope = event { try? await Task.sleep(for: .seconds(1)) }
             }
         }
         let interval = appState.refreshInterval.isFinite ? max(1, appState.refreshInterval) : 20
+        tickerTask = Task { [weak self] in
+            while !Task.isCancelled {
+                self?.now = Date()
+                do { try await Task.sleep(for: .seconds(1)) } catch { return }
+            }
+        }
         refreshTask = Task { [weak self] in
             while !Task.isCancelled {
+                await self?.refreshRouting(web, generation: token)
                 await self?.refresh(gateway, generation: token)
                 do { try await Task.sleep(for: .seconds(interval)) } catch { return }
             }
@@ -94,6 +122,8 @@ final class AgentStore {
 
     func stop() {
         generation = UUID()
+        tickerTask?.cancel()
+        tickerTask = nil
         traceTask?.cancel()
         traceTask = nil
         refreshTask?.cancel()
@@ -112,14 +142,31 @@ final class AgentStore {
             if value == .live { authFailed = false }
         case .envelope(let envelope):
             if let value = envelope.totals { totals = value }
-            // Route IDs are updated as requests complete; seq is the update cursor.
-            for route in envelope.routes?.elements ?? [] {
-                if let id = route.id?.value { routes.removeAll { $0.id?.value == id } }
-                routes.append(route)
-            }
-            routes.sort { ($0.seq?.value ?? 0) > ($1.seq?.value ?? 0) }
-            routes = Array(routes.prefix(200))
+            routes = (envelope.routes?.elements ?? []).sorted { ($0.seq?.value ?? 0) > ($1.seq?.value ?? 0) }
+            if let pinnedID, !routes.contains(where: { $0.id?.value == pinnedID }) { self.pinnedID = nil }
         }
+    }
+
+    private func refreshRouting(_ client: WebClient, generation token: UUID) async {
+        async let groupResult = result { try await client.groups() }
+        async let providerResult = result { try await client.providers() }
+        async let quotaResult = result { try await client.usageQuotas() }
+        let results = await (groupResult, providerResult, quotaResult)
+        guard !Task.isCancelled, token == generation else { return }
+        var errors: [String] = []
+        switch results.0 {
+        case .success(let value): groups = value.groups?.elements ?? []
+        case .failure(let error): errors.append(MagpieError.map(error).localizedChinese)
+        }
+        switch results.1 {
+        case .success(let value): providers = value.providers?.elements ?? []
+        case .failure(let error): errors.append(MagpieError.map(error).localizedChinese)
+        }
+        switch results.2 {
+        case .success(let value): usageQuotas = value.elements
+        case .failure(let error): errors.append(MagpieError.map(error).localizedChinese)
+        }
+        routingError = errors.isEmpty ? nil : errors.joined(separator: "；")
     }
 
     private func refresh(_ client: GatewayClient?, generation token: UUID) async {

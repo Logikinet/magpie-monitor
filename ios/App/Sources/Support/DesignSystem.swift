@@ -1,6 +1,63 @@
 import SwiftUI
+import UIKit
+import MagpieKit
 
 enum DS {
+    enum Palette {
+        static func hex(_ hex: String) -> Color { Color(uiColor: ui(hex)) }
+        private static func ui(_ hex: String) -> UIColor {
+            let value = UInt32(hex.replacingOccurrences(of: "#", with: ""), radix: 16) ?? 0
+            return UIColor(red: CGFloat((value >> 16) & 255) / 255, green: CGFloat((value >> 8) & 255) / 255, blue: CGFloat(value & 255) / 255, alpha: 1)
+        }
+        private static func dynamic(_ dark: String, _ light: String) -> Color {
+            Color(uiColor: UIColor { traits in ui(traits.userInterfaceStyle == .dark ? dark : light) })
+        }
+        static let bg = dynamic("0a0a0a", "f2f2f7")
+        static let elev = dynamic("141414", "ffffff")
+        static let panel = dynamic("131313", "fafafa")
+        static let deep = dynamic("101010", "ececec")
+        static let hover = dynamic("1f1f1f", "e9e9e9")
+        static let active = dynamic("262626", "e2e2e2")
+        static let border = dynamic("222222", "e0e0e0")
+        static let borderSoft = dynamic("1f1f1f", "e4e4e4")
+        static let borderFaint = dynamic("1a1a1a", "eaeaea")
+        static let chip = dynamic("1c1c1e", "ffffff")
+        static let chipOn = dynamic("f2f2f2", "1f1f1f")
+        static let chipText = dynamic("111111", "ffffff")
+        static let accent = dynamic("0a84ff", "0066cc")
+        static let red = dynamic("e06c6c", "b33939")
+        static let warn = dynamic("f0b662", "8a5800")
+        static let green = dynamic("6ec89a", "1e7d4f")
+        static let orange = dynamic("e0884c", "a85413")
+        static let blue = dynamic("8ab4f8", "2b6cb0")
+        static let violet = dynamic("9d8cf5", "6c5ce7")
+        static let chartCPU = dynamic("6ea8dc", "3572b0")
+        static let chartLoad = dynamic("6ec89a", "1e7d4f")
+        static let chartMemory = dynamic("e0a84c", "a8731a")
+        static let chartSwap = dynamic("b48ead", "8d6a9e")
+        static let chartGrid = dynamic("1c1c1c", "e4e4e4")
+        static let title = dynamic("f2f2f2", "111111")
+        static let hi = dynamic("eeeeee", "1a1a1a")
+        static let text = dynamic("d6d6d6", "242424")
+        static let mid = dynamic("c9c9c9", "333333")
+        static let soft = dynamic("b0b0b0", "464646")
+        static let dim = dynamic("909090", "575757")
+        static let faint = dynamic("8a8a8a", "666666")
+        static let ghost = dynamic("777777", "757575")
+        static let dead = dynamic("666666", "8f8f8f")
+        static let kSystem = dynamic("a855f7", "a855f7")
+        static let kTools = dynamic("818cf8", "818cf8")
+        static let kFiles = dynamic("38bdf8", "38bdf8")
+        static let kResults = dynamic("f43f5e", "f43f5e")
+        static let kChat = dynamic("a5b4fc", "a5b4fc")
+        static let kMemory = dynamic("f59e0b", "f59e0b")
+        static let quotaGreen = dynamic("22c55e", "22c55e")
+        static let quotaOrange = dynamic("f59e0b", "f59e0b")
+        static let quotaRed = dynamic("ef4444", "ef4444")
+        static let kFree = Color.gray.opacity(0.12)
+        static func agent(_ name: String) -> Color { hex(MagpieKit.RoutingModel.agentHue(name)) }
+    }
+
     enum Spacing {
         static let xSmall: CGFloat = 4
         static let small: CGFloat = 8
@@ -11,7 +68,8 @@ enum DS {
 
     enum Radius {
         static let small: CGFloat = 8
-        static let card: CGFloat = 12
+        static let card: CGFloat = 16
+        static let node: CGFloat = 10
     }
 
     enum StatusKind {
