@@ -33,7 +33,11 @@ open magpie-ios.xcodeproj
 
 ## 截图
 
-截图将在之后由 CI 或模拟器使用 Mock 数据模式生成，并明确标记为 mock。当前暂未提供真实服务器截图。
+Mock data (模拟数据) — generated on CI simulator, not a real server
+
+| 概览 | 动态 | Tmux | Agent | 服务 |
+| --- | --- | --- | --- | --- |
+| <img src="docs/screenshots/mock-overview.png" width="200" alt="Mock data — 概览"> | <img src="docs/screenshots/mock-activity.png" width="200" alt="Mock data — 动态"> | <img src="docs/screenshots/mock-tmux.png" width="200" alt="Mock data — Tmux"> | <img src="docs/screenshots/mock-agent.png" width="200" alt="Mock data — Agent"> | <img src="docs/screenshots/mock-services.png" width="200" alt="Mock data — 服务"> |
 
 ## 隐私与安全
 
@@ -80,7 +84,11 @@ Build the `magpie-ios` scheme in Xcode for a target device. GitHub Actions also 
 
 ## Screenshots
 
-Screenshots will be generated later by CI or a simulator using Mock data mode and labeled as mock. No screenshots from a live server are included yet.
+Mock data (模拟数据) — generated on CI simulator, not a real server
+
+| Overview | Activity | Tmux | Agent | Services |
+| --- | --- | --- | --- | --- |
+| <img src="docs/screenshots/mock-overview.png" width="200" alt="Mock data — Overview"> | <img src="docs/screenshots/mock-activity.png" width="200" alt="Mock data — Activity"> | <img src="docs/screenshots/mock-tmux.png" width="200" alt="Mock data — Tmux"> | <img src="docs/screenshots/mock-agent.png" width="200" alt="Mock data — Agent"> | <img src="docs/screenshots/mock-services.png" width="200" alt="Mock data — Services"> |
 
 ## Privacy and security
 

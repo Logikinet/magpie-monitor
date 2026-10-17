@@ -22,7 +22,7 @@ final class AppState {
     init() {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         fileURL = support.appendingPathComponent("profiles.json")
-        isMockMode = UserDefaults.standard.object(forKey: "isMockMode") as? Bool ?? false
+        isMockMode = UserDefaults.standard.bool(forKey: "isMockMode")
         load()
         if profiles.isEmpty, UserDefaults.standard.object(forKey: "isMockMode") == nil { isMockMode = true }
     }
