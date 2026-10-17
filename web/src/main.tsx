@@ -4,3 +4,5 @@ import './styles/tokens.css';
 import './styles/base.css';
 
 render(<App />, document.getElementById('app')!);
+
+import './styles/routing.css';

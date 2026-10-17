@@ -958,7 +958,7 @@ small {
     z-index: 10;
     inset: auto 0 0;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     padding: 5px 5px calc(5px + env(safe-area-inset-bottom));
     background: color-mix(in srgb, var(--color-bg-elevated) 94%, transparent);
     border-top: 1px solid color-mix(in srgb, var(--color-separator) 45%, transparent);

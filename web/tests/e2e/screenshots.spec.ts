@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const views = ['overview', 'activity', 'agent', 'quotas', 'settings'] as const;
+const views = ['overview', 'activity', 'agent', 'agent-usage', 'settings'] as const;
 const themes = ['light', 'dark'] as const;
 
 for (const view of views) {
@@ -11,8 +11,10 @@ for (const view of views) {
         const host = new URL(request.url()).hostname;
         if (host !== 'localhost') outsideRequests.push(request.url());
       });
-      await page.goto(`/?mock=1&theme=${theme}#/${view}`);
-      await expect(page.getByTestId(`view-${view}`)).toBeVisible();
+      const target =
+        view === 'agent-usage' ? 'agent?atab=usage' : view === 'agent' ? 'agent?atab=routing' : view;
+      await page.goto(`/?mock=1&theme=${theme}#/${target}`);
+      await expect(page.getByTestId(`view-${view === 'agent-usage' ? 'agent' : view}`)).toBeVisible();
       await page.waitForLoadState('networkidle');
       await expect(page.getByTestId('mock-badge')).toBeVisible();
       expect(outsideRequests).toEqual([]);

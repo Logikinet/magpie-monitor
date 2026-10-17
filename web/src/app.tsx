@@ -17,13 +17,15 @@ import {
 import { defaultProfile, loadProfiles, saveProfiles, validateProfile, type Profile } from './state/profiles';
 import { createKeyStore } from './state/keys';
 import { Icon } from './ui/icons';
+import { RoutingView } from './views/agent/RoutingView';
+import { AgentNav, AgentPlaceholder, readPage, type AgentTab } from './views/agent/AgentNav';
+import type { decodeGroups } from './core/decode';
 
-type Tab = 'overview' | 'activity' | 'agent' | 'quotas' | 'settings';
+type Tab = 'overview' | 'activity' | 'agent' | 'settings';
 const nav: { id: Tab; label: string; icon: string }[] = [
   { id: 'overview', label: '概览', icon: 'overview' },
   { id: 'activity', label: '动态', icon: 'chart' },
   { id: 'agent', label: 'Agent', icon: 'bot' },
-  { id: 'quotas', label: '配额', icon: 'quota' },
   { id: 'settings', label: '设置', icon: 'settings' },
 ];
 const fmt = (n?: number, digits = 0) =>
@@ -59,7 +61,6 @@ const relTime = (s?: string) => {
   }
   return new Intl.RelativeTimeFormat('zh-CN', { numeric: 'auto' }).format(Math.round(sec / 60), 'minute');
 };
-const timeOf = (r: Route) => dateTime(r.time);
 
 function Status({
   kind,
@@ -176,7 +177,10 @@ export default function App() {
       : (localStorage.getItem('magpie.activeProfile') ?? loadProfiles()[0]?.id ?? defaultProfile.id),
   );
   const profile = profiles.find((p) => p.id === activeId) ?? profiles[0] ?? defaultProfile;
-  const [tab, setTab] = useState<Tab>(() => (location.hash.slice(2) as Tab) || 'overview');
+  const [tab, setTab] = useState<Tab>(() => readPage().tab as Tab);
+  const [agentTab, setAgentTab] = useState<AgentTab>(() => readPage().atab);
+  const [routingGroups, setRoutingGroups] = useState<ReturnType<typeof decodeGroups>['groups']>([]);
+  const [traceVersion, setTraceVersion] = useState(0);
   const [theme, setTheme] = useState(
     () => params.get('theme') ?? localStorage.getItem('magpie.theme') ?? 'system',
   );
@@ -273,14 +277,27 @@ export default function App() {
   }, [theme]);
   useEffect(() => {
     const change = () => {
-      const next = (location.hash.slice(2) as Tab) || 'overview';
-      if (nav.some((n) => n.id === next)) setTab(next);
+      const next = readPage();
+      setTab(next.tab as Tab);
+      setAgentTab(next.atab);
+      if (location.hash === '#/quotas') history.replaceState(null, '', '#/agent?atab=usage');
     };
+    change();
     addEventListener('hashchange', change);
     return () => removeEventListener('hashchange', change);
   }, []);
   useEffect(() => {
-    if (tab !== 'agent' || profile.mode === 'direct') return;
+    if (tab !== 'agent' || agentTab !== 'routing' || profile.mode === 'direct') return;
+    setTraceRoutes([]);
+    setTraceTotals(undefined);
+    setRoutingGroups([]);
+    let active = true;
+    void web
+      .groups()
+      .then((env) => {
+        if (active) setRoutingGroups(env.groups);
+      })
+      .catch(() => {});
     const loop = createTraceLoop({
       fetchTrace: (after, wait, signal) => web.trace(after, wait, signal),
       onRoutes: setTraceRoutes,
@@ -288,10 +305,13 @@ export default function App() {
       onState: setTraceState,
     });
     loop.start();
-    return () => loop.stop();
-  }, [tab, profile.id, profile.mode, web]);
+    return () => {
+      active = false;
+      loop.stop();
+    };
+  }, [tab, agentTab, profile.id, profile.mode, web, traceVersion]);
   useEffect(() => {
-    if (profile.mode !== 'direct' || tab !== 'agent' || !sessionId) return;
+    if (profile.mode !== 'direct' || tab !== 'agent' || agentTab !== 'routing' || !sessionId) return;
     let active = true,
       after = 0;
     const poll = async () => {
@@ -310,9 +330,14 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [profile.mode, tab, sessionId, gateway]);
+  }, [profile.mode, tab, agentTab, sessionId, gateway, traceVersion]);
+  const chooseAgentTab = (next: AgentTab) => {
+    setAgentTab(next);
+    setTab('agent');
+    location.hash = `/agent?atab=${next}`;
+  };
   const chooseTab = (id: Tab) => {
-    location.hash = `/${id}`;
+    location.hash = id === 'agent' ? `/agent?atab=${agentTab}` : `/${id}`;
     setTab(id);
   };
   const chooseProfile = (id: string) => {
@@ -329,16 +354,6 @@ export default function App() {
   const topQuotas = allWindows.slice(0, 4);
   const series = ledger?.series ?? usage?.series ?? [];
   const rows: Row[] = ledger?.rows ?? [];
-  const concurrencyLanes = concurrency?.data ?? [];
-  const traceStatus =
-    traceState === 'running'
-      ? ['ok', '实时']
-      : traceState === 'backoff'
-        ? ['warn', '重连中']
-        : traceState === 'needsAuth'
-          ? ['error', '需要重新认证']
-          : ['neutral', '已暂停'];
-
   const loadMore = async () => {
     try {
       const next = await gateway.requests({ period, offset, limit: 20 });
@@ -520,7 +535,13 @@ export default function App() {
                   <Section
                     title="配额概览"
                     action={
-                      <button class="text-button" onClick={() => chooseTab('quotas')}>
+                      <button
+                        class="text-button"
+                        onClick={() => {
+                          chooseTab('agent');
+                          chooseAgentTab('usage');
+                        }}
+                      >
                         查看全部 <span aria-hidden="true">→</span>
                       </button>
                     }
@@ -595,10 +616,11 @@ export default function App() {
                 <div>
                   <p class="eyebrow">LIVE ROUTING</p>
                   <h1>Agent</h1>
-                  <p>实时路由 trace 与并发状态</p>
+                  <p>路由、用量与运行环境</p>
                 </div>
               </div>
-              {profile.mode === 'direct' && (
+              <AgentNav tab={agentTab} choose={chooseAgentTab} />
+              {profile.mode === 'direct' && agentTab === 'routing' && (
                 <Card class="notice-card">
                   <Status kind="warn">直连模式无全局 trace</Status>
                   <p>输入 session id 后轮询单会话路由记录。</p>
@@ -607,6 +629,7 @@ export default function App() {
                     onSubmit={(e) => {
                       e.preventDefault();
                       setTraceRoutes([]);
+                      setTraceVersion((v) => v + 1);
                     }}
                   >
                     <input
@@ -619,39 +642,28 @@ export default function App() {
                   </form>
                 </Card>
               )}
-              {profile.mode !== 'direct' && (
-                <Card class="trace-card">
-                  <div class="section-title">
-                    <h2>Trace 流</h2>
-                    <Status kind={traceStatus[0] as any}>{traceStatus[1]}</Status>
-                  </div>
-                  <div class="chip-row">
-                    <span class="chip">请求 {fmt(traceTotals?.requests ?? 186)}</span>
-                    <span class="chip">已重路由 {fmt(traceTotals?.rerouted ?? 14)}</span>
-                    <span class="chip">错误 {fmt(traceTotals?.errors ?? 3)}</span>
-                  </div>
-                  <TraceList
-                    routes={traceRoutes.length ? traceRoutes : []}
-                    emptyLabel={isMock ? '正在等待模拟 trace…' : '等待新的路由事件…'}
-                  />
-                </Card>
+              {agentTab === 'routing' && (
+                <RoutingView
+                  routes={traceRoutes}
+                  totals={traceTotals}
+                  groups={routingGroups}
+                  loading={
+                    profile.mode !== 'direct' &&
+                    traceTotals === undefined &&
+                    (traceState === 'running' || traceState === 'stopped')
+                  }
+                  state={profile.mode === 'direct' ? undefined : traceState}
+                  refresh={() => setTraceVersion((v) => v + 1)}
+                  usage={() => chooseAgentTab('usage')}
+                />
               )}
-              {routeError && <ErrorBox message={routeError} retry={() => setSessionId(sessionId)} />}
-              {profile.mode === 'direct' && (
-                <TraceList routes={traceRoutes} emptyLabel="输入 session id 开始查看" />
+              {routeError && agentTab === 'routing' && (
+                <ErrorBox message={routeError} retry={() => setTraceVersion((v) => v + 1)} />
               )}
-              <Section
-                title="并发线路"
-                action={<span class="muted">{fmt(concurrency?.active?.length)} 个活跃请求</span>}
-              />
-              <div class="grid lanes-grid">
-                {concurrencyLanes.map((lane: any) => (
-                  <Lane lane={lane} />
-                ))}
-              </div>
+              {(agentTab === 'providers' || agentTab === 'runtimes') && <AgentPlaceholder />}
             </>
           )}
-          {tab === 'quotas' && (
+          {tab === 'agent' && agentTab === 'usage' && (
             <>
               <div class="page-heading">
                 <div>
@@ -1039,83 +1051,6 @@ function LedgerRow({ row, mobile = false }: { row: Row; mobile?: boolean }) {
         </span>
       </td>
     </tr>
-  );
-}
-function TraceList({ routes, emptyLabel }: { routes: Route[]; emptyLabel: string }) {
-  if (!routes.length) return <Empty text={emptyLabel} />;
-  return (
-    <div class="trace-list">
-      {routes.map((r) => {
-        const x = r as any,
-          inTokens = (x.usage ?? []).reduce((n: any, u: any) => n + (u.in ?? 0), 0),
-          outTokens = (x.usage ?? []).reduce((n: any, u: any) => n + (u.out ?? 0), 0);
-        return (
-          <div class="trace-row">
-            <div class="trace-icon">
-              <Icon
-                name={
-                  x.error || (x.status && x.status >= 400) ? 'x-circle' : x.rule ? 'refresh' : 'check-circle'
-                }
-              />
-            </div>
-            <div class="trace-body">
-              <div class="trace-title">
-                <strong>{x.agent ?? 'Agent'}</strong>
-                <code>{x.model ?? '—'}</code>
-                <span class="muted">{x.provider ?? ''}</span>
-                {x.effort && <span class="chip trace-chip">{x.effort}</span>}
-                {x.tier && <span class="chip trace-chip">{x.tier}</span>}
-              </div>
-              <div class="trace-details">
-                <div class="trace-sub">
-                  {x.rule && <span>↻ 重路由 · {x.rule.reason ?? x.rule.name}</span>}
-                  {x.group?.name && <span>分组 · {x.group.name}</span>}
-                  {x.subagent && <span>◈ 子 Agent · {x.subagent.name ?? '是'}</span>}
-                  {x.pinned && <span>⌖ 固定线路</span>}
-                  {x.rerouted && !x.rule && <span>↻ 已重路由</span>}
-                  {x.parentSession && <span>↳ 子调用</span>}
-                  {!x.rule && !x.error && <span>✓ 完成</span>}
-                  {x.session && <code>{x.session}</code>}
-                </div>
-                <div class="trace-usage">
-                  入 {fmt(inTokens)} · 出 {fmt(outTokens)}
-                  {x.cost != null && x.priced && <span> · 费用 {money(x.cost)}</span>}
-                </div>
-              </div>
-            </div>
-            <time title={dateTime(x.time)}>{relativeAgo(x.time)}</time>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-function relativeAgo(s?: string) {
-  if (!s) return '—';
-  const mins = Math.max(0, Math.floor((Date.now() - new Date(s).getTime()) / 60000));
-  return mins < 1 ? '刚刚' : mins < 60 ? `${mins} 分钟前` : `${Math.floor(mins / 60)} 小时前`;
-}
-function Lane({ lane }: { lane: any }) {
-  const busy = lane.busy ?? 0,
-    waiting = lane.waiting ?? 0,
-    limit = lane.limit ?? Math.max(1, busy);
-  const pct = Math.min(100, Math.round((busy / limit) * 100));
-  return (
-    <Card class="lane-card">
-      <div class="lane-head">
-        <strong class="mono">{lane.id ?? lane.name ?? lane.provider ?? 'Provider'}</strong>
-        <Status kind={waiting ? 'warn' : 'ok'}>{waiting ? '等待中' : '正常'}</Status>
-      </div>
-      <div class="progress">
-        <span style={{ width: `${pct}%` }} />
-      </div>
-      <div class="lane-foot">
-        <span>
-          运行中 {busy} / {limit}
-        </span>
-        <span>等待 {waiting}</span>
-      </div>
-    </Card>
   );
 }
 function GenericQuota({ card }: { card: Record<string, any> }) {
