@@ -65,7 +65,7 @@ describe('proxy routing and credentials', () => {
     expect(upstream).not.toHaveBeenCalled();
   });
   it('handles methods and query limits', async () => {
-    expect((await proxy(request(undefined, {}, 'POST'), env)).status).toBe(405);
+    expect((await proxy(request(undefined, {}, 'POST'), env)).status).toBe(404);
     const options = await proxy(request(undefined, {}, 'OPTIONS'), env);
     expect(options.status).toBe(204);
     expect(options.headers.has('access-control-allow-origin')).toBe(false);
@@ -249,3 +249,17 @@ describe('Access JWT verification', () => {
     expect(upstream).not.toHaveBeenCalled();
   });
 });
+
+it.each(['/api/groups', '/api/providers', '/api/usage', '/api/usage/quotas', '/api/gateway/route'])(
+  'allows read-only web endpoint %s',
+  async (path) => {
+    expect((await proxy(request(`/proxy/web${path}?asked=1&asked=2&period=today`), env)).status).toBe(200);
+    const target = new URL(upstream.mock.calls[0][0].url);
+    expect(target.pathname).toBe(path);
+    expect(target.searchParams.get('period')).toBe('today');
+    expect(target.searchParams.has('asked')).toBe(path !== '/api/usage/quotas');
+    upstream.mockClear();
+    expect((await proxy(request(`/proxy/web${path}`, {}, 'POST'), env)).status).toBe(404);
+    expect(upstream).not.toHaveBeenCalled();
+  },
+);

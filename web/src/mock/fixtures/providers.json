@@ -1,0 +1,172 @@
+{
+  "providers": [
+    {
+      "id": "demo-claude",
+      "name": "demo-claude",
+      "ready": true,
+      "off": false,
+      "routing": "usage",
+      "affinity": "session",
+      "key": {
+        "set": true,
+        "masked": "demo\u20260000",
+        "optional": false
+      },
+      "keyList": [
+        {
+          "id": "fake-key-demo-claude",
+          "name": "Demo key",
+          "masked": "demo\u20260000",
+          "active": true,
+          "on": true
+        }
+      ],
+      "models": [
+        {
+          "id": "claude-sonnet",
+          "exposed": true,
+          "context": 128000
+        },
+        {
+          "id": "claude-opus",
+          "exposed": true,
+          "context": 128000
+        }
+      ],
+      "agents": [
+        {
+          "id": "claude",
+          "name": "claude",
+          "current": true
+        },
+        {
+          "id": "codex",
+          "name": "codex",
+          "current": true
+        },
+        {
+          "id": "gemini",
+          "name": "gemini",
+          "current": true
+        },
+        {
+          "id": "opencode",
+          "name": "opencode",
+          "current": true
+        }
+      ]
+    },
+    {
+      "id": "demo-codex",
+      "name": "demo-codex",
+      "ready": true,
+      "off": false,
+      "routing": "usage",
+      "affinity": "session",
+      "key": {
+        "set": true,
+        "masked": "demo\u20260000",
+        "optional": false
+      },
+      "keyList": [
+        {
+          "id": "fake-key-demo-codex",
+          "name": "Demo key",
+          "masked": "demo\u20260000",
+          "active": true,
+          "on": true
+        }
+      ],
+      "models": [
+        {
+          "id": "gpt-code",
+          "exposed": true,
+          "context": 128000
+        },
+        {
+          "id": "gpt-general",
+          "exposed": true,
+          "context": 128000
+        }
+      ],
+      "agents": [
+        {
+          "id": "claude",
+          "name": "claude",
+          "current": true
+        },
+        {
+          "id": "codex",
+          "name": "codex",
+          "current": true
+        },
+        {
+          "id": "gemini",
+          "name": "gemini",
+          "current": true
+        },
+        {
+          "id": "opencode",
+          "name": "opencode",
+          "current": true
+        }
+      ]
+    },
+    {
+      "id": "demo-gemini",
+      "name": "demo-gemini",
+      "ready": true,
+      "off": false,
+      "routing": "usage",
+      "affinity": "session",
+      "key": {
+        "set": true,
+        "masked": "demo\u20260000",
+        "optional": false
+      },
+      "keyList": [
+        {
+          "id": "fake-key-demo-gemini",
+          "name": "Demo key",
+          "masked": "demo\u20260000",
+          "active": true,
+          "on": true
+        }
+      ],
+      "models": [
+        {
+          "id": "gemini-pro",
+          "exposed": true,
+          "context": 128000
+        },
+        {
+          "id": "gemini-flash",
+          "exposed": true,
+          "context": 128000
+        }
+      ],
+      "agents": [
+        {
+          "id": "claude",
+          "name": "claude",
+          "current": true
+        },
+        {
+          "id": "codex",
+          "name": "codex",
+          "current": true
+        },
+        {
+          "id": "gemini",
+          "name": "gemini",
+          "current": true
+        },
+        {
+          "id": "opencode",
+          "name": "opencode",
+          "current": true
+        }
+      ]
+    }
+  ]
+}

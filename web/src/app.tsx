@@ -283,12 +283,7 @@ export default function App() {
     if (tab !== 'agent' || profile.mode === 'direct') return;
     const loop = createTraceLoop({
       fetchTrace: (after, wait, signal) => web.trace(after, wait, signal),
-      onRoutes: (routes) =>
-        setTraceRoutes((prev) =>
-          [...prev, ...routes]
-            .sort((a, b) => Number((b as any).seq ?? (b as any).id) - Number((a as any).seq ?? (a as any).id))
-            .slice(0, 200),
-        ),
+      onRoutes: setTraceRoutes,
       onEnvelope: (env) => setTraceTotals(env.totals),
       onState: setTraceState,
     });

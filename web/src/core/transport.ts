@@ -173,7 +173,9 @@ export class MockTransport implements Transport {
       for (const [key, item] of Object.entries(value)) {
         if (
           typeof item === 'string' &&
-          /^(t|time|resetsAt|asOf|readAt|until|since|day)$/.test(key) &&
+          /^(t|time|resetsAt|startsAt|start|at|fitFrom|runsOut|runsOutAt|due|restarts|capBack|usedRenews|sunk|asOf|readAt|until|since|day)$/.test(
+            key,
+          ) &&
           Number.isFinite(Date.parse(item))
         ) {
           let ms = Date.parse(item) + offset;
@@ -188,6 +190,11 @@ export class MockTransport implements Transport {
   async request(req: Request) {
     const names: Record<string, string> = {
       '/api/hello': 'hello',
+      '/api/groups': 'groups',
+      '/api/providers': 'providers',
+      '/api/usage': 'usage',
+      '/api/usage/quotas': 'usage_quotas',
+      '/api/gateway/route': 'trace',
       '/v1/magpie/limit': 'limit',
       '/v1/magpie/usage': 'usage',
       '/v1/magpie/usage/requests': 'ledger',
@@ -221,16 +228,23 @@ export class MockTransport implements Transport {
     }
     if (!name) throw statusError(404);
     const json = this.fixtures()[`../mock/fixtures/${name}.json`] as Record<string, unknown>;
+    if (req.path === '/api/gateway/route') {
+      const route = (json.routes as Record<string, unknown>[]).find(
+        (r) => String(r.id) === String(req.query?.id),
+      );
+      if (!route) throw statusError(404);
+      return { status: 200, json: route };
+    }
     if (name === 'trace') {
       const fixtureRoutes = json.routes as Record<string, any>[];
       if (Number(req.query?.after) === 0 && this.traceCalls === 1) {
-        const routes = fixtureRoutes.slice().sort((a, b) => Number(b.seq) - Number(a.seq));
+        const routes = fixtureRoutes.slice().sort((a, b) => Number(a.seq) - Number(b.seq));
         this.seq = Math.max(...routes.map((r) => Number(r.seq)), Number(json.seq) || 0);
         json.seq = this.seq;
         json.routes = routes;
       } else {
         this.seq = Math.max(this.seq, Number(req.query?.after) || 0, Number(json.seq) || 0) + 1;
-        const source = fixtureRoutes[(this.seq - 632) % fixtureRoutes.length];
+        const source = fixtureRoutes[this.seq % fixtureRoutes.length];
         json.seq = this.seq;
         json.routes = [
           {

@@ -1,14 +1,19 @@
 import type { Route, TraceEnvelope } from './decode';
 import type { MagpieError } from './errors';
 import { sleep as defaultSleep } from './transport';
-export type TraceState = 'running' | 'backoff' | 'needsAuth' | 'stopped';
+export type TraceState = 'running' | 'offline' | 'backoff' | 'needsAuth' | 'stopped';
 export interface VisibilitySource {
   readonly hidden: boolean;
   addEventListener(type: 'visibilitychange', listener: () => void): void;
   removeEventListener(type: 'visibilitychange', listener: () => void): void;
 }
 export function createTraceLoop(options: {
-  fetchTrace: (after: number, wait: number, signal: AbortSignal, timeoutMs: number) => Promise<TraceEnvelope>;
+  fetchTrace: (
+    after: number,
+    wait: number | undefined,
+    signal: AbortSignal,
+    timeoutMs: number,
+  ) => Promise<TraceEnvelope>;
   onRoutes: (routes: Route[]) => void;
   onEnvelope?: (envelope: TraceEnvelope) => void;
   onState?: (state: TraceState) => void;
@@ -24,21 +29,34 @@ export function createTraceLoop(options: {
     controller: AbortController | undefined,
     wanted = false;
   const pause = options.sleep ?? defaultSleep;
+  let routes: Route[] = [];
   async function run(id: number) {
-    let failures = 0;
+    let first = true;
     const active = () => running && id === generation;
     while (active()) {
       controller = new AbortController();
       const signal = controller.signal;
       try {
         options.onState?.('running');
-        const env = await options.fetchTrace(after, 1, signal, 35000);
+        const env = await options.fetchTrace(after, first ? undefined : 1, signal, 35000);
+        first = false;
         if (!active()) break;
         options.onEnvelope?.(env);
-        after = Math.max(after, env.seq);
-        failures = 0;
-        if (env.routes.length) options.onRoutes(env.routes);
-        else await pause(250, signal);
+        if (env.seq < after) {
+          routes = [];
+          options.onRoutes([]);
+        }
+        after = env.seq;
+        if (env.routes.length) {
+          const merged = new Map(routes.map((r) => [r.id ?? `seq:${r.seq}`, r]));
+          for (const r of env.routes) merged.set(r.id ?? `seq:${r.seq}`, r);
+          routes = [...merged.values()].sort((a, b) => a.seq - b.seq).slice(-60);
+          options.onRoutes(routes);
+        }
+        if (!env.mine) {
+          options.onState?.('offline');
+          await pause(5000, signal);
+        } else if (!env.routes.length) await pause(250, signal);
       } catch (error) {
         if (!active()) break;
         const err = error as MagpieError;
@@ -54,13 +72,9 @@ export function createTraceLoop(options: {
           options.onState?.('stopped');
           break;
         }
-        const delay =
-          err.kind === 'timeout'
-            ? 250
-            : (options.random ?? Math.random)() * Math.min(30000, 500 * 2 ** Math.min(failures++, 16));
         options.onState?.('backoff');
         try {
-          await pause(delay, signal);
+          await pause(3000, signal);
         } catch {
           break;
         }

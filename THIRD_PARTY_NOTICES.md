@@ -13,3 +13,5 @@ The bundled license texts under `ios/App/Resources/Licenses/` are presented in t
 
 - Preact — MIT License; see `web/node_modules/preact/LICENSE` in an installed dependency tree.
 - Vite — MIT License; see `web/node_modules/vite/LICENSE.md` in an installed dependency tree for its license and bundled dependency notices.
+
+The web routing, groups, providers, and quota decoders were written against the JSON contracts in yetone/magpie commit `7660399` (MIT, copyright (c) 2026 yetone), including `internal/gui` and its gateway/provider types. No upstream implementation was copied.

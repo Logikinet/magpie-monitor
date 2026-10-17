@@ -27,7 +27,15 @@ const gateway = new Set([
   '/v1/magpie/limit',
   '/api/hello',
 ]);
-const web = new Set(['/api/gateway/trace', '/api/gateway/history']);
+const web = new Set([
+  '/api/gateway/trace',
+  '/api/gateway/history',
+  '/api/gateway/route',
+  '/api/groups',
+  '/api/providers',
+  '/api/usage',
+  '/api/usage/quotas',
+]);
 type SigningKey = JsonWebKey & { kid?: string };
 // Cache public keys only, scoped to the team and injected fetcher.
 const caches = new WeakMap<typeof fetch, Map<string, { until: number; keys: SigningKey[] }>>();
@@ -140,7 +148,8 @@ export async function proxy(request: Request, env: Env, deps: Dependencies = {})
   const match = /^\/proxy\/(gateway|web)(\/.*)$/.exec(url.pathname);
   if (!match || !(match[1] === 'gateway' ? gateway : web).has(match[2])) return error(404, 'not_found');
   if (request.method === 'OPTIONS') return secureResponse(new Response(null, { status: 204 }));
-  if (!['GET', 'HEAD'].includes(request.method)) return error(405, 'method_not_allowed');
+  if (!['GET', 'HEAD'].includes(request.method)) return error(404, 'not_found');
+  if (match[2] === '/api/usage/quotas') url.searchParams.delete('asked');
   if (url.search.length > 2048) return error(400, 'query_too_long');
   if (!(await authorized(request, env, deps))) return error(401, 'access_required');
   const isGateway = match[1] === 'gateway';
@@ -181,7 +190,7 @@ export async function proxy(request: Request, env: Env, deps: Dependencies = {})
       }),
     ]);
     const resultHeaders = new Headers();
-    for (const name of ['content-type', 'cache-control', 'etag', 'content-encoding']) {
+    for (const name of ['content-type', 'cache-control', 'etag', 'content-encoding', 'x-magpie-reading']) {
       const value = response.headers.get(name);
       if (value !== null) resultHeaders.set(name, value);
     }

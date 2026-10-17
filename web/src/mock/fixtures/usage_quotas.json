@@ -1,0 +1,58 @@
+[
+  {
+    "provider": "demo-codex",
+    "name": "Demo Codex",
+    "user": "demo-user@example.com",
+    "kind": "subscription",
+    "windows": [
+      {
+        "name": "5-hour",
+        "used": 35,
+        "remaining": 65,
+        "runsOut": 7200,
+        "runsOutAt": "2026-10-17T10:00:00Z",
+        "resetsAt": "2026-10-17T12:00:00Z",
+        "holds": {
+          "tokens": 20000,
+          "used": 35,
+          "priced": true,
+          "cost": 0.04,
+          "since": "2026-10-17T07:00:00Z",
+          "routed": {
+            "calls": 10,
+            "tokens": 7000
+          }
+        }
+      }
+    ],
+    "resets": {
+      "count": 2,
+      "until": "2026-11-01T00:00:00Z"
+    },
+    "daily": {
+      "since": "2026-10-16",
+      "days": [
+        {
+          "day": "2026-10-16",
+          "used": 12
+        }
+      ]
+    },
+    "checkin": {
+      "day": "2026-10-17",
+      "at": "2026-10-17T08:00:00Z",
+      "outcome": "ok",
+      "credit": 5
+    },
+    "balanceTrend": {
+      "points": [
+        {
+          "at": "2026-10-17T08:00:00Z",
+          "amount": 25
+        }
+      ],
+      "perDay": 2,
+      "runsOut": "2026-10-29T08:00:00Z"
+    }
+  }
+]

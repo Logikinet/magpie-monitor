@@ -1,0 +1,107 @@
+{
+  "groups": [
+    {
+      "id": "demo",
+      "name": "Development",
+      "routing": "usage",
+      "affinity": "session",
+      "members": [
+        "demo-claude/claude-sonnet",
+        "demo-claude/claude-opus",
+        "demo-codex/gpt-code",
+        "demo-codex/gpt-general",
+        "demo-gemini/gemini-pro",
+        "demo-gemini/gemini-flash"
+      ],
+      "subs": [
+        {
+          "id": "backup",
+          "name": "Backup",
+          "routing": "order",
+          "in": "demo"
+        }
+      ],
+      "via": [
+        "demo"
+      ],
+      "ready": true
+    }
+  ],
+  "models": [
+    {
+      "id": "demo-claude/claude-sonnet",
+      "provider": "demo-claude",
+      "name": "claude-sonnet",
+      "context": 128000
+    },
+    {
+      "id": "demo-claude/claude-opus",
+      "provider": "demo-claude",
+      "name": "claude-opus",
+      "context": 128000
+    },
+    {
+      "id": "demo-codex/gpt-code",
+      "provider": "demo-codex",
+      "name": "gpt-code",
+      "context": 128000
+    },
+    {
+      "id": "demo-codex/gpt-general",
+      "provider": "demo-codex",
+      "name": "gpt-general",
+      "context": 128000
+    },
+    {
+      "id": "demo-gemini/gemini-pro",
+      "provider": "demo-gemini",
+      "name": "gemini-pro",
+      "context": 128000
+    },
+    {
+      "id": "demo-gemini/gemini-flash",
+      "provider": "demo-gemini",
+      "name": "gemini-flash",
+      "context": 128000
+    }
+  ],
+  "pools": [
+    {
+      "provider": "demo-claude",
+      "name": "demo-claude",
+      "kind": "account",
+      "who": [
+        "demo-user@example.com",
+        "ops@example.com",
+        "builder@example.com"
+      ],
+      "routing": "usage",
+      "affinity": "session"
+    },
+    {
+      "provider": "demo-codex",
+      "name": "demo-codex",
+      "kind": "account",
+      "who": [
+        "demo-user@example.com",
+        "ops@example.com",
+        "builder@example.com"
+      ],
+      "routing": "usage",
+      "affinity": "session"
+    },
+    {
+      "provider": "demo-gemini",
+      "name": "demo-gemini",
+      "kind": "account",
+      "who": [
+        "demo-user@example.com",
+        "ops@example.com",
+        "builder@example.com"
+      ],
+      "routing": "usage",
+      "affinity": "session"
+    }
+  ],
+  "found": false
+}

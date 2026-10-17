@@ -170,11 +170,19 @@ export interface QuotaSpan {
   limit?: number;
   unit?: string;
   pool?: string;
-  holds?: number;
+  holds?: number | ReturnType<typeof decodeHolds>;
+  runsOut?: number;
+  runsOutAt?: string;
   holdsWhy?: string;
 }
 export const decodeQuotaSpan = (v: unknown): QuotaSpan => ({
-  ...fields(v, 'resetsAt display unit pool holdsWhy', 'used remaining amount limit holds', 'unlimited'),
+  ...fields(
+    v,
+    'resetsAt startsAt display unit pool holdsWhy runsOutAt',
+    'used remaining amount limit runsOut resetSecs span pace',
+    'unlimited',
+  ),
+  holds: toNumber(record(v).holds) ?? optional(record(v).holds, decodeHolds),
   name: required(v, 'name'),
 });
 export interface Quota {
@@ -188,7 +196,13 @@ export function decodeQuota(v: unknown): Quota {
   const r = record(v),
     windows = lossyArray(decodeQuotaSpan)(r.windows);
   return {
-    ...fields(v, 'name kind plan user balance error asOf readAt until', '', 'readDeferred'),
+    ...fields(
+      v,
+      'name icon kind plan user balance error asOf readAt until renew checkinBy',
+      '',
+      'readDeferred held checkins checkinOff',
+    ),
+    ...decodeQuotaDetails(r),
     provider: required(v, 'provider'),
     balanceSplit: lossyArray((v: unknown) => fields(v, 'name balance', 'amount'))(r.balanceSplit).items,
     windows: windows.items,
@@ -233,40 +247,158 @@ export function decodeConcurrency(v: unknown) {
   };
 }
 export type Concurrency = ReturnType<typeof decodeConcurrency>;
+// Wire fields checked against yetone/magpie (MIT), commit 7660399; no implementation copied.
+const optional = <T>(v: unknown, decode: (v: unknown) => T): T | undefined => {
+  if (v == null) return undefined;
+  try {
+    return decode(v);
+  } catch {
+    return undefined;
+  }
+};
+const strings = (v: unknown) =>
+  lossyArray((v: unknown) => {
+    const s = toStr(v);
+    if (s === undefined) throw {};
+    return s;
+  })(v).items;
+export const decodeRest = (v: unknown) => fields(v, 'why until by key model', 'status failures');
+export function decodeSeat(v: unknown) {
+  const r = record(v);
+  return {
+    ...fields(
+      v,
+      'id provider name icon preset who kind agent plan model fixed routing unit due dueBy restarts speaks noURL capBack usedRenews sunk',
+      'used amount limit pace tokens rank fit capped',
+      'fallback turn fast shared known learns unlisted barred held noCredits aside',
+    ),
+    renews: strings(r.renews),
+    via: strings(r.via),
+    rest: optional(r.rest, decodeRest),
+  };
+}
+export type Seat = ReturnType<typeof decodeSeat>;
+export function decodeGroup(v: unknown) {
+  const r = record(v);
+  return {
+    ...fields(v, 'id name routing affinity', '', 'auto sink ready decides'),
+    members: strings(r.members),
+    via: strings(r.via),
+    subs: lossyArray((v: unknown) => fields(v, 'id name routing in', 'rules'))(r.subs).items,
+  };
+}
+export function decodeTry(v: unknown) {
+  const r = record(v);
+  return {
+    ...fields(
+      v,
+      'id model effort fixed ruleEffort start served upstream tier tierServed fail error',
+      'status ms ttft firstText firstReasoning flow again replan patience queued',
+      'picked fast done reasoningHidden swapped routed gone earlier',
+    ),
+    rest: optional(r.rest, decodeRest),
+    net: optional(r.net, (v) =>
+      fields(v, '', 'own before asks pool dns connect tls send wait head', 'reused'),
+    ),
+  };
+}
+export function decodePrompt(v: unknown) {
+  const r = record(v);
+  return {
+    ...fields(v, '', 'window tokens turns', 'counted held'),
+    parts: lossyArray((v: unknown) => {
+      const r = record(v);
+      return {
+        ...fields(v, 'kind', 'tokens'),
+        items: lossyArray((v: unknown) => fields(v, 'name tag', 'n tokens'))(r.items).items,
+      };
+    })(r.parts).items,
+  };
+}
 export interface Route {
   [key: string]: unknown;
   seq: number;
   id?: string;
   time?: string;
-  order: Record<string, unknown>[];
+  order: Seat[];
+  left?: Seat[];
+  tries?: ReturnType<typeof decodeTry>[];
+  prompt?: ReturnType<typeof decodePrompt>;
+  group?: ReturnType<typeof decodeGroup>;
 }
 export function decodeRoute(v: unknown): Route {
-  const r = record(v);
-  const seq = toNumber(r.seq);
+  const r = record(v),
+    seq = toNumber(r.seq);
   if (seq === undefined) throw { kind: 'decoding' };
   return {
     ...fields(
       v,
-      'id time agent parentSession session kind model effort tier provider leadAccount pinned error',
-      'status cost',
-      'priced done rerouted',
+      'id time agent parentSession session sessionTitle kind model effort tier provider leadAccount pinned error served upstream conv folder archive',
+      'status cost unpriced ms tokens out reasoning ttft firstText firstReasoning flow sent own retried queued',
+      'priced done rerouted swapped routed reasoningHidden parentMatched sealedTask',
     ),
     seq,
     usage: lossyArray((v: unknown) => fields(v, 'provider model', 'in out cache_read cache_write reasoning'))(
       r.usage,
     ).items,
-    group: r.group ? fields(r.group, 'id name routing affinity') : undefined,
-    rule: r.rule ? fields(r.rule, 'name reason') : undefined,
-    subagent: r.subagent ? fields(r.subagent, 'name model effort') : undefined,
-    order: lossyArray((v: unknown) =>
-      fields(
-        v,
-        'id provider name icon kind agent plan model routing unit',
-        'used amount limit pace tokens rank',
-        'fallback turn',
-      ),
-    )(r.order).items,
+    group: optional(r.group, decodeGroup),
+    affinity: optional(r.affinity, (v) =>
+      fields(v, 'mode last at why', 'turn lastTurn cacheRead cacheWrite', 'within kept'),
+    ),
+    rule: optional(r.rule, (v) => fields(v, 'name reason')),
+    subagent: optional(r.subagent, (v) => fields(v, 'name model effort')),
+    order: lossyArray(decodeSeat)(r.order).items,
+    left: lossyArray(decodeSeat)(r.left).items,
+    tries: lossyArray(decodeTry)(r.tries).items,
+    prompt: optional(r.prompt, decodePrompt),
   };
+}
+export function decodeGroups(v: unknown) {
+  const r = record(v),
+    groups = lossyArray(decodeGroup)(r.groups);
+  const models = lossyArray((v: unknown) =>
+    fields(v, 'id provider name icon model', 'context', 'ready images'),
+  )(r.models);
+  const pools = lossyArray((v: unknown) => {
+    const r = record(v);
+    return {
+      ...fields(v, 'provider name icon kind routing affinity protocol', '', 'sink'),
+      who: strings(r.who),
+    };
+  })(r.pools);
+  return {
+    groups: groups.items,
+    models: models.items,
+    pools: pools.items,
+    found: toBool(r.found),
+    bad: groups.bad + models.bad + pools.bad,
+  };
+}
+export function decodeProviders(v: unknown) {
+  const providers = lossyArray((v: unknown) => {
+    const r = record(v);
+    return {
+      ...fields(
+        v,
+        'id name icon kind base routing affinity fetched listError',
+        'exposed maxConcurrency pluginConcurrency queueLimit queueWait maxRPM priceRate',
+        'ready off unlisted noModels sponsored',
+      ),
+      key: optional(r.key, (v) => fields(v, 'masked', '', 'set optional')),
+      keyList: lossyArray((v: unknown) => fields(v, 'id name masked protocol', 'weight', 'active on'))(
+        r.keyList,
+      ).items,
+      models: lossyArray((v: unknown) =>
+        fields(v, 'id name model', 'context output', 'exposed images ready'),
+      )(r.models).items,
+      agents: lossyArray((v: unknown) => fields(v, 'id name icon model group', '', 'current'))(r.agents)
+        .items,
+      account: optional(r.account, (v) => fields(v, 'agent agentName agentIcon builtin')),
+      chosen: strings(r.chosen),
+      fallback: strings(r.fallback),
+    };
+  })(record(v).providers);
+  return { providers: providers.items, bad: providers.bad };
 }
 export function decodeTraceEnvelope(v: unknown) {
   const r = record(v),
@@ -303,4 +435,38 @@ export function decodeHistory(v: unknown) {
     cut: toBool(r.cut),
     bad: routes.bad,
   };
+}
+
+function decodeHolds(v: unknown) {
+  const r = record(v);
+  return {
+    ...fields(v, 'since', 'tokens cost used', 'priced'),
+    routed: optional(r.routed, (v) => fields(v, '', 'calls tokens cacheRead cacheWrite cost')),
+  };
+}
+function decodeQuotaDetails(r: Record<string, unknown>) {
+  return {
+    resets: optional(r.resets, (v) => {
+      const r = record(v);
+      return {
+        ...fields(v, 'until', 'count fiveHour weekly', 'byWindow team'),
+        each: lossyArray((v: unknown) => fields(v, 'until window', 'count'))(r.each).items,
+      };
+    }),
+    daily: optional(r.daily, (v) => ({
+      ...fields(v, 'since'),
+      days: lossyArray((v: unknown) => fields(v, 'day', 'used'))(record(v).days).items,
+    })),
+    checkin: optional(r.checkin, (v) =>
+      fields(v, 'user day at outcome msg until by vendor', 'credit streak tries', 'offline'),
+    ),
+    balanceTrend: optional(r.balanceTrend, (v) => ({
+      ...fields(v, 'fitFrom runsOut currency', 'fitStart fitNow perDay'),
+      points: lossyArray((v: unknown) => fields(v, 'at', 'amount'))(record(v).points).items,
+    })),
+  };
+}
+export function decodeUsageQuotas(v: unknown) {
+  const result = lossyArray(decodeQuota)(v);
+  return { data: result.items, bad: result.bad + result.items.reduce((sum, q) => sum + q.bad, 0) };
 }

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, it, expect, vi } from 'vitest';
 import { createPoller, createTraceLoop, type VisibilitySource } from '../../src/core/longpoll';
 import { decodeTraceEnvelope } from '../../src/core/decode';
-const envelope = (seq: number, routes: unknown[] = []) => decodeTraceEnvelope({ seq, routes });
+const envelope = (seq: number, routes: unknown[] = []) => decodeTraceEnvelope({ seq, routes, mine: true });
 const pending = () => new Promise<ReturnType<typeof envelope>>(() => {});
 const flush = async () => {
   await vi.advanceTimersByTimeAsync(0);
@@ -45,48 +45,25 @@ it('advances sequence, sets 35s timeout and delays empty responses', async () =>
   expect(fetchTrace.mock.calls[2][0]).toBe(5);
   loop.stop();
 });
-it('backs off exponentially with full jitter, caps at 30s and resets on success', async () => {
-  const delays: number[] = [];
-  let sleepCalls = 0;
-  const fetchTrace = vi.fn().mockImplementation(async () => {
-    throw { kind: 'network' };
-  });
-  const loop = createTraceLoop({
-    fetchTrace,
-    onRoutes: vi.fn(),
-    random: () => 0.5,
-    sleep: (ms, signal) => {
-      delays.push(ms);
-      sleepCalls++;
-      if (sleepCalls === 9) fetchTrace.mockResolvedValueOnce(envelope(1, [{ seq: 1 }]));
-      if (sleepCalls === 10) return new Promise<void>(() => {});
-      return new Promise<void>((resolve, reject) => {
-        const t = setTimeout(resolve, ms);
-        signal?.addEventListener('abort', () => {
-          clearTimeout(t);
-          reject({ kind: 'aborted' });
-        });
-      });
-    },
-  });
+it('retries errors after 3 seconds', async () => {
+  const fetchTrace = vi.fn().mockRejectedValueOnce({ kind: 'network' }).mockImplementation(pending);
+  const loop = createTraceLoop({ fetchTrace, onRoutes: vi.fn() });
   loop.start();
-  for (let i = 0; i < 9; i++) {
-    await flush();
-    await vi.advanceTimersByTimeAsync(delays[i]);
-  }
   await flush();
-  expect(delays.slice(0, 9)).toEqual([250, 500, 1000, 2000, 4000, 8000, 15000, 15000, 15000]);
-  expect(delays[9]).toBe(250);
+  await vi.advanceTimersByTimeAsync(2999);
+  expect(fetchTrace).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(fetchTrace).toHaveBeenCalledTimes(2);
   loop.stop();
 });
-it('timeouts use short delay, unauthorized and forbidden stop until restarted', async () => {
+it('timeouts retry after 3 seconds, unauthorized and forbidden stop until restarted', async () => {
   for (const kind of ['unauthorized', 'forbidden']) {
     const onState = vi.fn();
     const fetchTrace = vi.fn().mockRejectedValueOnce({ kind: 'timeout' }).mockRejectedValueOnce({ kind });
     const loop = createTraceLoop({ fetchTrace, onRoutes: vi.fn(), onState });
     loop.start();
     await flush();
-    await vi.advanceTimersByTimeAsync(250);
+    await vi.advanceTimersByTimeAsync(3000);
     expect(onState).toHaveBeenLastCalledWith('needsAuth');
     await vi.advanceTimersByTimeAsync(60000);
     expect(fetchTrace).toHaveBeenCalledTimes(2);
@@ -175,4 +152,46 @@ it('poller does not start hidden and never overlaps slow tasks', async () => {
   await vi.advanceTimersByTimeAsync(10);
   expect(task).toHaveBeenCalledTimes(2);
   poller.stop();
+});
+
+it('omits wait initially, retains 60 routes, replaces updates and clears on regression', async () => {
+  const fetchTrace = vi
+    .fn()
+    .mockResolvedValueOnce(
+      envelope(
+        70,
+        Array.from({ length: 70 }, (_, i) => ({ id: i + 1, seq: i + 1 })),
+      ),
+    )
+    .mockResolvedValueOnce(envelope(71, [{ id: 70, seq: 71, done: true }]))
+    .mockResolvedValueOnce(envelope(2, [{ id: 1, seq: 2 }]))
+    .mockImplementation(pending);
+  const onRoutes = vi.fn();
+  const loop = createTraceLoop({ fetchTrace, onRoutes });
+  loop.start();
+  await flush();
+  expect(fetchTrace.mock.calls.map((c) => c[1])).toEqual([undefined, 1, 1, 1]);
+  expect(onRoutes.mock.calls[0][0]).toHaveLength(60);
+  expect(onRoutes.mock.calls[1][0]).toHaveLength(60);
+  expect(onRoutes.mock.calls[1][0].at(-1)).toMatchObject({ id: '70', seq: 71, done: true });
+  expect(onRoutes.mock.calls[2][0]).toEqual([]);
+  expect(onRoutes.mock.calls[3][0]).toMatchObject([{ id: '1', seq: 2 }]);
+  expect(loop.lastSeq).toBe(2);
+  loop.stop();
+});
+it('reports offline and retries mine=false after 5 seconds', async () => {
+  const fetchTrace = vi
+    .fn()
+    .mockResolvedValueOnce(decodeTraceEnvelope({ mine: false, seq: 0 }))
+    .mockImplementation(pending);
+  const onState = vi.fn();
+  const loop = createTraceLoop({ fetchTrace, onState, onRoutes: vi.fn() });
+  loop.start();
+  await flush();
+  expect(onState).toHaveBeenLastCalledWith('offline');
+  await vi.advanceTimersByTimeAsync(4999);
+  expect(fetchTrace).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(fetchTrace).toHaveBeenCalledTimes(2);
+  loop.stop();
 });
