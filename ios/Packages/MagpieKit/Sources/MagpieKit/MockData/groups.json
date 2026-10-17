@@ -1,0 +1,48 @@
+{
+  "groups": [
+    {
+      "id": "demo",
+      "name": "Demo routing",
+      "routing": "usage",
+      "affinity": "session",
+      "members": [
+        "demo-claude/demo-sonnet",
+        "demo-codex/demo-code"
+      ],
+      "weights": {
+        "demo-claude/demo-sonnet": 2
+      },
+      "ready": true,
+      "memberInfo": [
+        {
+          "id": "demo-claude/demo-sonnet",
+          "ready": true,
+          "provider": "demo-claude",
+          "name": "Demo Claude",
+          "icon": "generic",
+          "model": "demo-sonnet",
+          "on": 4,
+          "of": "demo-claude/demo-sonnet",
+          "context": 128000,
+          "images": true,
+          "efforts": [
+            "low",
+            "medium"
+          ]
+        }
+      ]
+    }
+  ],
+  "pools": [
+    {
+      "provider": "demo-claude",
+      "name": "Demo Claude",
+      "kind": "account",
+      "who": [
+        "demo-user@example.com"
+      ],
+      "routing": "usage",
+      "affinity": "session"
+    }
+  ]
+}

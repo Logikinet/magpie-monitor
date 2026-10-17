@@ -36,6 +36,18 @@ public actor WebClient: TraceSource {
         try await get("/api/gateway/history", query: ["day": day])
     }
 
+    public func groups() async throws -> GroupsEnvelope { try await get("/api/groups") }
+    public func providers() async throws -> ProvidersEnvelope { try await get("/api/providers") }
+    public func usage(period: String) async throws -> UsageSummary {
+        try await get("/api/usage", query: ["period": period])
+    }
+    public func usageQuotas() async throws -> LossyArray<Quota> { try await get("/api/usage/quotas") }
+    public func route(id: Int, day: String? = nil) async throws -> Route {
+        var query = ["id": String(id)]
+        if let day { query["day"] = day }
+        return try await get("/api/gateway/route", query: query)
+    }
+
     private func get<T: Decodable>(_ path: String, query: [String: String] = [:],
                                    timeout: TimeInterval = 15) async throws -> T {
         do {

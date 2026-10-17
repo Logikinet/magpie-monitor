@@ -16,6 +16,10 @@ public struct Quota: Decodable {
     public let balanceSplit: LossyArray<BalancePart>?
     public let error: String?
     public let asOf: MagpieDate?
+    public let resets: QuotaResets?
+    public let daily: QuotaDaily?
+    public let checkin: QuotaCheckin?
+    public let balanceTrend: BalanceTrend?
     public let readDeferred: Bool?
     public let readAt: MagpieDate?
     public let until: MagpieDate?
@@ -47,6 +51,8 @@ public struct QuotaSpan: Decodable {
     public let unit: String?
     public let pool: String?
     public let holds: WindowHolds?
+    public let runsOut: FlexibleDouble?
+    public let runsOutAt: MagpieDate?
     public let holdsWhy: String?
 
     /// `used` and `remaining` are percentages; `amount` and `limit` are counts.
@@ -68,6 +74,7 @@ public struct QuotaSpan: Decodable {
 }
 
 public struct WindowHolds: Decodable {
+    public let since: MagpieDate?
     public let requests: FlexibleInt?
     public let tokens: FlexibleInt?
     public let cost: FlexibleDouble?
@@ -110,4 +117,46 @@ private extension String {
     var normalizedWindow: String {
         lowercased().filter { $0.isLetter || $0.isNumber }
     }
+}
+
+public struct QuotaResets: Decodable, Sendable {
+    public let count: FlexibleInt?
+    public let until: MagpieDate?
+    public let each: LossyArray<QuotaReset>?
+}
+
+public struct QuotaDaily: Decodable, Sendable {
+    public let since: MagpieDate?
+    public let days: LossyArray<QuotaDay>?
+}
+
+public struct QuotaDay: Decodable, Sendable {
+    public let day: String?
+    public let used: FlexibleDouble?
+}
+
+public struct QuotaCheckin: Decodable, Sendable {
+    public let user: String?
+    public let day: String?
+    public let at: MagpieDate?
+    public let outcome: String?
+    public let credit: FlexibleDouble?
+    public let streak: FlexibleInt?
+}
+
+public struct BalanceTrend: Decodable, Sendable {
+    public let points: LossyArray<BalancePoint>?
+    public let perDay: FlexibleDouble?
+    public let runsOut: MagpieDate?
+}
+
+public struct BalancePoint: Decodable, Sendable {
+    public let at: MagpieDate?
+    public let amount: FlexibleDouble?
+}
+
+
+public struct QuotaReset: Decodable, Sendable {
+    public let until: MagpieDate?
+    public let window: String?
 }

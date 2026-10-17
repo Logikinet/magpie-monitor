@@ -19,7 +19,7 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(cards.data.elements.first?.accessSKU, "demo-plan-1")
         XCTAssertEqual(cards.data.elements.first?.windows?.elements.first?.limit?.value, 100)
         XCTAssertEqual(try fixture("concurrency", as: Concurrency.self).data?["anthropic#key-demo-1"]?.busy?.value, 2)
-        XCTAssertEqual(try fixture("trace", as: TraceEnvelope.self).routes?.elements.count, 12)
+        XCTAssertEqual(try fixture("trace", as: TraceEnvelope.self).routes?.elements.count, 40)
         XCTAssertEqual(try fixture("usage", as: UsageSummary.self).totals?.calls?.value, 30)
         XCTAssertEqual(try fixture("route", as: RouteLookup.self).route?.id?.value, 4129)
     }
@@ -37,7 +37,7 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(cards.data.badCount, 0)
         XCTAssertTrue(cards.data.elements.allSatisfy { $0.windows?.badCount == 0 })
         let trace = try fixture("trace", as: TraceEnvelope.self)
-        XCTAssertEqual(trace.routes?.elements.count, 12)
+        XCTAssertEqual(trace.routes?.elements.count, 40)
         XCTAssertEqual(trace.routes?.badCount, 0)
         XCTAssertTrue(trace.routes?.elements.allSatisfy { $0.usage?.badCount == 0 && $0.order?.badCount == 0 } == true)
         _ = try fixture("hello", as: GatewayHello.self)

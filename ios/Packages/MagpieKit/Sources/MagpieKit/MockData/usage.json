@@ -230,5 +230,29 @@
       "input": 19000,
       "output": 8000
     }
+  ],
+  "timed": 20,
+  "ttft_ms": 4200,
+  "decode_ms": 22000,
+  "decode_out": 6000,
+  "decode_n": 20,
+  "agents": [
+    {
+      "id": "claude",
+      "name": "Claude",
+      "calls": 20,
+      "input": 1500,
+      "output": 300
+    }
+  ],
+  "accounts": [
+    {
+      "id": "fake-account",
+      "name": "demo-user@example.com",
+      "provider": "demo-claude",
+      "calls": 20,
+      "input": 1500,
+      "output": 300
+    }
   ]
 }

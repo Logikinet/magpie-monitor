@@ -22,6 +22,15 @@ public actor MockTransport: HTTPTransport {
     public private(set) var requests: [URLRequest] = []
     private var responses: [Response] = []
 
+    /// Sanitized fixtures for the read-only Web GUI endpoints.
+    public static func webFixtures() throws -> MockTransport {
+        let resources = ["/api/hello": "hello", "/api/gateway/trace": "trace",
+                         "/api/groups": "groups", "/api/providers": "providers",
+                         "/api/usage": "usage", "/api/usage/quotas": "usage_quotas",
+                         "/api/gateway/route": "web_route"]
+        return MockTransport(fixtures: try resources.mapValues { try MockFixtures.data(named: $0) })
+    }
+
     /// Scripted responses are consumed in order, then fixture routing resumes.
     public init(responses: [Response]) {
         self.responses = responses

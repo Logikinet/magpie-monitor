@@ -76,4 +76,24 @@ final class WebClientTests: XCTestCase {
         XCTAssertTrue(MagpieError.unauthorized.localizedChinese.contains("magpie 重启"))
         XCTAssertTrue(MagpieError.unauthorized.localizedChinese.contains("MAGPIE_WEB_KEY"))
     }
+    func testReadOnlyWebEndpoints() async throws {
+        let transport = try MockTransport.webFixtures()
+        let client = WebClient(baseURL: base, runtimeKey: nil, transport: transport, port: 3430)
+        let groups = try await client.groups()
+        let providers = try await client.providers()
+        let usage = try await client.usage(period: "7d")
+        let quotas = try await client.usageQuotas()
+        let route = try await client.route(id: 10038, day: "2026-10-17")
+        XCTAssertEqual(groups.groups?.elements.count, 1)
+        XCTAssertEqual(providers.providers?.elements.count, 1)
+        XCTAssertEqual(usage.totals?.calls?.value, 30)
+        XCTAssertEqual(quotas.elements.count, 1)
+        XCTAssertEqual(route.id?.value, 10038)
+        let requests = await transport.requests
+        XCTAssertEqual(requests.map { $0.httpMethod }, Array(repeating: "GET", count: 5))
+        XCTAssertEqual(requests[2].url?.query, "period=7d")
+        XCTAssertNil(requests[3].url?.query)
+        XCTAssertEqual(requests[4].url?.query, "day=2026-10-17&id=10038")
+    }
+
 }

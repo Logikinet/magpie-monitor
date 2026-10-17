@@ -1,0 +1,536 @@
+{
+  "seq": 138,
+  "id": 10038,
+  "time": "2026-10-17T08:00:00Z",
+  "agent": "gemini",
+  "model": "group/demo",
+  "provider": "demo-gemini",
+  "effort": "medium",
+  "order": [
+    {
+      "id": "fake-seat-0-0",
+      "provider": "demo-claude",
+      "name": "demo-claude",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "claude",
+      "plan": "Demo",
+      "model": "demo-sonnet",
+      "routing": "usage",
+      "known": true,
+      "used": 20,
+      "pace": 2.5,
+      "tokens": 1000,
+      "rank": 0,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true
+    },
+    {
+      "id": "fake-seat-0-1",
+      "provider": "demo-claude",
+      "name": "demo-claude",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "claude",
+      "plan": "Demo",
+      "model": "demo-sonnet",
+      "routing": "usage",
+      "known": true,
+      "used": 32,
+      "pace": 2.5,
+      "tokens": 1300,
+      "rank": 1,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true
+    },
+    {
+      "id": "fake-seat-0-2",
+      "provider": "demo-claude",
+      "name": "demo-claude",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "claude",
+      "plan": "Demo",
+      "model": "demo-sonnet",
+      "routing": "usage",
+      "known": true,
+      "used": 44,
+      "pace": 2.5,
+      "tokens": 1600,
+      "rank": 2,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true,
+      "rest": {
+        "why": "failRate",
+        "status": 429,
+        "until": "2026-10-17T08:05:00Z",
+        "by": "retry-after",
+        "key": "fake-seat-0-2",
+        "model": "demo-sonnet"
+      }
+    },
+    {
+      "id": "fake-seat-0-3",
+      "provider": "demo-claude",
+      "name": "demo-claude",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "claude",
+      "plan": "Demo",
+      "model": "demo-sonnet",
+      "routing": "usage",
+      "known": true,
+      "used": 56,
+      "pace": 2.5,
+      "tokens": 1900,
+      "rank": 3,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true
+    },
+    {
+      "id": "fake-seat-1-0",
+      "provider": "demo-codex",
+      "name": "demo-codex",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "codex",
+      "plan": "Demo",
+      "model": "demo-code",
+      "routing": "usage",
+      "known": true,
+      "used": 20,
+      "pace": 2.5,
+      "tokens": 1000,
+      "rank": 0,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true
+    },
+    {
+      "id": "fake-seat-1-1",
+      "provider": "demo-codex",
+      "name": "demo-codex",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "codex",
+      "plan": "Demo",
+      "model": "demo-code",
+      "routing": "usage",
+      "known": true,
+      "used": 32,
+      "pace": 2.5,
+      "tokens": 1300,
+      "rank": 1,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true
+    },
+    {
+      "id": "fake-seat-1-2",
+      "provider": "demo-codex",
+      "name": "demo-codex",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "codex",
+      "plan": "Demo",
+      "model": "demo-code",
+      "routing": "usage",
+      "known": true,
+      "used": 44,
+      "pace": 2.5,
+      "tokens": 1600,
+      "rank": 2,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true
+    },
+    {
+      "id": "fake-seat-1-3",
+      "provider": "demo-codex",
+      "name": "demo-codex",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "codex",
+      "plan": "Demo",
+      "model": "demo-code",
+      "routing": "usage",
+      "known": true,
+      "used": 56,
+      "pace": 2.5,
+      "tokens": 1900,
+      "rank": 3,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true
+    },
+    {
+      "id": "fake-seat-2-0",
+      "provider": "demo-gemini",
+      "name": "demo-gemini",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "gemini",
+      "plan": "Demo",
+      "model": "demo-flash",
+      "routing": "usage",
+      "known": true,
+      "used": 20,
+      "pace": 2.5,
+      "tokens": 1000,
+      "rank": 0,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true
+    },
+    {
+      "id": "fake-seat-2-1",
+      "provider": "demo-gemini",
+      "name": "demo-gemini",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "gemini",
+      "plan": "Demo",
+      "model": "demo-flash",
+      "routing": "usage",
+      "known": true,
+      "used": 32,
+      "pace": 2.5,
+      "tokens": 1300,
+      "rank": 1,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true
+    },
+    {
+      "id": "fake-seat-2-2",
+      "provider": "demo-gemini",
+      "name": "demo-gemini",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "gemini",
+      "plan": "Demo",
+      "model": "demo-flash",
+      "routing": "usage",
+      "known": true,
+      "used": 44,
+      "pace": 2.5,
+      "tokens": 1600,
+      "rank": 2,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true
+    },
+    {
+      "id": "fake-seat-2-3",
+      "provider": "demo-gemini",
+      "name": "demo-gemini",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "gemini",
+      "plan": "Demo",
+      "model": "demo-flash",
+      "routing": "usage",
+      "known": true,
+      "used": 56,
+      "pace": 2.5,
+      "tokens": 1900,
+      "rank": 3,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true
+    },
+    {
+      "id": "fake-seat-3-0",
+      "provider": "demo-claude",
+      "name": "demo-claude",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "opencode",
+      "plan": "Demo",
+      "model": "demo-opus",
+      "routing": "usage",
+      "known": true,
+      "used": 20,
+      "pace": 2.5,
+      "tokens": 1000,
+      "rank": 0,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true
+    },
+    {
+      "id": "fake-seat-3-1",
+      "provider": "demo-claude",
+      "name": "demo-claude",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "opencode",
+      "plan": "Demo",
+      "model": "demo-opus",
+      "routing": "usage",
+      "known": true,
+      "used": 32,
+      "pace": 2.5,
+      "tokens": 1300,
+      "rank": 1,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true
+    },
+    {
+      "id": "fake-seat-3-2",
+      "provider": "demo-claude",
+      "name": "demo-claude",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "opencode",
+      "plan": "Demo",
+      "model": "demo-opus",
+      "routing": "usage",
+      "known": true,
+      "used": 44,
+      "pace": 2.5,
+      "tokens": 1600,
+      "rank": 2,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true
+    },
+    {
+      "id": "fake-seat-3-3",
+      "provider": "demo-claude",
+      "name": "demo-claude",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "opencode",
+      "plan": "Demo",
+      "model": "demo-opus",
+      "routing": "usage",
+      "known": true,
+      "used": 56,
+      "pace": 2.5,
+      "tokens": 1900,
+      "rank": 3,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true,
+      "fallback": true
+    }
+  ],
+  "left": [
+    {
+      "id": "fake-seat-0-2",
+      "provider": "demo-claude",
+      "name": "demo-claude",
+      "icon": "generic",
+      "who": "demo-user@example.com",
+      "kind": "account",
+      "agent": "claude",
+      "plan": "Demo",
+      "model": "demo-sonnet",
+      "routing": "usage",
+      "known": true,
+      "used": 44,
+      "pace": 2.5,
+      "tokens": 1600,
+      "rank": 2,
+      "renews": [
+        "2026-10-24T08:00:00Z"
+      ],
+      "due": "2026-10-24T08:00:00Z",
+      "shared": true,
+      "rest": {
+        "why": "failRate",
+        "status": 429,
+        "until": "2026-10-17T08:05:00Z",
+        "by": "retry-after",
+        "key": "fake-seat-0-2",
+        "model": "demo-sonnet"
+      }
+    }
+  ],
+  "tries": [
+    {
+      "id": "fake-seat-2-0",
+      "model": "demo-flash",
+      "effort": "medium",
+      "start": "2026-10-17T08:00:00Z",
+      "done": true,
+      "status": 200,
+      "ms": 1438,
+      "ttft": 210,
+      "firstText": 230,
+      "flow": 1100,
+      "served": "demo-flash"
+    }
+  ],
+  "done": true,
+  "usage": [
+    {
+      "provider": "demo-gemini",
+      "model": "demo-flash",
+      "in": 1500,
+      "out": 300,
+      "cache_read": 500
+    }
+  ],
+  "group": {
+    "id": "demo",
+    "name": "Demo routing",
+    "routing": "usage",
+    "affinity": "session",
+    "members": [
+      "demo-claude/demo-sonnet",
+      "demo-codex/demo-code"
+    ],
+    "subs": [
+      {
+        "id": "fake-sub",
+        "name": "Demo nested",
+        "routing": "order",
+        "in": "demo"
+      }
+    ],
+    "via": [
+      "fake-sub"
+    ]
+  },
+  "affinity": {
+    "mode": "session",
+    "turn": 3,
+    "within": false,
+    "last": "fake-seat-2-0",
+    "lastTurn": 2,
+    "at": "2026-10-17T07:59:00Z",
+    "cacheRead": 500,
+    "kept": true,
+    "why": "session"
+  },
+  "prompt": {
+    "window": 128000,
+    "tokens": 2000,
+    "counted": true,
+    "turns": 3,
+    "parts": [
+      {
+        "kind": "system",
+        "tokens": 300,
+        "items": [
+          {
+            "name": "Demo instructions",
+            "tokens": 300,
+            "tag": "project"
+          }
+        ]
+      },
+      {
+        "kind": "tools",
+        "tokens": 400,
+        "items": [
+          {
+            "name": "Demo tool",
+            "tokens": 400,
+            "tag": "mcp"
+          }
+        ]
+      },
+      {
+        "kind": "files",
+        "tokens": 600,
+        "items": [
+          {
+            "name": "sample.swift",
+            "tokens": 600,
+            "tag": "read"
+          }
+        ]
+      },
+      {
+        "kind": "results",
+        "tokens": 200,
+        "items": [
+          {
+            "name": "Demo output",
+            "tokens": 200,
+            "tag": "shell"
+          }
+        ]
+      },
+      {
+        "kind": "chat",
+        "tokens": 500,
+        "items": [
+          {
+            "name": "Demo turn",
+            "tokens": 500,
+            "tag": "turn"
+          }
+        ]
+      }
+    ]
+  },
+  "conv": "fake-conversation",
+  "folder": "devbox/demo",
+  "priced": true,
+  "status": 200,
+  "ms": 1438,
+  "ttft": 210,
+  "firstText": 230,
+  "flow": 1100,
+  "served": "demo-flash",
+  "cost": 0.004,
+  "tokens": 1800,
+  "out": 300
+}

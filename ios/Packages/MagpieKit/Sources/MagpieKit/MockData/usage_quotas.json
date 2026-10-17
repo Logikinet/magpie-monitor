@@ -1,0 +1,64 @@
+[
+  {
+    "provider": "demo-claude",
+    "name": "Demo Claude",
+    "user": "demo-user@example.com",
+    "plan": "Demo",
+    "windows": [
+      {
+        "name": "7 days",
+        "used": "25",
+        "resetsAt": "2026-10-24T08:00:00Z",
+        "runsOut": 7,
+        "runsOutAt": "2026-10-24T08:00:00Z",
+        "holds": {
+          "since": "2026-10-17T08:00:00Z",
+          "tokens": 2000,
+          "cost": 0.04
+        }
+      }
+    ],
+    "resets": {
+      "count": 2,
+      "until": "2026-11-01T00:00:00Z",
+      "each": [
+        {
+          "until": "2026-11-01T00:00:00Z",
+          "window": "weekly"
+        }
+      ]
+    },
+    "daily": {
+      "since": "2026-10-17T00:00:00Z",
+      "days": [
+        {
+          "day": "2026-10-17",
+          "used": 25
+        }
+      ]
+    },
+    "checkin": {
+      "user": "demo-user@example.com",
+      "day": "2026-10-17",
+      "at": "2026-10-17T00:00:00Z",
+      "outcome": "ok",
+      "credit": 2,
+      "streak": 3
+    },
+    "balance": "$8.00",
+    "balanceTrend": {
+      "points": [
+        {
+          "at": "2026-10-16T08:00:00Z",
+          "amount": 10
+        },
+        {
+          "at": "2026-10-17T08:00:00Z",
+          "amount": 8
+        }
+      ],
+      "perDay": 2,
+      "runsOut": "2026-10-21T08:00:00Z"
+    }
+  }
+]

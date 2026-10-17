@@ -32,7 +32,22 @@ public struct Route: Decodable, Sendable {
     public let leadAccount: String?
     public let subagent: RouteSubagent?
     public let pinned: String?
-    public let order: LossyArray<Weighed>?
+    public let order: LossyArray<Seat>?
+    public let left: LossyArray<Seat>?
+    public let tries: LossyArray<RouteTry>?
+    public let prompt: RoutePrompt?
+    public let affinity: RouteAffinity?
+    public let ttft: FlexibleInt?
+    public let firstText: FlexibleInt?
+    public let flow: FlexibleInt?
+    public let served: String?
+    public let cost: FlexibleDouble?
+    public let ms: FlexibleInt?
+    public let conv: String?
+    public let folder: String?
+    public let tokens: FlexibleInt?
+    public let out: FlexibleInt?
+    public let reasoning: FlexibleInt?
     public let done: Bool?
     public let status: FlexibleInt?
     public let error: String?
@@ -57,7 +72,7 @@ public struct RouteUsage: Decodable, Sendable {
     }
 }
 
-public struct Weighed: Decodable, Sendable {
+public struct Seat: Decodable, Sendable {
     public let id: String?
     public let provider: String?
     public let name: String?
@@ -81,6 +96,13 @@ public struct Weighed: Decodable, Sendable {
     public let tokens: FlexibleDouble?
     public let rank: FlexibleInt?
     public let turn: Bool?
+    public let renews: LossyArray<MagpieDate>?
+    public let due: MagpieDate?
+    public let usedRenews: MagpieDate?
+    public let rest: SeatRest?
+    public let unlisted: Bool?
+    public let known: Bool?
+    public let via: LossyArray<String>?
 }
 
 public struct RouteGroup: Decodable, Sendable {
@@ -89,6 +111,8 @@ public struct RouteGroup: Decodable, Sendable {
     public let routing: String?
     public let affinity: String?
     public let members: [String]?
+    public let subs: LossyArray<RouteSubgroup>?
+    public let via: LossyArray<String>?
 }
 
 public struct RouteRule: Decodable, Sendable {
@@ -118,3 +142,6 @@ public struct HistoryDay: Decodable, Sendable {
     public let day: String?
     public let requests: FlexibleInt?
 }
+
+/// Compatibility with the original gateway scheduling model.
+public typealias Weighed = Seat

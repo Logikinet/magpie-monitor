@@ -130,9 +130,19 @@ public struct UsageTotals: Decodable {
     public let cost: FlexibleDouble?
     public let unpriced: FlexibleInt?
     public let tokens: FlexibleInt?
+    public let timed: FlexibleInt?
+    public let ttftMS: FlexibleDouble?
+    public let decodeMS: FlexibleDouble?
+    public let decodeOut: FlexibleInt?
+    public let decodeN: FlexibleInt?
 
     enum CodingKeys: String, CodingKey {
         case calls, errors, retried, loops, input, output, cost, unpriced, tokens, reasoning
+        case timed
+        case ttftMS = "ttft_ms"
+        case decodeMS = "decode_ms"
+        case decodeOut = "decode_out"
+        case decodeN = "decode_n"
         case cacheRead = "cache_read"
         case cacheWrite = "cache_write"
     }
@@ -146,9 +156,11 @@ public struct UsageSummary: Decodable {
     public let models: LossyArray<UsageModelTotal>?
     public let series: LossyArray<SeriesPoint>?
     public let callerKeys: LossyArray<CallerKeyGroup>?
+    public let agents: LossyArray<UsageGroup>?
+    public let accounts: LossyArray<UsageGroup>?
 
     private enum CodingKeys: String, CodingKey {
-        case bucket, period, since, series, callerKeys, models
+        case bucket, period, since, series, callerKeys, models, agents, accounts
         case calls, errors, retried, loops, input, output, cost, unpriced, tokens, reasoning
         case cacheRead = "cache_read"
         case cacheWrite = "cache_write"
@@ -163,37 +175,60 @@ public struct UsageSummary: Decodable {
         callerKeys = try container.decodeIfPresent(LossyArray<CallerKeyGroup>.self, forKey: .callerKeys)
         models = try container.decodeIfPresent(LossyArray<UsageModelTotal>.self, forKey: .models)
 
-        totals = UsageTotals(
-            calls: try container.decodeIfPresent(FlexibleInt.self, forKey: .calls),
-            errors: try container.decodeIfPresent(FlexibleInt.self, forKey: .errors),
-            retried: try container.decodeIfPresent(FlexibleInt.self, forKey: .retried),
-            loops: try container.decodeIfPresent(FlexibleInt.self, forKey: .loops),
-            input: try container.decodeIfPresent(FlexibleInt.self, forKey: .input),
-            output: try container.decodeIfPresent(FlexibleInt.self, forKey: .output),
-            cacheRead: try container.decodeIfPresent(FlexibleInt.self, forKey: .cacheRead),
-            cacheWrite: try container.decodeIfPresent(FlexibleInt.self, forKey: .cacheWrite),
-            reasoning: try container.decodeIfPresent(FlexibleInt.self, forKey: .reasoning),
-            cost: try container.decodeIfPresent(FlexibleDouble.self, forKey: .cost),
-            unpriced: try container.decodeIfPresent(FlexibleInt.self, forKey: .unpriced),
-            tokens: try container.decodeIfPresent(FlexibleInt.self, forKey: .tokens)
-        )
+        agents = try container.decodeIfPresent(LossyArray<UsageGroup>.self, forKey: .agents)
+        accounts = try container.decodeIfPresent(LossyArray<UsageGroup>.self, forKey: .accounts)
+        totals = try UsageTotals(from: decoder)
     }
 }
 
 /// A usage model group; provider IDs let quota cards aggregate model totals.
-public struct UsageModelTotal: Decodable {
+public typealias UsageModelTotal = UsageGroup
+
+/// Usage totals are flattened into each group and time bucket by the server.
+public struct UsageGroup: Decodable {
+    public let id: String?
+    public let name: String?
+    public let sub: String?
+    public let icon: String?
     public let provider: String?
-    public let input: FlexibleInt?
-    public let output: FlexibleInt?
+    public let model: String?
+    public let host: String?
+    public let account: String?
+    public let totals: UsageTotals
+    public var input: FlexibleInt? { totals.input }
+    public var output: FlexibleInt? { totals.output }
+
+    private enum CodingKeys: String, CodingKey { case id, name, sub, icon, provider, model, host, account }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(String.self, forKey: .id)
+        name = try c.decodeIfPresent(String.self, forKey: .name)
+        sub = try c.decodeIfPresent(String.self, forKey: .sub)
+        icon = try c.decodeIfPresent(String.self, forKey: .icon)
+        provider = try c.decodeIfPresent(String.self, forKey: .provider)
+        model = try c.decodeIfPresent(String.self, forKey: .model)
+        host = try c.decodeIfPresent(String.self, forKey: .host)
+        account = try c.decodeIfPresent(String.self, forKey: .account)
+        totals = try UsageTotals(from: decoder)
+    }
 }
 
 public struct SeriesPoint: Decodable {
     public let label: String?
     public let time: MagpieDate?
     public let by: [String: [String: UsageTotals]]?
-    public let calls: FlexibleInt?
-    public let cost: FlexibleDouble?
-    public let tokens: FlexibleInt?
+    public let totals: UsageTotals
+    public var calls: FlexibleInt? { totals.calls }
+    public var cost: FlexibleDouble? { totals.cost }
+    public var tokens: FlexibleInt? { totals.tokens }
+    private enum CodingKeys: String, CodingKey { case label, time, by }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        label = try c.decodeIfPresent(String.self, forKey: .label)
+        time = try c.decodeIfPresent(MagpieDate.self, forKey: .time)
+        by = try c.decodeIfPresent([String: [String: UsageTotals]].self, forKey: .by)
+        totals = try UsageTotals(from: decoder)
+    }
 }
 
 public struct CallerKeyGroup: Decodable {
