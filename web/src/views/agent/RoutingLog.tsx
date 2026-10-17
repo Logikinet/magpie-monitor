@@ -2,40 +2,7 @@ import type { Route } from '../../core/decode';
 import { failedTry, latencyBreakdown } from '../../core/routing-model';
 import { formatDuration } from '../../core/format';
 import { value, word, type Lang } from './shared';
-const text = {
-  zh: {
-    title: '请求决策过程',
-    details: '用量详情',
-    refresh: '刷新',
-    empty: '没有决策记录',
-    stream: '输出',
-    total: '总计',
-    magpie: '网关',
-    network: '网络',
-    vendor: '服务商',
-    dns: 'DNS',
-    tcp: 'TCP',
-    tls: 'TLS',
-    send: '发送',
-    ttft: '首字时间',
-  },
-  en: {
-    title: 'Request decisions',
-    details: 'Usage details',
-    refresh: 'Refresh',
-    empty: 'No decision records',
-    stream: 'Stream',
-    total: 'Total',
-    magpie: 'Gateway',
-    network: 'Network',
-    vendor: 'Provider',
-    dns: 'DNS',
-    tcp: 'TCP',
-    tls: 'TLS',
-    send: 'Send',
-    ttft: 'TTFT',
-  },
-};
+import { t as translate } from '../../i18n';
 export function RoutingLog({
   route,
   lang,
@@ -47,7 +14,7 @@ export function RoutingLog({
   refresh: () => void;
   usage: () => void;
 }) {
-  const t = text[lang],
+  const t = { title: translate('route.decisions', {}, lang), details: translate('route.usageDetails', {}, lang), refresh: translate('app.refresh', {}, lang), empty: translate('route.noDecisions', {}, lang), stream: translate('route.stream', {}, lang), total: translate('route.total', {}, lang), magpie: translate('route.gateway', {}, lang), network: translate('route.network', {}, lang), vendor: translate('route.vendor', {}, lang), dns: 'DNS', tcp: 'TCP', tls: 'TLS', send: translate('route.send', {}, lang), ttft: translate('route.ttft', {}, lang) },
     b = latencyBreakdown(route),
     segments = [b.magpie, b.network, b.vendor],
     sum = segments.reduce<number>((n, v) => n + (v ?? 0), 0);

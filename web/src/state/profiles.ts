@@ -1,3 +1,5 @@
+import { t } from '../i18n';
+
 export interface Profile {
   id: string;
   name: string;
@@ -8,17 +10,17 @@ export interface Profile {
   refreshSec: number;
 }
 const storageKey = 'magpie.profiles';
-export const defaultProfile: Profile = { id: 'demo', name: '演示（模拟数据）', mode: 'mock', refreshSec: 20 };
+export const defaultProfile: Profile = { id: 'demo', name: t('profile.demoName'), mode: 'mock', refreshSec: 20 };
 function url(value: unknown): string | undefined {
   if (value === undefined || value === '') return undefined;
-  if (typeof value !== 'string') throw new Error('地址格式无效');
+  if (typeof value !== 'string') throw new Error(t('profile.invalidUrl'));
   const u = new URL(value);
   if (!['http:', 'https:'].includes(u.protocol) || u.username || u.password || u.search || u.hash)
-    throw new Error('地址格式无效');
+    throw new Error(t('profile.invalidUrl'));
   return value;
 }
 export function validateProfile(value: unknown): Profile {
-  if (!value || typeof value !== 'object') throw new Error('Profile 格式无效');
+  if (!value || typeof value !== 'object') throw new Error(t('profile.invalidShape'));
   const p = value as Record<string, unknown>;
   if (
     typeof p.id !== 'string' ||
@@ -28,14 +30,14 @@ export function validateProfile(value: unknown): Profile {
     !['live', 'direct', 'mock'].includes(String(p.mode)) ||
     ![10, 20, 30, 60].includes(Number(p.refreshSec))
   )
-    throw new Error('Profile 格式无效');
+    throw new Error(t('profile.invalidShape'));
   if (
     p.webPort !== undefined &&
     (typeof p.webPort !== 'number' || !Number.isInteger(p.webPort) || p.webPort < 1 || p.webPort > 65535)
   )
-    throw new Error('端口无效');
+    throw new Error(t('profile.invalidPort'));
   const gatewayUrl = url(p.gatewayUrl);
-  if (p.mode === 'direct' && !gatewayUrl) throw new Error('直连模式需要网关地址');
+  if (p.mode === 'direct' && !gatewayUrl) throw new Error(t('settings.gatewayRequired'));
   return {
     id: p.id,
     name: p.name,
@@ -48,9 +50,9 @@ export function validateProfile(value: unknown): Profile {
 }
 export function importProfiles(json: string): Profile[] {
   const data: unknown = JSON.parse(json);
-  if (!Array.isArray(data)) throw new Error('Profile 列表格式无效');
+  if (!Array.isArray(data)) throw new Error(t('profile.invalidList'));
   const profiles = data.map(validateProfile);
-  if (new Set(profiles.map((p) => p.id)).size !== profiles.length) throw new Error('Profile ID 重复');
+  if (new Set(profiles.map((p) => p.id)).size !== profiles.length) throw new Error(t('profile.duplicateId'));
   return profiles;
 }
 export function exportProfiles(profiles: Profile[] = loadProfiles()): string {

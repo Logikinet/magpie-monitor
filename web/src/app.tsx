@@ -109,7 +109,7 @@ export function QuotaCard({ provider, window, usage }: { provider: string; windo
   const pct = Math.round(usedPercent(window));
   const danger = pct >= 100 ? 'error' : pct >= 80 ? 'warn' : 'ok';
   const period = /^(weekly|week)$/i.test(window.name) ? t('quota.week') : t('quota.fiveHours');
-  const accessible = `${provider} ${period}, ${quotaSubtitle(window, provider, usage)}, ${t('quota.used', { percent: pct })}${window.limit ? `, limit ${fmt(window.limit)} ${window.unit ?? ''}` : ''}`;
+  const accessible = `${provider} ${period}, ${quotaSubtitle(window, provider, usage)}, ${t('quota.used', { percent: pct })}${window.limit ? `, ${t('quota.limitDescription', { limit: fmt(window.limit), unit: window.unit ?? '' })}` : ''}`;
   return (
     <Card class={`quota-card quota-${danger}`} aria-label={accessible}>
       <div class="quota-head">
@@ -354,7 +354,7 @@ export default function App() {
   const saveKeys = () => {
     keyStore.setKeys(profile.id, { gatewayKey, webKey }, remember);
     setKeysVersion((v) => v + 1);
-    setNotice('密钥已保存');
+    setNotice(t('app.savedKeys'));
   };
   const removeProfile = (id: string) => {
     if (profiles.length < 2) return;
@@ -368,13 +368,13 @@ export default function App() {
   return (
     <div class="app-shell" data-testid={`view-${tab}`}>
       <header class="topbar">
-        <a class="brand" href="#/overview" onClick={() => chooseTab('overview')} aria-label="magpie 概览">
+        <a class="brand" href="#/overview" onClick={() => chooseTab('overview')} aria-label={`magpie ${t('overview.title')}`}>
           <span class="brand-mark">m</span>
           <span>magpie</span>
         </a>
         <div class="header-profile">
           <label class="sr-only" for="profile-switch">
-            选择 Profile
+            {t('app.profileSelect')}
           </label>
           <select
             id="profile-switch"
@@ -392,8 +392,8 @@ export default function App() {
             <span
               class="badge badge-secondary"
               data-testid="mock-badge"
-              title="Mock data"
-              aria-label="Mock data"
+              title={t('app.mock')}
+              aria-label={t('app.mock')}
             >
               <Icon name="play-rect" />
               {t('app.mock')}
@@ -407,7 +407,7 @@ export default function App() {
           )}
         </div>
         {profile.mode !== 'mock' && (
-          <span class="mode-pill">{profile.mode === 'live' ? 'Live' : 'Direct'}</span>
+          <span class="mode-pill">{profile.mode === 'live' ? t('settings.live') : t('settings.directPill')}</span>
         )}
         <div class="top-actions">
           <label class="language-switch">
@@ -447,7 +447,7 @@ export default function App() {
         </div>
       </header>
       <aside class="sidebar">
-        <nav aria-label="主导航">
+        <nav aria-label={t('app.mainNav')}>
           {nav.map((n) => (
             <a
               href={`#/${n.id}`}
@@ -464,7 +464,7 @@ export default function App() {
           <small>{profile.name}</small>
         </div>
       </aside>
-      <nav class="mobile-nav" aria-label="主导航">
+      <nav class="mobile-nav" aria-label={t('app.mainNav')}>
         {nav.map((n) => (
           <a
             href={`#/${n.id}`}
@@ -560,7 +560,7 @@ export default function App() {
                   <p class="eyebrow">
                     {new URLSearchParams(location.search).get('lang') === 'en'
                       ? 'REQUEST LEDGER'
-                      : '请求记录'}
+                      : t('activity.eyebrow')}
                   </p>
                   <h1>{t('activity.title')}</h1>
                   <p>{t('activity.subtitle')}</p>
@@ -596,7 +596,7 @@ export default function App() {
                           {t('chart.requests', { count: fmt(ledger?.total ?? usage?.calls ?? rows.length) })}
                         </p>
                       </div>
-                      <span class="muted">{series.length} {locale === 'en' ? 'periods' : locale === 'ja' ? '期間' : '个时间段'}</span>
+                      <span class="muted">{t('app.periods', { count: series.length })}</span>
                     </div>
                     <TrendChart series={series} />
                   </Card>
@@ -616,12 +616,7 @@ export default function App() {
               <div class="page-heading">
                 <div>
                   <p class="eyebrow">
-                    {({
-                      routing: { zh: '实时路由', en: 'ROUTING' },
-                      usage: { zh: '用量与配额', en: 'USAGE & QUOTAS' },
-                      providers: { zh: '服务商', en: 'PROVIDERS' },
-                      runtimes: { zh: '运行时', en: 'RUNTIMES' },
-                    } as const)[agentTab][new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'zh']}
+                    {t(({ routing: 'app.routingEyebrow', usage: 'app.usageEyebrow', providers: 'app.providersEyebrow', runtimes: 'app.runtimesEyebrow' } as const)[agentTab])}
                   </p>
                   <h1>Agent</h1>
                   <p>{t('agent.subtitle')}</p>
@@ -630,8 +625,8 @@ export default function App() {
               <AgentNav tab={agentTab} choose={chooseAgentTab} />
               {profile.mode === 'direct' && agentTab === 'routing' && (
                 <Card class="notice-card">
-                  <Status kind="warn">直连模式无全局 trace</Status>
-                  <p>输入 session id 后轮询单会话路由记录。</p>
+                  <Status kind="warn">{t('agent.directMode')}</Status>
+                  <p>{t('agent.sessionHint')}</p>
                   <form
                     class="session-form"
                     onSubmit={(e) => {
@@ -643,10 +638,10 @@ export default function App() {
                     <input
                       value={sessionId}
                       onInput={(e) => setSessionId((e.currentTarget as HTMLInputElement).value)}
-                      placeholder="session id"
-                      aria-label="session id"
+                      placeholder={t('agent.session')}
+                      aria-label={t('agent.session')}
                     />
-                    <button class="button button-primary">开始轮询</button>
+                    <button class="button button-primary">{t('agent.startPolling')}</button>
                   </form>
                 </Card>
               )}
@@ -681,14 +676,14 @@ export default function App() {
               <div class="page-heading">
                 <div>
                   <p class="eyebrow">
-                    {new URLSearchParams(location.search).get('lang') === 'en' ? 'PREFERENCES' : '偏好设置'}
+                    {t('settings.eyebrow')}
                   </p>
-                  <h1>设置</h1>
-                  <p>连接 Profile、密钥与外观</p>
+                  <h1>{t('settings.title')}</h1>
+                  <p>{t('settings.subtitle')}</p>
                 </div>
               </div>
               <Section
-                title="服务器配置"
+                title={t('settings.sectionServer')}
                 action={
                   <button
                     class="button button-primary"
@@ -696,7 +691,7 @@ export default function App() {
                       setProfileEdit({ id: `profile-${Date.now()}`, name: '', mode: 'mock', refreshSec: 20 })
                     }
                   >
-                    添加配置
+                    {t('settings.addProfile')}
                   </button>
                 }
               />
@@ -709,63 +704,62 @@ export default function App() {
                     <div class="profile-meta">
                       <strong>{p.name}</strong>
                       <span class="muted">
-                        {p.mode === 'mock' ? '模拟数据' : p.mode === 'live' ? '经代理' : '直连'} · 每{' '}
-                        {p.refreshSec} 秒刷新
+                        {p.mode === 'mock' ? t('settings.mock') : p.mode === 'live' ? t('settings.proxy') : t('settings.direct')} · {t('settings.everySeconds', { seconds: p.refreshSec })}
                       </span>
                       {p.gatewayUrl?.startsWith('http://') && (
                         <span class="badge badge-warn">
                           <Icon name="lock-open" />
-                          不安全（HTTP）
+                          {t('settings.insecure')}
                         </span>
                       )}
                     </div>
                     <div class="row-actions">
                       <button class="button button-quiet" onClick={() => chooseProfile(p.id)}>
-                        切换
+                        {t('settings.switch')}
                       </button>
                       <button class="button button-quiet" onClick={() => setProfileEdit(p)}>
-                        编辑
+                        {t('settings.edit')}
                       </button>
                       <button
                         class="button button-quiet danger-text"
                         disabled={profiles.length < 2}
                         onClick={() => removeProfile(p.id)}
                       >
-                        删除
+                        {t('settings.delete')}
                       </button>
                     </div>
                   </Card>
                 ))}
               </div>
-              <Section title="密钥" />
+              <Section title={t('settings.sectionKeys')} />
               <Card class="settings-card">
                 <div class="form-grid">
                   <label>
-                    Gateway key
+                    {t('settings.gatewayKeyLabel')}
                     <input
                       type={showKeys ? 'text' : 'password'}
                       autoComplete="off"
                       value={gatewayKey}
                       onInput={(e) => setGatewayKey((e.currentTarget as HTMLInputElement).value)}
-                      placeholder="输入 gateway key"
+                      placeholder={t('settings.gatewayKey')}
                     />
                   </label>
                   {profile.mode === 'live' && (
                     <label>
-                      Runtime key
+                      {t('settings.runtimeKeyLabel')}
                       <input
                         type={showKeys ? 'text' : 'password'}
                         autoComplete="off"
                         value={webKey}
                         onInput={(e) => setWebKey((e.currentTarget as HTMLInputElement).value)}
-                        placeholder="输入 runtime key"
+                        placeholder={t('settings.runtimeKey')}
                       />
                     </label>
                   )}
                 </div>
                 <div class="inline-controls">
                   <button class="text-button" onClick={() => setShowKeys((v) => !v)}>
-                    {showKeys ? '隐藏密钥' : '显示密钥'}
+                    {showKeys ? t('settings.hideKey') : t('settings.showKey')}
                   </button>
                   <label class="check-label">
                     <input
@@ -773,18 +767,18 @@ export default function App() {
                       checked={remember}
                       onChange={(e) => setRemember((e.currentTarget as HTMLInputElement).checked)}
                     />
-                    记住 key（在此设备）
+                    {t('settings.remember')}
                   </label>
                 </div>
                 {remember && (
                   <div class="warning-box">
-                    <Status kind="warn">本地存储提示</Status>
-                    <p>启用后密钥会保存在此设备的浏览器 localStorage 中。仅在可信任的个人设备上使用。</p>
+                    <Status kind="warn">{t('settings.localStorageTitle')}</Status>
+                    <p>{t('settings.localStorageBody')}</p>
                   </div>
                 )}
                 <div class="row-actions">
                   <button class="button button-primary" onClick={saveKeys}>
-                    保存密钥
+                    {t('settings.saveKeys')}
                   </button>
                   <button
                     class="button"
@@ -795,32 +789,32 @@ export default function App() {
                       setWebKey('');
                     }}
                   >
-                    清除所有 key
+                    {t('settings.clearKeys')}
                   </button>
                 </div>
                 {notice && <p class="success-note">{notice}</p>}
               </Card>
-              <Section title="外观与数据" />
+              <Section title={t('settings.sectionAppearance')} />
               <Card class="settings-card">
                 <label class="field-label">
-                  主题
+                  {t('settings.theme')}
                   <select
                     value={theme}
                     onChange={(e) => setTheme((e.currentTarget as HTMLSelectElement).value)}
                   >
-                    <option value="system">跟随系统</option>
-                    <option value="light">浅色</option>
-                    <option value="dark">深色</option>
+                    <option value="system">{t('settings.system')}</option>
+                    <option value="light">{t('settings.light')}</option>
+                    <option value="dark">{t('settings.dark')}</option>
                   </select>
                 </label>
                 <div class="field-label">
-                  Profile 管理
+                  {t('settings.profileManagement')}
                   <div class="row-actions">
                     <button class="button" onClick={() => downloadProfiles(profiles)}>
-                      导出 Profile
+                      {t('settings.export')}
                     </button>
                     <label class="button file-button">
-                      导入 Profile
+                      {t('settings.import')}
                       <input
                         type="file"
                         accept="application/json"
@@ -830,22 +824,22 @@ export default function App() {
                       />
                     </label>
                   </div>
-                  <small>导出内容不包含任何 key。</small>
+                  <small>{t('settings.exportNote')}</small>
                 </div>
               </Card>
-              <Section title="关于" />
+              <Section title={t('settings.sectionAbout')} />
               <Card class="about-card">
                 <p>
                   <strong>magpie web</strong> · MIT License
                 </p>
-                <p>用于查看网关状态、请求与配额。Tmux/服务 请使用 iOS App。</p>
+                <p>{t('settings.aboutBody')}</p>
                 <a
                   href="https://magpie.example.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   class="text-link"
                 >
-                  magpie 项目 <Icon name="external-link" size={14} />
+                  {t('settings.project')} <Icon name="external-link" size={14} />
                 </a>
               </Card>
             </>
@@ -902,8 +896,8 @@ function TrendChart({ series }: { series: any[] }) {
   const label = (p: any) => p?.label ?? dateTime(p?.time);
   return (
     <div class="chart-wrap" ref={host}>
-      <svg width={width} height={height} role="img" aria-label="请求数量趋势">
-        <title>按时间段统计的请求数量趋势</title>
+      <svg width={width} height={height} role="img" aria-label={t('chart.aria')}>
+        <title>{t('chart.title')}</title>
         {[0, 1, 2, 3].map((i) => {
           const value = (max * (3 - i)) / 3,
             y = top + (i * plotH) / 3;
@@ -927,10 +921,10 @@ function TrendChart({ series }: { series: any[] }) {
               height={h}
               rx="2"
               tabIndex={0}
-              aria-label={`${label(series[i])}: ${fmt(v)} 个请求`}
+              aria-label={`${label(series[i])}: ${t('chart.requests', { count: fmt(v) })}`}
             >
               <title>
-                {label(series[i])} · {fmt(v)} 个请求
+                {label(series[i])} · {t('chart.requests', { count: fmt(v) })}
               </title>
             </rect>
           );
@@ -955,20 +949,20 @@ function compactNumber(n: number) {
   return fmtTokens(n);
 }
 function Ledger({ rows }: { rows: Row[] }) {
-  if (!rows.length) return <Empty text="此时间段暂无请求记录" />;
+  if (!rows.length) return <Empty text={t('activity.emptyRows')} />;
   return (
     <>
       <div class="ledger-table-wrap">
         <table class="ledger-table">
           <thead>
             <tr>
-              <th>时间</th>
+              <th>{t('activity.th')}</th>
               <th>Agent</th>
-              <th>模型</th>
+              <th>{t('activity.thModel')}</th>
               <th>Provider</th>
-              <th>Tokens（入 / 出）</th>
-              <th>费用</th>
-              <th>状态</th>
+              <th>{t('activity.thTokens')}</th>
+              <th>{t('activity.cost')}</th>
+              <th>{t('activity.status')}</th>
             </tr>
           </thead>
           <tbody>
@@ -1000,7 +994,7 @@ function LedgerRow({ row, mobile = false }: { row: Row; mobile?: boolean }) {
     <Card class="ledger-mobile-row">
       <div class="ledger-mobile-top">
         <time>{when}</time>
-        <Status kind={ok ? 'ok' : 'error'}>{ok ? '正常' : '错误'}</Status>
+        <Status kind={ok ? 'ok' : 'error'}>{ok ? t('activity.ok') : t('activity.error')}</Status>
       </div>
       <strong>{agent}</strong>
       <code>{model}</code>
@@ -1011,7 +1005,7 @@ function LedgerRow({ row, mobile = false }: { row: Row; mobile?: boolean }) {
         </span>
         <span>{money(cost)}</span>
       </div>
-      {(row.swapped || row.routed) && <small>已切换 / 已路由</small>}
+      {(row.swapped || row.routed) && <small>{t('activity.switched')}</small>}
     </Card>
   ) : (
     <tr>
@@ -1027,8 +1021,8 @@ function LedgerRow({ row, mobile = false }: { row: Row; mobile?: boolean }) {
       <td>{money(cost)}</td>
       <td>
         <span class="row-status">
-          <Status kind={ok ? 'ok' : 'error'}>{ok ? '正常' : '错误'}</Status>
-          {(row.swapped || row.routed) && <span class="muted">已路由</span>}
+          <Status kind={ok ? 'ok' : 'error'}>{ok ? t('activity.ok') : t('activity.error')}</Status>
+          {(row.swapped || row.routed) && <span class="muted">{t('activity.routed')}</span>}
         </span>
       </td>
     </tr>
@@ -1051,7 +1045,7 @@ function KeyValueCard({ title, subtitle, value }: { title: string; subtitle: str
           <div>
             <dt>{keyLabel(k)}</dt>
             <dd class={/id|key/i.test(k) ? 'mono' : ''}>
-              {typeof v === 'number' ? fmt(v) : typeof v === 'boolean' ? (v ? '是' : '否') : String(v)}
+              {typeof v === 'number' ? fmt(v) : typeof v === 'boolean' ? (v ? t('app.yes') : t('app.no')) : String(v)}
             </dd>
           </div>
         ))}
@@ -1060,27 +1054,8 @@ function KeyValueCard({ title, subtitle, value }: { title: string; subtitle: str
   );
 }
 function keyLabel(k: string) {
-  return (
-    (
-      {
-        name: '名称',
-        version: '版本',
-        label: '调用方',
-        callerKeyLabel: '调用方',
-        caller_key_label: '调用方',
-        requests_limit: '请求上限',
-        budget: '预算',
-        spent: '已使用',
-        remaining: '剩余',
-        period: '周期',
-        limit: '限额',
-        requests: '请求上限',
-        tokens: 'Token',
-        active: '运行中',
-        waiting: '等待中',
-      } as Record<string, string>
-    )[k] ?? k
-  );
+  const keys: Record<string, string> = { name: 'key.name', version: 'key.version', label: 'key.caller', callerKeyLabel: 'key.caller', caller_key_label: 'key.caller', requests_limit: 'key.requestsLimit', budget: 'key.budget', spent: 'key.spent', remaining: 'key.remaining', period: 'key.period', limit: 'key.limit', requests: 'key.requestsLimit', tokens: 'key.tokens', active: 'key.active', waiting: 'key.waiting' };
+  return keys[k] ? t(keys[k]) : k;
 }
 function Empty({ text }: { text: string }) {
   return (
@@ -1106,26 +1081,26 @@ function ProfileForm({
     <Card class="settings-card profile-form">
       <div class="form-grid">
         <label>
-          名称
+          {t('settings.formName')}
           <input
             value={value.name}
             onInput={(e) => patch({ name: (e.currentTarget as HTMLInputElement).value })}
           />
         </label>
         <label>
-          模式
+          {t('settings.formMode')}
           <select
             value={value.mode}
             onChange={(e) => patch({ mode: (e.currentTarget as HTMLSelectElement).value as Profile['mode'] })}
           >
-            <option value="live">Live · Worker 代理，可用全局 trace</option>
-            <option value="direct">Direct · 浏览器直连，仅 gateway API</option>
-            <option value="mock">Mock · 本地演示数据，零网络</option>
+            <option value="live">{t('settings.liveDesc')}</option>
+            <option value="direct">{t('settings.directDesc')}</option>
+            <option value="mock">{t('settings.mockDesc')}</option>
           </select>
         </label>
         {value.mode === 'direct' && (
           <label>
-            Gateway URL
+            {t('settings.gatewayUrlLabel')}
             <input
               value={value.gatewayUrl ?? ''}
               placeholder="https://magpie.example.com"
@@ -1135,7 +1110,7 @@ function ProfileForm({
         )}
         {value.mode === 'live' && (
           <label>
-            Web GUI 端口
+            {t('settings.formWebPort')}
             <input
               type="number"
               min="1"
@@ -1148,7 +1123,7 @@ function ProfileForm({
           </label>
         )}
         <label>
-          magpie web 地址（可选）
+          {t('settings.formWebAddress')}
           <input
             value={value.webGuiUrl ?? ''}
             placeholder="https://magpie.example.com"
@@ -1156,7 +1131,7 @@ function ProfileForm({
           />
         </label>
         <label>
-          刷新间隔
+          {t('settings.formInterval')}
           <select
             value={value.refreshSec}
             onChange={(e) =>
@@ -1166,7 +1141,7 @@ function ProfileForm({
             }
           >
             {[10, 20, 30, 60].map((n) => (
-              <option value={n}>{n} 秒</option>
+              <option value={n}>{t('settings.seconds', { seconds: n })}</option>
             ))}
           </select>
         </label>
@@ -1177,18 +1152,18 @@ function ProfileForm({
           class="button button-primary"
           onClick={() => {
             try {
-              if (!value.name.trim()) throw new Error('请填写名称');
-              if (value.mode === 'direct' && !value.gatewayUrl) throw new Error('直连模式需要网关地址');
+              if (!value.name.trim()) throw new Error(t('settings.nameRequired'));
+              if (value.mode === 'direct' && !value.gatewayUrl) throw new Error(t('settings.gatewayRequired'));
               save(value);
             } catch (e) {
               setErr((e as Error).message);
             }
           }}
         >
-          保存 Profile
+          {t('settings.profileSaved')}
         </button>
         <button class="button" onClick={cancel}>
-          取消
+          {t('app.cancel')}
         </button>
       </div>
     </Card>
@@ -1221,10 +1196,10 @@ function importProfileFile(
     .text()
     .then((text) => {
       const parsed = JSON.parse(text);
-      if (!Array.isArray(parsed)) throw new Error('Profile 文件格式无效');
+      if (!Array.isArray(parsed)) throw new Error(t('settings.invalidFile'));
       setProfiles(parsed as Profile[]);
       saveProfiles(parsed as Profile[]);
-      setNotice('Profile 已导入（密钥不会导入）');
+      setNotice(t('settings.imported'));
     })
-    .catch((e) => setNotice(`导入失败：${(e as Error).message}`));
+    .catch((e) => setNotice(t('settings.importFailed', { message: (e as Error).message })));
 }

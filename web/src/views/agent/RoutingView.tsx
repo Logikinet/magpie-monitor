@@ -12,48 +12,7 @@ import { AccountsPanel } from './AccountsPanel';
 import { GroupsList } from './GroupsList';
 import { MobilePipeline } from './MobilePipeline';
 import { clock, language, strategy, type Lang } from './shared';
-const text = {
-  zh: {
-    group: '路由组',
-    active: '有效席位',
-    agents: '个 Agent',
-    live: '回到实时',
-    loading: '正在加载路由…',
-    refresh: '刷新路由',
-    running: '实时连接',
-    offline: '等待网关连接',
-    backoff: '正在重新连接',
-    needsAuth: '请在设置中更新密钥',
-    stopped: '连接已暂停',
-    empty: '暂无请求，等待路由事件',
-    mask: '隐藏账号',
-    show: '显示账号',
-    smart: '结合可用状态选择目标。',
-    order: '按配置顺序尝试可用目标。',
-    rotate: '在可用目标之间轮流分配。',
-    usage: '优先选择用量较低的可用目标。',
-  },
-  en: {
-    group: 'routing group',
-    active: 'active',
-    agents: 'agents',
-    live: 'Back to live',
-    loading: 'Loading routes…',
-    refresh: 'Refresh routes',
-    running: 'Live connection',
-    offline: 'Waiting for gateway',
-    backoff: 'Reconnecting',
-    needsAuth: 'Update credentials in Settings',
-    stopped: 'Connection paused',
-    empty: 'No requests yet. Waiting for routing events.',
-    mask: 'Hide accounts',
-    show: 'Show accounts',
-    smart: 'Select an available target using routing signals.',
-    order: 'Try available targets in their configured order.',
-    rotate: 'Take turns across available targets.',
-    usage: 'Prefer available targets with lower usage.',
-  },
-};
+import { t as translate } from '../../i18n';
 export function RoutingView({
   routes,
   totals,
@@ -83,7 +42,7 @@ export function RoutingView({
   const today = new Date().toLocaleDateString('en-CA');
   const window = routeWindow(routes),
     route = currentRoute(window, pinned),
-    t = text[lang];
+    t = { group: translate('route.group', {}, lang), active: translate('route.active', {}, lang), agents: translate('route.agents', {}, lang), live: translate('route.live', {}, lang), loading: translate('route.loading', {}, lang), refresh: translate('route.refresh', {}, lang), running: translate('route.running', {}, lang), offline: translate('route.offline', {}, lang), backoff: translate('route.backoff', {}, lang), needsAuth: translate('route.auth', {}, lang), stopped: translate('route.stopped', {}, lang), empty: translate('route.empty', {}, lang), mask: translate('route.hide', {}, lang), show: translate('route.show', {}, lang), smart: translate('route.smartDesc', {}, lang), order: translate('route.orderDesc', {}, lang), rotate: translate('route.rotateDesc', {}, lang), usage: translate('route.usageDesc', {}, lang) };
   useEffect(() => {
     let active = true;
     client?.history(today).then((result) => { if (active) setTodayHistory(result.routes); }).catch(() => {});

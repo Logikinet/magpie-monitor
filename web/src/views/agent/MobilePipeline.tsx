@@ -2,21 +2,7 @@ import type { Route } from '../../core/decode';
 import { newestRoutes, outputSpeed, matchSeat } from '../../core/routing-model';
 import { formatDuration } from '../../core/format';
 import { clock, formatElapsed, strategy, value, word, type Lang } from './shared';
-const text = {
-  zh: { recent: '最近请求', responding: '回答中', hit: '命中', input: '输入', output: '输出', duration: '耗时', elapsed: '已用', first: '首字', speed: '速度', status: '状态' },
-  en: {
-    recent: 'Recent requests',
-    responding: 'Responding',
-    hit: 'Served by',
-    input: 'Input',
-    output: 'Output',
-    duration: 'Duration',
-    elapsed: 'Elapsed',
-    first: 'First text',
-    speed: 'Speed',
-    status: 'Status',
-  },
-};
+import { t as translate } from '../../i18n';
 export function MobilePipeline({
   route,
   routes,
@@ -28,7 +14,7 @@ export function MobilePipeline({
   pick: (seq: number) => void;
   lang: Lang;
 }) {
-  const t = text[lang],
+  const t = { recent: translate('route.recent', {}, lang), responding: translate('route.responding', {}, lang), hit: translate('route.hit', {}, lang), input: translate('route.input', {}, lang), output: translate('route.output', {}, lang), duration: translate('route.duration', {}, lang), elapsed: translate('route.elapsed', {}, lang), first: translate('route.firstText', {}, lang), speed: translate('route.speed', {}, lang), status: translate('route.status', {}, lang) },
     winner = [...(route.tries ?? [])]
       .reverse()
       .find(

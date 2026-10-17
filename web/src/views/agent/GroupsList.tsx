@@ -1,9 +1,6 @@
 import type { decodeGroups } from '../../core/decode';
 import { word, type Lang } from './shared';
-const text = {
-  zh: { title: '路由组', empty: '暂无路由组' },
-  en: { title: 'Routing groups', empty: 'No routing groups' },
-};
+import { t } from '../../i18n';
 export function GroupsList({
   groups,
   lang,
@@ -11,17 +8,17 @@ export function GroupsList({
   groups: ReturnType<typeof decodeGroups>['groups'];
   lang: Lang;
 }) {
-  const t = text[lang];
+  const text = { title: t('route.routingGroups', {}, lang), empty: t('route.noGroups', {}, lang) };
   return (
     <section class="rt-panel rt-groups">
-      <h2>{t.title}</h2>
+      <h2>{text.title}</h2>
       {groups.map((g) => (
         <div>
           <b>{g.name ?? g.id}</b> <code>group/{g.id}</code> <span>{word(g.routing)}</span>
           <p>{g.members.join(' · ') || '—'}</p>
         </div>
       ))}
-      {!groups.length && <p>{t.empty}</p>}
+      {!groups.length && <p>{text.empty}</p>}
     </section>
   );
 }

@@ -2,10 +2,7 @@ import type { Route, TraceEnvelope } from '../../core/decode';
 import { footSummary } from '../../core/routing-model';
 import { formatDuration } from '../../core/format';
 import { formatElapsed, value, word, type Lang } from './shared';
-const text = {
-  zh: { requests: '请求', retries: '迂回', errors: '错误', first: '首字', cache: '缓存命中', provider: '服务商', model: '模型', duration: '耗时', tokens: 'Token', speed: '速度', status: '状态', elapsed: '已用', responding: '回答中' },
-  en: { requests: 'Requests', retries: 'Rerouted', errors: 'Errors', first: 'First text', cache: 'Cache hit', provider: 'Provider', model: 'Model', duration: 'Duration', tokens: 'Tokens', speed: 'Speed', status: 'Status', elapsed: 'Elapsed', responding: 'Responding' },
-};
+import { t as translate } from '../../i18n';
 export function RoutingFoot({
   route,
   totals,
@@ -18,7 +15,7 @@ export function RoutingFoot({
   lang: Lang;
 }) {
   const s = footSummary(route, totals),
-    t = text[lang];
+    t = { requests: translate('usage.requests', {}, lang), retries: translate('route.retries', {}, lang), errors: translate('route.errors', {}, lang), first: translate('route.firstText', {}, lang), cache: translate('route.cacheHit', {}, lang), provider: translate('route.provider', {}, lang), model: translate('route.model', {}, lang), duration: translate('route.duration', {}, lang), tokens: translate('route.tokens', {}, lang), speed: translate('route.speed', {}, lang), status: translate('route.status', {}, lang), elapsed: translate('route.elapsed', {}, lang), responding: translate('route.responding', {}, lang) };
   return (
     <footer class="rt-foot">
       <p>

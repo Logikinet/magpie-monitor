@@ -10,11 +10,12 @@ it('formats Chinese and English boundaries like Swift', () => {
     [100000000, '1 亿', '100M'],
     [123450000, '1.2 亿', '123.45M'],
   ] as const) {
-    expect(formatTokens(n)).toBe(zh);
+    expect(formatTokens(n, 'zh')).toBe(zh);
     expect(formatTokens(n, 'en')).toBe(en);
   }
 });
 it('uses token amount first, otherwise provider totals and appropriate label', () => {
+  localStorage.setItem('mm-lang', 'zh');
   const usage = decodeUsageSummary({
     models: [
       { provider: 'p', input: 12000, output: 3400 },
@@ -30,4 +31,5 @@ it('uses token amount first, otherwise provider totals and appropriate label', (
   for (const amount of [-1, NaN, Infinity])
     expect(tokenUsage({ name: '5h', amount, unit: 'token' }, 'p', usage, 'today')?.source).toBe('today');
   expect(tokenUsage({ name: '5h', amount: 20, unit: 'requests' }, 'p', usage, 'today')?.count).toBe(15400);
+  localStorage.removeItem('mm-lang');
 });

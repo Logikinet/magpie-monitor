@@ -5,34 +5,7 @@ import type { Route } from '../../core/decode';
 import { agentHue, groupSeats, recentAgents, seatKey, seatState, seatStatus } from '../../core/routing-model';
 import { agentToHub, hubToRow, relativeRect, subheaderToRow } from '../../core/wire-geometry';
 import { strategy, value, word, type Lang } from './shared';
-const text = {
-  zh: {
-    accounts: '账号',
-    available: '可用',
-    fallback: '备用',
-    trying: '回答中',
-    answered: '已回答',
-    resting: '休息中',
-    remaining: '剩余',
-    credits: '余额',
-    'single-key': '独立 key',
-    ready: '就绪',
-    reset: '重置',
-  },
-  en: {
-    accounts: 'accounts',
-    available: 'available',
-    fallback: 'fallback',
-    trying: 'Responding',
-    answered: 'Answered',
-    resting: 'Resting',
-    remaining: 'Remaining',
-    credits: 'Credits',
-    'single-key': 'Single key',
-    ready: 'Ready',
-    reset: 'resets',
-  },
-};
+import { t as translate } from '../../i18n';
 export function RoutingStage({
   route,
   routes,
@@ -53,7 +26,7 @@ export function RoutingStage({
   const [hover, setHover] = useState('');
   const groups = groupSeats(route, now),
     agents = recentAgents(routes),
-    t = text[lang];
+    t = { accounts: translate('route.accounts', {}, lang), available: translate('route.available', {}, lang), fallback: translate('route.fallback', {}, lang), trying: translate('route.trying', {}, lang), answered: translate('route.answered', {}, lang), resting: translate('route.resting', {}, lang), remaining: translate('route.remaining', {}, lang), credits: translate('route.credits', {}, lang), 'single-key': translate('route.singleKey', {}, lang), ready: translate('route.ready', {}, lang), reset: translate('route.reset', {}, lang) };
   useEffect(() => {
     const el = box.current;
     if (!el) return;

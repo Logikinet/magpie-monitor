@@ -2,40 +2,11 @@ import { useState } from 'preact/hooks';
 import type { Route } from '../../core/decode';
 import { contextCells, CONTEXT_KINDS, footSummary } from '../../core/routing-model';
 import { value, word, type Lang } from './shared';
-const text = {
-  zh: {
-    title: '上下文窗口',
-    cache: '提示缓存',
-    all: '全部',
-    show: '显示全部',
-    free: '空闲',
-    system: '系统',
-    tools: '工具',
-    files: '文件',
-    results: '结果',
-    chat: '对话',
-    empty: '暂无上下文数据',
-    turns: '轮对话',
-  },
-  en: {
-    title: 'Context window',
-    cache: 'Prompt cache',
-    all: 'All',
-    show: 'Show all',
-    free: 'Free',
-    system: 'System',
-    tools: 'Tools',
-    files: 'Files',
-    results: 'Results',
-    chat: 'Chat',
-    empty: 'No context data',
-    turns: 'turns',
-  },
-};
+import { t as translate } from '../../i18n';
 export function ContextWaffle({ route, lang }: { route: Route; lang: Lang }) {
   const [filter, setFilter] = useState('all'),
     [all, setAll] = useState(false),
-    t = text[lang],
+    t = { title: translate('route.context', {}, lang), cache: translate('route.promptCache', {}, lang), all: translate('route.all', {}, lang), show: translate('route.showAll', {}, lang), free: translate('route.free', {}, lang), system: translate('route.system', {}, lang), tools: translate('route.tools', {}, lang), files: translate('route.files', {}, lang), results: translate('route.results', {}, lang), chat: translate('route.chat', {}, lang), empty: translate('route.noContext', {}, lang), turns: translate('route.turns', {}, lang) },
     cells = contextCells(route.prompt);
   const parts = (route.prompt?.parts ?? [])
     .flatMap((p) => p.items.map((item) => ({ ...item, kind: p.kind })))

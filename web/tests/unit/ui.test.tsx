@@ -1,12 +1,14 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'preact';
 import App, { QuotaCard } from '../../src/app';
 import { t } from '../../src/i18n';
 import type { QuotaSpan } from '../../src/core/decode';
 
 const root = document.createElement('div');
+beforeEach(() => localStorage.setItem('mm-lang', 'zh'));
 afterEach(() => {
   render(null, root);
+  localStorage.removeItem('mm-lang');
 });
 
 describe('quota UI', () => {

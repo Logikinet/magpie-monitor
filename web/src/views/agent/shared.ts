@@ -1,8 +1,15 @@
 import type { Route } from '../../core/decode';
 import { fmtNumber, fmtDate, formatDuration } from '../../core/format';
+import { t as translate } from '../../i18n';
 export { formatDuration } from '../../core/format';
-export type Lang = 'zh' | 'en';
-export const language = (): Lang => (new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'zh');
+export type Lang = 'zh' | 'en' | 'ja';
+export const language = (): Lang => {
+  const selected = localStorage.getItem('mm-lang');
+  if (selected === 'zh' || selected === 'en' || selected === 'ja') return selected;
+  const query = new URLSearchParams(location.search).get('lang');
+  if (query === 'zh' || query === 'en' || query === 'ja') return query;
+  return navigator.language.startsWith('ja') ? 'ja' : navigator.language.startsWith('en') ? 'en' : 'zh';
+};
 export const value = (v: unknown, suffix = '') =>
   typeof v === 'number' && Number.isFinite(v) ? `${fmtNumber(v, 1)}${suffix}` : '—';
 export const word = (v: unknown) => (typeof v === 'string' && v ? v : '—');
@@ -15,9 +22,5 @@ export const formatElapsed = (s?: string, now = Date.now()) => {
   const start = s ? Date.parse(s) : NaN;
   return Number.isFinite(start) ? formatDuration(Math.max(0, now - start)) : '—';
 };
-const text = {
-  zh: { smart: '智能分配', order: '依序尝试', rotate: '轮流分配', usage: '按用量分配' },
-  en: { smart: 'Smart selection', order: 'Try in order', rotate: 'Round robin', usage: 'Usage based' },
-};
 export const strategy = (r: Route, lang: Lang) =>
-  text[lang][(r.group?.routing || 'smart') as keyof typeof text.zh] ?? word(r.group?.routing);
+  translate(({ smart: 'strategy.smart', order: 'strategy.order', rotate: 'strategy.rotate', usage: 'strategy.usage' } as const)[(r.group?.routing || 'smart') as 'smart' | 'order' | 'rotate' | 'usage'] ?? 'strategy.smart', {}, lang) ?? word(r.group?.routing);

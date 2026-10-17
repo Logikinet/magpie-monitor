@@ -1,29 +1,20 @@
 import { language } from './shared';
+import { t } from '../../i18n';
 export type AgentTab = 'routing' | 'usage' | 'providers' | 'runtimes';
-const text = {
-  zh: { routing: '实时路由', usage: '用量与配额', providers: '服务商', runtimes: '运行时', next: '即将推出' },
-  en: {
-    routing: 'Routing',
-    usage: 'Usage',
-    providers: 'Providers',
-    runtimes: 'Runtimes',
-    next: 'Coming next',
-  },
-};
 export function AgentNav({ tab, choose }: { tab: AgentTab; choose: (tab: AgentTab) => void }) {
-  const t = text[language()];
+  const lang = language();
   return (
     <nav class="agent-subnav" aria-label="Agent">
       {(['routing', 'usage', 'providers', 'runtimes'] as const).map((id) => (
         <button aria-current={tab === id ? 'page' : undefined} onClick={() => choose(id)}>
-          {t[id]}
+          {t(({ routing: 'agent.tabRouting', usage: 'agent.tabUsage', providers: 'agent.tabProviders', runtimes: 'agent.tabRuntimes' } as const)[id], {}, lang)}
         </button>
       ))}
     </nav>
   );
 }
 export function AgentPlaceholder() {
-  return <section class="rt-panel">{text[language()].next}</section>;
+  return <section class="rt-panel">{t('agent.comingSoon')}</section>;
 }
 export function readPage() {
   const hash = location.hash.slice(1),

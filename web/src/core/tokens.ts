@@ -1,4 +1,6 @@
 import { usedPercent, type QuotaSpan, type UsageSummary } from './decode';
+import { activeLocale } from './format';
+import { t } from '../i18n';
 export type TokenSource = 'window' | 'today' | 'sevenDays';
 export function tokenUsage(
   window: QuotaSpan,
@@ -22,11 +24,11 @@ export function tokenUsage(
     : undefined;
 }
 const decimal = (n: number, places: number) => n.toFixed(places).replace(/\.?0+$/, '');
-export function formatTokens(count: number, locale = 'zh') {
+export function formatTokens(count: number, locale = activeLocale()) {
   const n = Number.isFinite(count) ? Math.max(0, Math.round(count)) : 0;
   if (locale.startsWith('zh')) {
-    if (n >= 1e8) return decimal(n / 1e8, 1) + ' 亿';
-    if (n >= 1e4) return decimal(n / 1e4, 1) + ' 万';
+    if (n >= 1e8) return decimal(n / 1e8, 1) + t('tokens.largeUnit', {}, locale);
+    if (n >= 1e4) return decimal(n / 1e4, 1) + t('tokens.mediumUnit', {}, locale);
   } else {
     if (n >= 1e6) return decimal(n / 1e6, 2) + 'M';
     if (n >= 1e4) return decimal(n / 1e3, 1) + 'K';
@@ -41,8 +43,8 @@ export function quotaSubtitle(
 ) {
   const value = tokenUsage(window, provider, usage, approximateSource);
   return value
-    ? `${{ window: '已消耗', today: '今日已消耗', sevenDays: '近 7 天已消耗' }[value.source]} ${formatTokens(value.count)} token`
-    : `已用 ${Math.round(usedPercent(window))}%`;
+    ? `${t(value.source === 'sevenDays' ? 'tokens.week' : `tokens.${value.source}`)} ${formatTokens(value.count, activeLocale())} token`
+    : t('tokens.used', { percent: Math.round(usedPercent(window)) });
 }
 export const TokenUsage = { value: tokenUsage };
 export const TokenFormatter = { compact: formatTokens };

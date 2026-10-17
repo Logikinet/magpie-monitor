@@ -3,16 +3,7 @@ import { useState } from 'preact/hooks';
 import { formatDuration } from '../../core/format';
 import { agentHue, requestsForAccount } from '../../core/routing-model';
 import { clock, value, word, type Lang } from './shared';
-const text = {
-  zh: { title: '请求记录', live: '实时', today: (n: number) => `今天 ${n}`, clear: '清除账号筛选', empty: '没有匹配的请求' },
-  en: {
-    title: 'Requests',
-    live: 'Follow live',
-    today: (n: number) => `Today ${n}`,
-    clear: 'Clear account filter',
-    empty: 'No matching requests',
-  },
-};
+import { t } from '../../i18n';
 export function RequestList({
   routes,
   todayRoutes,
@@ -34,21 +25,21 @@ export function RequestList({
   clear: () => void;
   lang: Lang;
 }) {
-  const t = text[lang];
+  const text = { title: t('route.requests', {}, lang), live: t('route.followLive', {}, lang), today: t('route.today', { count: todayRoutes.length }, lang), clear: t('route.clearFilter', {}, lang), empty: t('route.noMatch', {}, lang) };
   const [showToday, setShowToday] = useState(false);
   const filtered = requestsForAccount(showToday ? todayRoutes : routes, account);
   return (
     <section class="rt-panel" id="rt-requests" tabIndex={-1}>
       <header>
-        <h2>{t.title}</h2>
+        <h2>{text.title}</h2>
         <button aria-pressed={!pinned && !showToday} onClick={() => { setShowToday(false); live(); }}>
-          {t.live}
+          {text.live}
         </button>
-        <button aria-pressed={showToday} onClick={() => setShowToday(true)}>{t.today(todayRoutes.length)}</button>
+        <button aria-pressed={showToday} onClick={() => setShowToday(true)}>{text.today}</button>
       </header>
       {account && (
         <button class="rt-filter" onClick={clear}>
-          {account} × <span class="sr-only">{t.clear}</span>
+          {account} × <span class="sr-only">{text.clear}</span>
         </button>
       )}
       <ol class="rt-requests">
@@ -75,7 +66,7 @@ export function RequestList({
           </li>
         ))}
       </ol>
-      {!filtered.length && <p>{t.empty}</p>}
+      {!filtered.length && <p>{text.empty}</p>}
     </section>
   );
 }

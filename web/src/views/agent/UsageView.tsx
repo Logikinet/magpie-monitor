@@ -10,6 +10,7 @@ import {
   fmtTokens,
 } from '../../core/format';
 import { usageText } from './usage-text';
+import { t as translate } from '../../i18n';
 import type { WebClient } from '../../core/web-client';
 
 type Client = Pick<WebClient, 'usage' | 'usageQuotas'>;
@@ -105,9 +106,9 @@ function Account({ account: q, used }: { account: Data; used: boolean }) {
           const name = /^(5 hours|5-hour|5h)$/.test(w.name)
             ? '5h'
             : /^(7 days|weekly|week)$/.test(w.name)
-              ? ({ zh: '7天', en: '7d', ja: '7日' } as const)[activeLocale()]
+              ? translate('usage.sevenDaysShort')
             : /^(credits?)$/i.test(w.name)
-              ? ({ zh: '额度', en: 'Credits', ja: 'クレジット' } as const)[activeLocale()]
+              ? translate('usage.credits')
               : w.name;
           return (
             <section>
@@ -131,7 +132,7 @@ function Account({ account: q, used }: { account: Data; used: boolean }) {
               {w.resetsAt && (
                 <small>
                   {t.resets} {fmtDate(w.resetsAt)} · {fmtRelative(w.resetsAt)}
-                  {pace !== undefined && ` · ${({ zh: '节奏', en: 'pace', ja: 'ペース' } as const)[activeLocale()]} ${pace >= 0 ? '+' : ''}${fmtNumber(pace)}%`}
+                  {pace !== undefined && ` · ${translate('usage.pace')} ${pace >= 0 ? '+' : ''}${fmtNumber(pace)}%`}
                 </small>
               )}
               {w.holds && (
