@@ -65,16 +65,18 @@ final class ServicesStore {
         case .containers:
             containers.map { item in
                 let id = "container:\(item.name)"
-                return ServiceEntry(id: id, category: .containers, name: item.name,
-                                    detail: [item.image, item.status, item.ports].filter { !$0.isEmpty }.joined(separator: " · "),
-                                    state: mockStates[id] ?? item.state)
+                return ServiceEntry(
+                    id: id, category: .containers, name: item.name,
+                    detail: [item.image, item.status, item.ports].filter { !$0.isEmpty }.joined(separator: " · "),
+                    state: mockStates[id] ?? item.state)
             }
         case .systemd:
             units.map { item in
                 let id = "unit:\(item.name)"
-                return ServiceEntry(id: id, category: .systemd, name: item.name,
-                                    detail: [item.sub, item.description].filter { !$0.isEmpty }.joined(separator: " · "),
-                                    state: mockStates[id] ?? item.active)
+                return ServiceEntry(
+                    id: id, category: .systemd, name: item.name,
+                    detail: [item.sub, item.description].filter { !$0.isEmpty }.joined(separator: " · "),
+                    state: mockStates[id] ?? item.active)
             }
         }
     }

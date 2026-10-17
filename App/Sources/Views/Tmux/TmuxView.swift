@@ -52,9 +52,11 @@ struct TmuxView: View {
             .id(store.terminalID)
             .overlay {
                 if !appState.isMockMode, store.channel == nil {
-                    EmptyStateView(title: store.state == .connecting ? "正在连接终端" : "选择会话后连接",
-                                   description: "连接中断后，请点按重连。", systemImage: "terminal")
-                        .allowsHitTesting(false)
+                    EmptyStateView(
+                        title: store.state == .connecting ? "正在连接终端" : "选择会话后连接",
+                        description: "连接中断后，请点按重连。", systemImage: "terminal"
+                    )
+                    .allowsHitTesting(false)
                 }
             }
         }

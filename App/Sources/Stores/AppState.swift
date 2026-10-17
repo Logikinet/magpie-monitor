@@ -14,7 +14,10 @@ final class AppState {
     private let fileURL: URL
 
     var currentProfile: ProfileConfig? { profiles.first { $0.id == selectedID } }
-    var refreshInterval: TimeInterval { currentProfile?.refreshInterval ?? 20 }
+    var refreshInterval: TimeInterval {
+        let interval = currentProfile?.refreshInterval ?? 20
+        return interval.isFinite ? max(1, interval) : 20
+    }
 
     init() {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -24,11 +27,32 @@ final class AppState {
         if profiles.isEmpty, UserDefaults.standard.object(forKey: "isMockMode") == nil { isMockMode = true }
     }
 
-    func select(_ id: UUID) { guard profiles.contains(where: { $0.id == id }) else { return }; selectedID = id; save() }
-    func saveProfile(_ profile: ProfileConfig) { if let index = profiles.firstIndex(where: { $0.id == profile.id }) { profiles[index] = profile } else { profiles.append(profile) }; if selectedID == nil { selectedID = profile.id }; save() }
-    func deleteProfile(_ id: UUID) { profiles.removeAll { $0.id == id }; if selectedID == id { selectedID = profiles.first?.id }; save(); Task { do { for field in SecretField.allCases { try await secretStore.delete(account: field.account(profileID: id)) } } catch { persistenceError = ErrorMessages.chinese(for: error) } } }
+    func select(_ id: UUID) {
+        guard profiles.contains(where: { $0.id == id }) else { return }
+        selectedID = id
+        save()
+    }
+    func saveProfile(_ profile: ProfileConfig) {
+        if let index = profiles.firstIndex(where: { $0.id == profile.id }) { profiles[index] = profile } else { profiles.append(profile) }
+        if selectedID == nil { selectedID = profile.id }
+        save()
+    }
+    func deleteProfile(_ id: UUID) {
+        profiles.removeAll { $0.id == id }
+        if selectedID == id { selectedID = profiles.first?.id }
+        save()
+        Task {
+            do { for field in SecretField.allCases { try await secretStore.delete(account: field.account(profileID: id)) } } catch {
+                persistenceError = ErrorMessages.chinese(for: error)
+            }
+        }
+    }
 
     func makeGatewayClient() -> GatewayClient? {
+        if isMockMode {
+            guard let url = URL(string: "https://example.ts.net") else { return nil }
+            return GatewayClient(baseURL: url, key: nil, transport: makeTransport())
+        }
         guard let profile = currentProfile, let url = URL(string: profile.gatewayURL) else { return nil }
         let transport: any HTTPTransport = makeTransport()
         let account = SecretField.gatewayKey.account(profileID: profile.id)
@@ -47,6 +71,7 @@ final class AppState {
     }
 
     func makeOverviewSSHRunner() async throws -> any SSHRunning {
+        try Task.checkCancellation()
         if isMockMode { return MockSSHRunner() }
         guard let profile = currentProfile else { throw MagpieError.sshFailed("请先选择服务器配置。") }
         let read: (SecretField) -> String? = { [secretStore] field in
@@ -68,8 +93,11 @@ final class AppState {
             pinnedFingerprint: pin
         )
         if pin == nil {
-            do { try await secretStore.set(fingerprint, account: SecretField.hostKey.account(profileID: profile.id)) }
-            catch { persistenceError = ErrorMessages.chinese(for: error) }
+            do { try await secretStore.set(fingerprint, account: SecretField.hostKey.account(profileID: profile.id)) } catch {
+                await connection.disconnect()
+                persistenceError = ErrorMessages.chinese(for: error)
+                throw MagpieError.sshFailed("无法保存 SSH 主机指纹，请检查设备钥匙串后重试。")
+            }
         }
         return connection
     }
@@ -78,7 +106,11 @@ final class AppState {
         guard isMockMode else { return LiveTransport() }
         let names = ["hello", "usage", "ledger", "quotas", "quota_cards", "route", "concurrency", "trace"]
         var fixtures: [String: Data] = [:]
-        for name in names { if let data = try? MockFixtures.data(named: name) { fixtures["/" + (name == "hello" ? "api/hello" : "v1/magpie/" + name.replacingOccurrences(of: "_", with: "/"))] = data } }
+        for name in names {
+            if let data = try? MockFixtures.data(named: name) {
+                fixtures["/" + (name == "hello" ? "api/hello" : "v1/magpie/" + name.replacingOccurrences(of: "_", with: "/"))] = data
+            }
+        }
         // Explicit endpoint routing to the supplied safe fixtures.
         fixtures["/v1/magpie/usage"] = try? MockFixtures.data(named: "usage")
         fixtures["/v1/magpie/usage/requests"] = try? MockFixtures.data(named: "ledger")
@@ -91,13 +123,19 @@ final class AppState {
     }
     private func load() {
         var store = ProfileStore(fileURL: fileURL)
-        do { try store.load(); profiles = store.profiles; selectedID = store.selectedID }
-        catch { persistenceError = "无法读取服务器配置。" }
+        do {
+            try store.load()
+            profiles = store.profiles
+            selectedID = store.selectedID
+        } catch { persistenceError = "无法读取服务器配置。" }
     }
     private func save() {
         var store = ProfileStore(fileURL: fileURL)
         for profile in profiles { store.add(profile) }
         if let selectedID { store.select(id: selectedID) }
-        do { try store.save(); persistenceError = nil } catch { persistenceError = "无法保存服务器配置。" }
+        do {
+            try store.save()
+            persistenceError = nil
+        } catch { persistenceError = "无法保存服务器配置。" }
     }
 }

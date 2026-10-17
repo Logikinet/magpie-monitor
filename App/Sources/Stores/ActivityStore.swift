@@ -9,7 +9,11 @@ enum ActivityPeriod: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
     var title: String {
-        switch self { case .today: "今天"; case .sevenDays: "近 7 天"; case .thirtyDays: "近 30 天" }
+        switch self {
+        case .today: "今天"
+        case .sevenDays: "近 7 天"
+        case .thirtyDays: "近 30 天"
+        }
     }
 }
 
@@ -35,21 +39,28 @@ final class ActivityStore {
     var providerFilter = ""
     var modelFilter = ""
     private let pageSize = 50
+    private var generation = UUID()
 
     var hasMore: Bool { offset < total }
 
     func refresh(appState: AppState) async {
-        guard !isLoading else { return }
+        generation = UUID()
+        let token = generation
         isLoading = true
-        defer { isLoading = false }
-        rows = []; series = []; total = 0; offset = 0
+        isLoadingMore = false
+        defer { if generation == token { isLoading = false } }
+        rows = []
+        series = []
+        total = 0
+        offset = 0
         await loadPage(appState: appState, replace: true)
     }
 
     func loadMore(appState: AppState) async {
         guard hasMore, !isLoading, !isLoadingMore else { return }
         isLoadingMore = true
-        defer { isLoadingMore = false }
+        let token = generation
+        defer { if generation == token { isLoadingMore = false } }
         await loadPage(appState: appState, replace: false)
     }
 
@@ -58,12 +69,14 @@ final class ActivityStore {
             error = "请先选择服务器配置。"
             return
         }
+        let token = generation
         var filters: [String: String] = [:]
         if !agentFilter.isEmpty { filters["agent"] = agentFilter }
         if !providerFilter.isEmpty { filters["provider"] = providerFilter }
         if !modelFilter.isEmpty { filters["model"] = modelFilter }
         do {
             let page = try await client.requests(period: period.rawValue, offset: replace ? 0 : offset, limit: pageSize, filters: filters)
+            guard token == generation, !Task.isCancelled else { return }
             let incoming = page.rows.elements
             if replace {
                 rows = incoming
@@ -80,11 +93,13 @@ final class ActivityStore {
                 rows.append(contentsOf: incoming.filter { known.insert(identity($0)).inserted })
                 modelOptions = Array(Set(modelOptions + incoming.compactMap(\.model))).sorted()
             }
-            offset = (page.offset?.value ?? (replace ? 0 : offset)) + incoming.count
+            offset = (page.offset?.value ?? (replace ? 0 : offset)) + incoming.count + page.rows.badCount
             total = page.total?.value ?? rows.count
+            if incoming.isEmpty && page.rows.badCount == 0 { offset = total }
             error = nil
             lastUpdated = Date()
         } catch {
+            guard token == generation, !Task.isCancelled else { return }
             self.error = (error as? MagpieError)?.localizedChinese ?? "读取请求记录失败，请检查连接后重试。"
         }
     }

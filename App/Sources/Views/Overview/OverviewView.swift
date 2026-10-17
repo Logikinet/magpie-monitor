@@ -1,6 +1,7 @@
 import SwiftUI
 import MagpieKit
 
+@MainActor
 struct OverviewView: View {
     @Environment(AppState.self) private var appState
     @State private var store = OverviewStore()
@@ -17,18 +18,24 @@ struct OverviewView: View {
                         statusHeader
                         quotaSection
                         concurrencySection
-                        listSection(title: "服务", symbol: "shippingbox", error: store.containersError,
-                                    items: store.containers.prefix(3).map { "\($0.name) · \($0.status)" },
-                                    allItems: store.containers.map { "\($0.name) · \($0.status)" })
-                        listSection(title: "端口", symbol: "point.3.connected.trianglepath.dotted", error: store.portsError,
-                                    items: store.ports.prefix(3).map { "\($0.address):\($0.port) · \($0.processName ?? "未知进程")" },
-                                    allItems: store.ports.map { "\($0.address):\($0.port) · \($0.processName ?? "未知进程")" })
-                        listSection(title: "系统服务", symbol: "gearshape.2", error: store.unitsError,
-                                    items: store.units.prefix(3).map { "\($0.name) · \($0.active)" },
-                                    allItems: store.units.map { "\($0.name) · \($0.active) · \($0.description)" })
-                        listSection(title: "高占用进程", symbol: "cpu", error: store.processesError,
-                                    items: store.processes.prefix(3).map { "\($0.command) · CPU \($0.cpu.formatted())%" },
-                                    allItems: store.processes.map { "PID \($0.pid) · \($0.command) · CPU \($0.cpu.formatted())% · 内存 \($0.memory.formatted())%" })
+                        listSection(
+                            title: "服务", symbol: "shippingbox", error: store.containersError,
+                            items: store.containers.prefix(3).map { "\($0.name) · \($0.status)" },
+                            allItems: store.containers.map { "\($0.name) · \($0.status)" })
+                        listSection(
+                            title: "端口", symbol: "point.3.connected.trianglepath.dotted", error: store.portsError,
+                            items: store.ports.prefix(3).map { "\($0.address):\($0.port) · \($0.processName ?? "未知进程")" },
+                            allItems: store.ports.map { "\($0.address):\($0.port) · \($0.processName ?? "未知进程")" })
+                        listSection(
+                            title: "系统服务", symbol: "gearshape.2", error: store.unitsError,
+                            items: store.units.prefix(3).map { "\($0.name) · \($0.active)" },
+                            allItems: store.units.map { "\($0.name) · \($0.active) · \($0.description)" })
+                        listSection(
+                            title: "高占用进程", symbol: "cpu", error: store.processesError,
+                            items: store.processes.prefix(3).map { "\($0.command) · CPU \($0.cpu.formatted())%" },
+                            allItems: store.processes.map {
+                                "PID \($0.pid) · \($0.command) · CPU \($0.cpu.formatted())% · 内存 \($0.memory.formatted())%"
+                            })
                     }
                     .padding(DS.Spacing.medium)
                     .frame(maxWidth: 900, alignment: .leading)
@@ -37,12 +44,17 @@ struct OverviewView: View {
                 .refreshable { await store.refresh(appState: appState) }
             }
         }
-        .task(id: appState.isActive) {
+        .task(
+            id: RefreshContext(
+                profile: appState.currentProfile,
+                isMockMode: appState.isMockMode,
+                isActive: appState.isActive
+            )
+        ) {
             guard appState.isActive else { return }
             await store.refresh(appState: appState)
             while !Task.isCancelled {
-                do { try await Task.sleep(for: .seconds(appState.refreshInterval)) }
-                catch { return }
+                do { try await Task.sleep(for: .seconds(appState.refreshInterval)) } catch { return }
                 guard appState.isActive else { return }
                 await store.refresh(appState: appState)
             }
@@ -51,8 +63,9 @@ struct OverviewView: View {
 
     private var statusHeader: some View {
         HStack(alignment: .center, spacing: DS.Spacing.medium) {
-            StatusBadge(kind: store.gatewayError == nil && store.version != nil ? .ok : .error,
-                        text: store.gatewayError == nil && store.version != nil ? "网关在线" : "网关离线")
+            StatusBadge(
+                kind: store.gatewayError == nil && store.version != nil ? .ok : .error,
+                text: store.gatewayError == nil && store.version != nil ? "网关在线" : "网关离线")
             if let version = store.version {
                 Text("版本 \(version)").font(.subheadline.monospaced()).foregroundStyle(.secondary)
             }
@@ -87,15 +100,20 @@ struct OverviewView: View {
     private var concurrencySection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.mediumSmall) {
             SectionHeader(title: "并发")
-            if let error = store.concurrencyError { sectionError(error) }
-            else if let value = store.concurrency {
+            if let error = store.concurrencyError {
+                sectionError(error)
+            } else if let value = store.concurrency {
                 LazyVGrid(columns: columns, alignment: .leading, spacing: DS.Spacing.mediumSmall) {
-                    MetricCard(title: "活动请求", value: "\(value.requests?.value ?? value.active?.elements.count ?? 0)", systemImage: "arrow.left.arrow.right")
+                    MetricCard(
+                        title: "活动请求", value: "\(value.requests?.value ?? value.active?.elements.count ?? 0)",
+                        systemImage: "arrow.left.arrow.right")
                     MetricCard(title: "等待中", value: "\(value.waiting?.value ?? 0)", systemImage: "hourglass")
                     MetricCard(title: "工具运行", value: "\(value.tools?.value ?? 0)", systemImage: "wrench.and.screwdriver")
                     ForEach(value.data?.keys.sorted() ?? [], id: \.self) { name in
                         if let lane = value.data?[name] {
-                            MetricCard(title: name, value: "\(lane.busy?.value ?? 0) / \(lane.limit?.value ?? 0)", caption: "等待 \(lane.waiting?.value ?? 0)", systemImage: "arrow.trianglehead.2.clockwise.rotate.90")
+                            MetricCard(
+                                title: name, value: "\(lane.busy?.value ?? 0) / \(lane.limit?.value ?? 0)",
+                                caption: "等待 \(lane.waiting?.value ?? 0)", systemImage: "arrow.trianglehead.2.clockwise.rotate.90")
                         }
                     }
                 }
@@ -115,9 +133,11 @@ struct OverviewView: View {
                     .font(.subheadline)
                     .accessibilityHint("打开全部\(title)列表")
             }
-            if let error { sectionError(error) }
-            else if items.isEmpty { Text("暂无数据").font(.subheadline).foregroundStyle(.secondary).padding(.vertical, DS.Spacing.small) }
-            else {
+            if let error {
+                sectionError(error)
+            } else if items.isEmpty {
+                Text("暂无数据").font(.subheadline).foregroundStyle(.secondary).padding(.vertical, DS.Spacing.small)
+            } else {
                 VStack(spacing: 0) {
                     ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                         HStack(spacing: DS.Spacing.small) {

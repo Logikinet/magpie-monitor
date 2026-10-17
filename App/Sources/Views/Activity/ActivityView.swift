@@ -2,6 +2,7 @@ import Charts
 import SwiftUI
 import MagpieKit
 
+@MainActor
 struct ActivityView: View {
     @Environment(AppState.self) private var appState
     @State private var store = ActivityStore()
@@ -36,7 +37,9 @@ struct ActivityView: View {
         .refreshable { await store.refresh(appState: appState) }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { Task { await store.refresh(appState: appState) } } label: {
+                Button {
+                    Task { await store.refresh(appState: appState) }
+                } label: {
                     Image(systemName: "arrow.clockwise")
                 }
                 .accessibilityLabel("刷新请求记录")
@@ -48,20 +51,22 @@ struct ActivityView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
-        .task(id: appState.isActive) {
+        .task(
+            id: RefreshContext(
+                profile: appState.currentProfile,
+                isMockMode: appState.isMockMode,
+                isActive: appState.isActive,
+                filters: [store.period.rawValue, store.agentFilter, store.providerFilter, store.modelFilter]
+            )
+        ) {
             guard appState.isActive else { return }
             await store.refresh(appState: appState)
             while !Task.isCancelled {
-                do { try await Task.sleep(for: .seconds(appState.refreshInterval)) }
-                catch { return }
+                do { try await Task.sleep(for: .seconds(appState.refreshInterval)) } catch { return }
                 guard appState.isActive, isAtTop else { continue }
                 await store.refresh(appState: appState)
             }
         }
-        .onChange(of: store.period) { _, _ in Task { await store.refresh(appState: appState) } }
-        .onChange(of: store.agentFilter) { _, _ in Task { await store.refresh(appState: appState) } }
-        .onChange(of: store.providerFilter) { _, _ in Task { await store.refresh(appState: appState) } }
-        .onChange(of: store.modelFilter) { _, _ in Task { await store.refresh(appState: appState) } }
     }
 
     private var controls: some View {
@@ -84,7 +89,13 @@ struct ActivityView: View {
                     BarMark(x: .value("时间", point.label ?? "\(index)"), y: .value("请求数", point.calls?.value ?? 0))
                         .foregroundStyle(.tint)
                         .accessibilityLabel(point.label ?? "时间段 \(index + 1)")
-                        .accessibilityValue("\(point.calls?.value ?? 0) 次请求，\(point.tokens?.value ?? 0) 个令牌，费用 \(point.cost?.value ?? 0, format: .number.precision(.fractionLength(4)))")
+                        .accessibilityValue(
+                            """
+                            \(point.calls?.value ?? 0) 次请求，\
+                            \(point.tokens?.value ?? 0) 个令牌，\
+                            费用 \(point.cost?.value ?? 0, format: .number.precision(.fractionLength(4)))
+                            """
+                        )
                 }
                 .chartYAxisLabel("请求数")
                 .frame(height: 180)
@@ -135,12 +146,16 @@ struct ActivityView: View {
             } else {
                 LazyVStack(spacing: 0) {
                     ForEach(Array(store.rows.enumerated()), id: \.offset) { index, row in
-                        Button { selectedRow = row } label: { ActivityRowView(row: row) }
-                            .buttonStyle(.plain)
+                        Button {
+                            selectedRow = row
+                        } label: {
+                            ActivityRowView(row: row)
+                        }
+                        .buttonStyle(.plain)
                         Divider()
                         if index == store.rows.count - 1 {
-                            Color.clear.frame(height: 1).onAppear {
-                                Task { await store.loadMore(appState: appState) }
+                            Color.clear.frame(height: 1).task {
+                                await store.loadMore(appState: appState)
                             }
                         }
                     }
@@ -156,7 +171,9 @@ struct ActivityView: View {
     private func unavailable(_ message: String) -> some View {
         ContentUnavailableView {
             Label("无法读取动态", systemImage: "exclamationmark.triangle")
-        } description: { Text(message) } actions: {
+        } description: {
+            Text(message)
+        } actions: {
             Button("重试") { Task { await store.refresh(appState: appState) } }
         }
     }
@@ -214,7 +231,7 @@ private struct ActivityRowDetail: View {
             ("费用", (row.cost?.value ?? 0).formatted()), ("已计价", row.priced == true ? "是" : "否"),
             ("已切换", row.swapped == true ? "是" : "否"), ("已路由", row.routed == true ? "是" : "否"),
             ("错误", row.error ?? row.errorType ?? "无"), ("会话", row.session ?? "未知"),
-            ("请求 ID", row.requestID ?? "未知"), ("来源", row.source ?? "未知")
+            ("请求 ID", row.requestID ?? "未知"), ("来源", row.source ?? "未知"),
         ]
     }
 

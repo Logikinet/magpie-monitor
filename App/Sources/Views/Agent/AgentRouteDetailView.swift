@@ -21,7 +21,8 @@ struct AgentRouteDetailView: View {
                     ForEach(Array((route.order?.elements ?? []).enumerated()), id: \.offset) { index, candidate in
                         VStack(alignment: .leading, spacing: DS.Spacing.small) {
                             Text("\(index + 1). \(candidate.name ?? candidate.provider ?? "候选")").font(.headline)
-                            Text([candidate.provider, candidate.model, candidate.kind].compactMap { $0 }.joined(separator: " · ")).font(.subheadline.monospaced())
+                            Text([candidate.provider, candidate.model, candidate.kind].compactMap { $0 }.joined(separator: " · ")).font(
+                                .subheadline.monospaced())
                             if let routing = candidate.routing { Text("调度：\(routing)") }
                             if let used = candidate.used?.value { Text("用量占比：\((used / 100).formatted(.percent))") }
                             if let amount = candidate.amount?.value { Text("用量：\(amount.formatted()) \(candidate.unit ?? "")") }
@@ -35,7 +36,11 @@ struct AgentRouteDetailView: View {
                         .font(.subheadline).monospacedDigit()
                     }
                     if route.order?.elements.isEmpty != false { Text("暂无候选数据") }
-                } header: { Text("候选顺序与调度依据") } footer: { Text("按服务端返回的尝试顺序排列；仅显示服务器提供的指标。") }
+                } header: {
+                    Text("候选顺序与调度依据")
+                } footer: {
+                    Text("按服务端返回的尝试顺序排列；仅显示服务器提供的指标。")
+                }
             }
             .textSelection(.enabled)
             .navigationTitle("路由详情")

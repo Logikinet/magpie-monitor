@@ -13,7 +13,9 @@ struct AgentRouteRow: View {
             if let group = route.group?.name { Text("分组：\(group)").font(.subheadline) }
             if let date = route.time?.date {
                 Text(date, format: .dateTime.hour().minute().second()).font(.footnote).monospacedDigit().foregroundStyle(.secondary)
-            } else { Text(route.time?.rawString ?? "时间未知").font(.footnote).foregroundStyle(.secondary) }
+            } else {
+                Text(route.time?.rawString ?? "时间未知").font(.footnote).foregroundStyle(.secondary)
+            }
             if route.subagent != nil { Label("子 Agent", systemImage: "arrow.triangle.branch").font(.footnote) }
             if let pinned = route.pinned, !pinned.isEmpty { Label("已固定", systemImage: "pin.fill").font(.footnote) }
             if route.error?.isEmpty == false || (route.status?.value ?? 0) >= 400 {

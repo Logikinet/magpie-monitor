@@ -61,14 +61,18 @@ final class TmuxStore {
         terminalID = UUID()
         do {
             let runner = try await appState.makeOverviewSSHRunner()
-            guard token == attempt, !Task.isCancelled else { await runner.disconnect(); return }
+            guard token == attempt, !Task.isCancelled else {
+                await runner.disconnect()
+                return
+            }
             self.runner = runner
             guard let connection = runner as? SSHConnection else {
                 throw MagpieError.sshFailed("当前连接不支持交互终端。")
             }
             // Shell quoting protects remote session names, including spaces and apostrophes.
             let quoted = "'" + target.replacingOccurrences(of: "'", with: "'\\''") + "'"
-            let command = createsSession
+            let command =
+                createsSession
                 ? "tmux new-session -A -s \(quoted)"
                 : "tmux attach-session -t '=\(target.replacingOccurrences(of: "'", with: "'\\''"))'"
             let channel = try await connection.openPTY(command: command)

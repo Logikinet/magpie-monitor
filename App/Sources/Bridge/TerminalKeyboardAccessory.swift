@@ -25,7 +25,7 @@ final class TerminalKeyboardAccessory: UIInputView {
             stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor, constant: -DS.Spacing.xSmall),
             stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor),
             stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor),
-            stack.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor)
+            stack.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor),
         ])
         let keys: [(String, String, [UInt8])] = [
             ("Esc", "退出键", [27]), ("Tab", "制表键", [9]),
@@ -33,7 +33,7 @@ final class TerminalKeyboardAccessory: UIInputView {
             ("↑", "上方向键", [27, 91, 65]), ("↓", "下方向键", [27, 91, 66]),
             ("←", "左方向键", [27, 91, 68]), ("→", "右方向键", [27, 91, 67]),
             ("|", "竖线", [124]), ("/", "斜线", [47]), ("-", "连字符", [45]),
-            ("~", "波浪号", [126]), ("⌃b", "tmux 前缀，控制键加 b", [2])
+            ("~", "波浪号", [126]), ("⌃b", "tmux 前缀，控制键加 b", [2]),
         ]
         for (title, label, bytes) in keys {
             let button = UIButton(type: .system)
@@ -45,17 +45,18 @@ final class TerminalKeyboardAccessory: UIInputView {
             button.accessibilityLabel = label
             button.widthAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
             button.heightAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
-            button.addAction(UIAction { [weak self, weak button] _ in
-                guard let self else { return }
-                if title == "Ctrl" {
-                    self.controlEnabled.toggle()
-                    button?.isSelected = self.controlEnabled
-                    button?.accessibilityValue = self.controlEnabled ? "已锁定" : "未锁定"
-                    button?.backgroundColor = self.controlEnabled ? .tertiarySystemFill : .clear
-                } else {
-                    self.send?(self.modified(bytes))
-                }
-            }, for: .touchUpInside)
+            button.addAction(
+                UIAction { [weak self, weak button] _ in
+                    guard let self else { return }
+                    if title == "Ctrl" {
+                        self.controlEnabled.toggle()
+                        button?.isSelected = self.controlEnabled
+                        button?.accessibilityValue = self.controlEnabled ? "已锁定" : "未锁定"
+                        button?.backgroundColor = self.controlEnabled ? .tertiarySystemFill : .clear
+                    } else {
+                        self.send?(self.modified(bytes))
+                    }
+                }, for: .touchUpInside)
             if title == "Ctrl" { button.accessibilityValue = "未锁定" }
             stack.addArrangedSubview(button)
         }

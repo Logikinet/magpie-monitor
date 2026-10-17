@@ -1,6 +1,7 @@
 import SwiftUI
 import MagpieKit
 
+@MainActor
 struct AgentView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.scenePhase) private var scenePhase
@@ -13,7 +14,9 @@ struct AgentView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: DS.Spacing.large) {
                 if store.configurationMissing {
-                    EmptyStateView(title: "配置实时路由", description: "请在设置中填写服务器的 Web 地址和 runtime key。Web 地址使用 magpie Web 界面的端口；密钥可从 Web 访问链接获取。", systemImage: "point.3.connected.trianglepath.dotted")
+                    EmptyStateView(
+                        title: "配置实时路由", description: "请在设置中填写服务器的 Web 地址和 runtime key。Web 地址使用 magpie Web 界面的端口；密钥可从 Web 访问链接获取。",
+                        systemImage: "point.3.connected.trianglepath.dotted")
                 } else {
                     StatusBadge(kind: store.authFailed ? .error : (store.status == .live ? .ok : .neutral), text: store.statusText)
                         .padding(DS.Spacing.small)
@@ -30,9 +33,13 @@ struct AgentView: View {
                         EmptyStateView(title: "等待路由事件", description: "收到请求后会显示实时路由。", systemImage: "arrow.triangle.branch")
                     }
                     ForEach(Array(store.routes.enumerated()), id: \.offset) { _, route in
-                        Button { selectedRoute = route } label: { AgentRouteRow(route: route) }
-                            .buttonStyle(.plain)
-                            .accessibilityHint("打开路由详情和候选顺序")
+                        Button {
+                            selectedRoute = route
+                        } label: {
+                            AgentRouteRow(route: route)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("打开路由详情和候选顺序")
                     }
                 }
             }
@@ -40,20 +47,32 @@ struct AgentView: View {
             .frame(maxWidth: 900, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
-        .onAppear { visible = true; restart() }
-        .onDisappear { visible = false; store.stop(); selectedRoute = nil }
+        .onAppear {
+            visible = true
+            restart()
+        }
+        .onDisappear {
+            visible = false
+            store.stop()
+            selectedRoute = nil
+        }
         .onChange(of: scenePhase) { _, _ in restart() }
         .onChange(of: appState.isActive) { _, _ in restart() }
-        .onChange(of: appState.currentProfile) { _, _ in selectedRoute = nil; restart() }
-        .onChange(of: appState.isMockMode) { _, _ in selectedRoute = nil; restart() }
+        .onChange(of: appState.currentProfile) { _, _ in
+            selectedRoute = nil
+            restart()
+        }
+        .onChange(of: appState.isMockMode) { _, _ in
+            selectedRoute = nil
+            restart()
+        }
         .sheet(isPresented: Binding(get: { selectedRoute != nil }, set: { if !$0 { selectedRoute = nil } })) {
             if let selectedRoute { AgentRouteDetailView(route: selectedRoute) }
         }
     }
 
     private func restart() {
-        if visible && scenePhase == .active && appState.isActive { store.start(appState: appState) }
-        else { store.stop() }
+        if visible && scenePhase == .active && appState.isActive { store.start(appState: appState) } else { store.stop() }
     }
 
     private var totals: some View {
@@ -73,19 +92,29 @@ struct AgentView: View {
                     if let lane = lanes[name] {
                         VStack(alignment: .leading, spacing: DS.Spacing.small) {
                             Text(name).font(.headline.monospaced()).textSelection(.enabled)
-                            Text("忙碌 \(lane.busy?.value.formatted() ?? "—") · 等待 \(lane.waiting?.value.formatted() ?? "—") · 上限 \(lane.limit?.value.formatted() ?? "—")")
-                                .font(.subheadline).monospacedDigit()
+                            Text(
+                                """
+                                忙碌 \(lane.busy?.value.formatted() ?? "—") · \
+                                等待 \(lane.waiting?.value.formatted() ?? "—") · \
+                                上限 \(lane.limit?.value.formatted() ?? "—")
+                                """
+                            )
+                            .font(.subheadline).monospacedDigit()
                             if let limit = lane.limit?.value, limit > 0 {
                                 ProgressView(value: min(max(Double(lane.busy?.value ?? 0), 0), Double(limit)), total: Double(limit))
                                     .accessibilityLabel("\(name)忙碌容量")
                                     .accessibilityValue("忙碌 \(lane.busy?.value ?? 0)，上限 \(limit)，等待 \(lane.waiting?.value ?? 0)")
-                            } else { Text("未设置并发上限").font(.footnote).foregroundStyle(.secondary) }
+                            } else {
+                                Text("未设置并发上限").font(.footnote).foregroundStyle(.secondary)
+                            }
                         }
                         .padding(DS.Spacing.medium)
                         .background(.background.secondary, in: RoundedRectangle(cornerRadius: DS.Radius.card))
                     }
                 }
-            } else { Text("暂无并发数据").foregroundStyle(.secondary) }
+            } else {
+                Text("暂无并发数据").foregroundStyle(.secondary)
+            }
         }
     }
 

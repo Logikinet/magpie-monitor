@@ -22,16 +22,16 @@ struct TerminalBridge: UIViewRepresentable {
         context.coordinator.bind(channel, view: view)
         if isDemo {
             let demo = """
-            magpie · tmux 演示
+                magpie · tmux 演示
 
-            $ tmux list-sessions
-            demo: 1 windows (attached)
+                $ tmux list-sessions
+                demo: 1 windows (attached)
 
-            $ printf '终端已就绪\\n'
-            终端已就绪
+                $ printf '终端已就绪\\n'
+                终端已就绪
 
-            [demo] 0:shell*                 模拟数据
-            """.replacingOccurrences(of: "\n", with: "\r\n")
+                [demo] 0:shell*                 模拟数据
+                """.replacingOccurrences(of: "\n", with: "\r\n")
             view.feed(byteArray: Array(demo.utf8)[...])
         }
         return view

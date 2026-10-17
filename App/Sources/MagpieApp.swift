@@ -1,6 +1,7 @@
 import SwiftUI
 
 @main
+@MainActor
 struct MagpieApp: App {
     @State private var appState = AppState()
     @Environment(\.scenePhase) private var scenePhase
@@ -15,12 +16,13 @@ struct MagpieApp: App {
                 tab(ServicesView(), title: "服务", symbol: "server.rack")
             }
             .environment(appState)
-            .onChange(of: scenePhase) { _, phase in appState.isActive = phase == .active }
+            .onChange(of: scenePhase, initial: true) { _, phase in appState.isActive = phase == .active }
         }
     }
     private func tab<V: View>(_ view: V, title: String, symbol: String) -> some View {
         NavigationStack {
             view
+                .id("\(appState.currentProfile?.id.uuidString ?? "none")-\(appState.isMockMode)")
                 .navigationTitle(title)
                 .navigationBarTitleDisplayMode(.large)
                 .profileToolbar()

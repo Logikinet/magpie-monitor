@@ -39,9 +39,16 @@ final class AgentStore {
     func start(appState: AppState) {
         stop()
         if profile != appState.currentProfile || mockMode != appState.isMockMode {
-            routes = []; totals = nil; concurrency = nil; cards = []
-            concurrencyError = nil; quotaError = nil; authFailed = false; poller = nil
-            profile = appState.currentProfile; mockMode = appState.isMockMode
+            routes = []
+            totals = nil
+            concurrency = nil
+            cards = []
+            concurrencyError = nil
+            quotaError = nil
+            authFailed = false
+            poller = nil
+            profile = appState.currentProfile
+            mockMode = appState.isMockMode
         }
         let web: WebClient?
         let gateway: GatewayClient?
@@ -49,7 +56,7 @@ final class AgentStore {
             let transport = MockTransport(fixtures: [
                 "/api/gateway/trace": (try? MockFixtures.data(named: "trace")) ?? Data(),
                 "/v1/magpie/concurrency": (try? MockFixtures.data(named: "concurrency")) ?? Data(),
-                "/v1/magpie/quotas/cards": (try? MockFixtures.data(named: "quota_cards")) ?? Data()
+                "/v1/magpie/quotas/cards": (try? MockFixtures.data(named: "quota_cards")) ?? Data(),
             ])
             let url = URL(string: "https://example.ts.net")!
             web = WebClient(baseURL: url, runtimeKey: nil, transport: transport, port: 443)
@@ -67,7 +74,8 @@ final class AgentStore {
         guard let poller else { return }
         let token = generation
         let mock = appState.isMockMode
-        authFailed = false; status = .connecting
+        authFailed = false
+        status = .connecting
         traceTask = Task { [weak self] in
             await poller.run { [weak self] event in
                 await self?.receive(event, generation: token)
@@ -86,8 +94,10 @@ final class AgentStore {
 
     func stop() {
         generation = UUID()
-        traceTask?.cancel(); traceTask = nil
-        refreshTask?.cancel(); refreshTask = nil
+        traceTask?.cancel()
+        traceTask = nil
+        refreshTask?.cancel()
+        refreshTask = nil
         // A fresh actor avoids overlapping run() calls during rapid tab switches.
         poller = nil
         status = .stopped
@@ -123,11 +133,15 @@ final class AgentStore {
         let (laneResult, quotaResult) = await (lanes, quotas)
         guard !Task.isCancelled, token == generation else { return }
         switch laneResult {
-        case .success(let value): concurrency = value; concurrencyError = nil
+        case .success(let value):
+            concurrency = value
+            concurrencyError = nil
         case .failure(let error): concurrencyError = MagpieError.map(error).localizedChinese
         }
         switch quotaResult {
-        case .success(let value): cards = value.data.elements; quotaError = nil
+        case .success(let value):
+            cards = value.data.elements
+            quotaError = nil
         case .failure(let error): quotaError = MagpieError.map(error).localizedChinese
         }
     }

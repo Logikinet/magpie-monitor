@@ -38,16 +38,20 @@ final class OverviewStore {
 
         let client = appState.makeGatewayClient()
         async let quotaResult: Result<QuotaList, Error> = fetch {
-            guard let client else { throw MagpieError.network("missing client") }; return try await client.quotas()
+            guard let client else { throw MagpieError.network("missing client") }
+            return try await client.quotas()
         }
         async let concurrencyResult: Result<Concurrency, Error> = fetch {
-            guard let client else { throw MagpieError.network("missing client") }; return try await client.concurrency()
+            guard let client else { throw MagpieError.network("missing client") }
+            return try await client.concurrency()
         }
         async let helloResult: Result<GatewayHello, Error> = fetch {
-            guard let client else { throw MagpieError.network("missing client") }; return try await client.hello()
+            guard let client else { throw MagpieError.network("missing client") }
+            return try await client.hello()
         }
         async let limitResult: Result<[String: JSONValue], Error> = fetch {
-            guard let client else { throw MagpieError.network("missing client") }; return try await client.limit()
+            guard let client else { throw MagpieError.network("missing client") }
+            return try await client.limit()
         }
 
         do {
@@ -57,11 +61,22 @@ final class OverviewStore {
                 let windows = [(quota.fiveHourWindow, "5 小时"), (quota.weeklyWindow, "每周")]
                 for (span, title) in windows {
                     guard let span else { continue }
-                    let remaining = span.remaining?.value
-                    let used = span.used?.value ?? ((span.limit?.value ?? span.amount?.value).flatMap { limit in remaining.map { limit - $0 } })
-                    let total = span.limit?.value ?? span.amount?.value ?? (used.flatMap { value in remaining.map { value + $0 } })
-                    if let used, let total {
-                        items.append(OverviewQuota(id: "\(quota.provider ?? quota.name ?? "provider")-\(title)", provider: quota.name ?? quota.provider ?? "提供方", window: title, used: used, limit: total))
+                    guard span.unlimited != true else { continue }
+                    // The server reports used/remaining as percentages, amount/limit as counts.
+                    let used: Double?
+                    let total: Double
+                    if let amount = span.amount?.value, let limit = span.limit?.value, limit > 0 {
+                        used = amount
+                        total = limit
+                    } else {
+                        used = span.used?.value ?? span.remaining.map { 100 - $0.value }
+                        total = 100
+                    }
+                    if let used {
+                        items.append(
+                            OverviewQuota(
+                                id: "\(quota.provider ?? quota.name ?? "provider")-\(title)",
+                                provider: quota.name ?? quota.provider ?? "提供方", window: title, used: used, limit: total))
                     }
                 }
             }
@@ -69,20 +84,36 @@ final class OverviewStore {
             quotaError = nil
         } catch { quotaError = message(for: error) }
 
-        do { concurrency = try await concurrencyResult.get(); concurrencyError = nil }
-        catch { concurrencyError = message(for: error) }
-        do { version = try await helloResult.get().version; gatewayError = nil }
-        catch { gatewayError = message(for: error) }
+        do {
+            concurrency = try await concurrencyResult.get()
+            concurrencyError = nil
+        } catch { concurrencyError = message(for: error) }
+        do {
+            version = try await helloResult.get().version
+            gatewayError = nil
+        } catch { gatewayError = message(for: error) }
         if case .success(let value) = await limitResult { limit = value }
 
         do {
             let runner = try await appState.makeOverviewSSHRunner()
             async let portsResult = fetch { try SSHOutputParser.parsePorts(await runner.run(SSHCommands.ports, idempotent: true)) }
-            async let containersResult = fetch { try SSHOutputParser.parseDockerPS(await runner.run(SSHCommands.dockerPS, idempotent: true)) }
-            async let unitsResult = fetch { try SSHOutputParser.parseSystemdUnits(await runner.run(SSHCommands.systemdUnits, idempotent: true)) }
-            async let processesResult = fetch { try SSHOutputParser.parseProcesses(await runner.run(SSHCommands.processes, idempotent: true)) }
-            do { ports = try await portsResult.get(); portsError = nil } catch { portsError = message(for: error) }
-            do { containers = try await containersResult.get(); containersError = nil } catch { containersError = message(for: error) }
+            async let containersResult = fetch {
+                try SSHOutputParser.parseDockerPS(await runner.run(SSHCommands.dockerPS, idempotent: true))
+            }
+            async let unitsResult = fetch {
+                try SSHOutputParser.parseSystemdUnits(await runner.run(SSHCommands.systemdUnits, idempotent: true))
+            }
+            async let processesResult = fetch {
+                try SSHOutputParser.parseProcesses(await runner.run(SSHCommands.processes, idempotent: true))
+            }
+            do {
+                ports = try await portsResult.get()
+                portsError = nil
+            } catch { portsError = message(for: error) }
+            do {
+                containers = try await containersResult.get()
+                containersError = nil
+            } catch { containersError = message(for: error) }
             do {
                 units = try await unitsResult.get().sorted {
                     let firstPriority = $0.active != "inactive" || $0.name.localizedCaseInsensitiveContains("magpie")
@@ -91,11 +122,17 @@ final class OverviewStore {
                 }
                 unitsError = nil
             } catch { unitsError = message(for: error) }
-            do { processes = Array(try await processesResult.get().sorted { $0.cpu > $1.cpu }.prefix(8)); processesError = nil } catch { processesError = message(for: error) }
+            do {
+                processes = Array(try await processesResult.get().sorted { $0.cpu > $1.cpu }.prefix(8))
+                processesError = nil
+            } catch { processesError = message(for: error) }
             await runner.disconnect()
         } catch {
             let text = message(for: error)
-            portsError = text; containersError = text; unitsError = text; processesError = text
+            portsError = text
+            containersError = text
+            unitsError = text
+            processesError = text
         }
         lastUpdated = Date()
     }

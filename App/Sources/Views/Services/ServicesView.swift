@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct ServicesView: View {
     @Environment(AppState.self) private var appState
     @State private var store = ServicesStore()
@@ -12,8 +13,7 @@ struct ServicesView: View {
         let items = store.entries(for: category)
         guard !searchText.isEmpty else { return items }
         return items.filter {
-            $0.name.localizedCaseInsensitiveContains(searchText) ||
-            $0.detail.localizedCaseInsensitiveContains(searchText)
+            $0.name.localizedCaseInsensitiveContains(searchText) || $0.detail.localizedCaseInsensitiveContains(searchText)
         }
     }
 
@@ -46,7 +46,8 @@ struct ServicesView: View {
             }
 
             if let message = category == .containers ? store.containersError : store.unitsError,
-               entries.isEmpty {
+                entries.isEmpty
+            {
                 Section {
                     ContentUnavailableView {
                         Label("无法读取服务", systemImage: "wifi.exclamationmark")
@@ -83,14 +84,18 @@ struct ServicesView: View {
                     HStack {
                         Text(category.rawValue)
                         Spacer()
-                        if store.isRefreshing { ProgressView().controlSize(.small).accessibilityLabel("正在刷新") }
-                        else if let updated = store.lastUpdated { Text(updated, style: .relative).textCase(nil) }
+                        if store.isRefreshing {
+                            ProgressView().controlSize(.small).accessibilityLabel("正在刷新")
+                        } else if let updated = store.lastUpdated {
+                            Text(updated, style: .relative).textCase(nil)
+                        }
                     }
                 }
             }
 
             if let message = category == .containers ? store.containersError : store.unitsError,
-               !entries.isEmpty {
+                !entries.isEmpty
+            {
                 Section { Label(message, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange) }
             }
 
@@ -98,7 +103,10 @@ struct ServicesView: View {
                 Section { Label(notice, systemImage: "checkmark.circle").foregroundStyle(.secondary).textSelection(.enabled) }
             }
             if let error = store.error {
-                Section { Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).fixedSize(horizontal: false, vertical: true) }
+                Section {
+                    Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).fixedSize(
+                        horizontal: false, vertical: true)
+                }
             }
         }
         .listStyle(.insetGrouped)
@@ -107,7 +115,9 @@ struct ServicesView: View {
         .navigationTitle("服务")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { Task { await store.refresh(appState: appState) } } label: {
+                Button {
+                    Task { await store.refresh(appState: appState) }
+                } label: {
                     Image(systemName: "arrow.clockwise")
                 }
                 .accessibilityLabel("刷新服务")
@@ -137,8 +147,7 @@ struct ServicesView: View {
             store.loadPreference(appState: appState)
             await store.refresh(appState: appState)
             while !Task.isCancelled {
-                do { try await Task.sleep(for: .seconds(appState.refreshInterval)) }
-                catch { return }
+                do { try await Task.sleep(for: .seconds(appState.refreshInterval)) } catch { return }
                 guard appState.isActive else { return }
                 await store.refresh(appState: appState)
             }
@@ -184,8 +193,11 @@ private struct ServiceRow: View {
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: DS.Spacing.small)
-                if isLoading { ProgressView().controlSize(.small).accessibilityLabel("正在操作") }
-                else { StatusBadge(kind: entry.status.kind, text: entry.status.title) }
+                if isLoading {
+                    ProgressView().controlSize(.small).accessibilityLabel("正在操作")
+                } else {
+                    StatusBadge(kind: entry.status.kind, text: entry.status.title)
+                }
             }
             if !entry.detail.isEmpty {
                 Text(entry.detail)
