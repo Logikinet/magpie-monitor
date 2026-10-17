@@ -37,7 +37,7 @@ struct UsageKPIView: View {
         let ttft = samples > 0 ? (t?.ttftMS?.value).map {
             ($0 / Double(samples)).formatted(.number.precision(.fractionLength(1))) + " ms"
         } ?? "—" : "—"
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150))], spacing: 12) {
+        return LazyVGrid(columns: [GridItem(.adaptive(minimum: 150))], spacing: 12) {
             metric(String(localized: "请求"), number(t?.calls?.value), requestDetail, DS.Palette.accent)
             metric(String(localized: "估算费用"), UsageFormat.cost(t?.cost?.value), costDetail, DS.Palette.green)
             metric("Token", UsageFormat.tokens(tokenValues.isEmpty ? nil : tokenValues.reduce(0, +)), "↓\(UsageFormat.tokens(t?.input?.value)) · ↑\(UsageFormat.tokens(t?.output?.value)) · ⚡\(UsageFormat.tokens(t?.reasoning?.value))", DS.Palette.accent)
