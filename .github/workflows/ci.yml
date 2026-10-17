@@ -83,10 +83,9 @@ jobs:
           -skipMacroValidation
           -project magpie-ios.xcodeproj
           -scheme magpie-ios
-          -configuration Debug
-          -sdk iphonesimulator
+          -configuration Release
           -destination 'generic/platform=iOS Simulator'
-          -derivedDataPath build
+          -derivedDataPath "$GITHUB_WORKSPACE/build"
           CODE_SIGNING_ALLOWED=NO
           build
       - name: Capture mock screenshots
@@ -114,7 +113,7 @@ jobs:
           xcrun simctl bootstatus "$udid" -b
           xcrun simctl status_bar "$udid" override --time '9:41' --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
           xcrun simctl ui "$udid" appearance light
-          xcrun simctl install "$udid" build/Build/Products/Debug-iphonesimulator/magpie-ios.app
+          xcrun simctl install "$udid" build/Build/Products/Release-iphonesimulator/magpie-ios.app
           mkdir -p docs/screenshots
           names=(overview activity tmux agent services)
           for i in 0 1 2 3 4; do
