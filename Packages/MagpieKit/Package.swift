@@ -12,6 +12,6 @@ let package = Package(
     ],
     targets: [
         .target(name: "MagpieKit"),
-        .testTarget(name: "MagpieKitTests", dependencies: ["MagpieKit"])
+        .testTarget(name: "MagpieKitTests", dependencies: ["MagpieKit"], resources: [.copy("Fixtures")])
     ]
 )
