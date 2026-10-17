@@ -242,10 +242,8 @@ actor SSHConnection {
 
 ## 11. 安全
 
-- **ATS（App Transport Security）**：magpie 在 tailnet 上通常走 `http://`（非 TLS）。两种方案：
-  - `NSAllowsArbitraryLoads = true`：简单，但全局放开 http，最不推荐。
-  - **异常域（推荐）**：`NSExceptionDomains` 对 `*.ts.net` / 用户自定义 tailnet 域启用 `NSExceptionAllowsInsecureHTTPLoads`，其余域保持默认安全。
-  - 折衷：若用户 host 为 IP 且不可枚举，需在异常域中使用具体 IP/域名；文档应说明此 trade-off，避免无脑 `NSAllowsArbitraryLoads`。
+- **ATS（App Transport Security）**（已决策）：同时支持 http 与 https。`Info.plist` 设 `NSAllowsArbitraryLoads = true`（tailnet 主机名/IP 不可枚举，异常域方案对分享给他人的通用 App 不可行）；https 照常工作。
+  - 使用 `http://` 的 Profile 在设置页与 Profile 列表/编辑页显示醒目的“不安全（http）”警告徽章，并提示仅在 Tailscale 等私有网络内使用。
 - 密钥只进 Keychain，不进 UserDefaults、不进日志、不进截图（Mock 模式演示无真实密钥）。
 - 私钥在内存中不持久化缓存；SSH 连接断开即释放。
 
@@ -277,7 +275,7 @@ actor SSHConnection {
         path: App/Info.plist
         properties:
           LSApplicationQueriesSchemes: [tailscale, uuremote]
-          NSAppTransportSecurity: { ... }   # 异常域策略
+          NSAppTransportSecurity: { NSAllowsArbitraryLoads: true }   # 见 §11
   ```
 - 生成：`xcodegen generate`（CI 与本地均执行）。
 
@@ -339,8 +337,8 @@ actor SSHConnection {
   验收：启动/停止前有确认；操作后状态刷新；错误文案正确。
 - **T13 Tmux Tab** — SwiftTerm + PTY + resize + 键盘附件。
   验收：`tmux attach` 可交互；旋转/键盘弹出触发 resize；Esc/Ctrl 等附件键可用。
-- **T14 Tailscale/UU Remote 深链 + ATS 异常域**。
-  验收：`LSApplicationQueriesSchemes` 声明；点击深链；http 走异常域不被 ATS 拦截。
+- **T14 Tailscale/UU Remote 深链 + ATS（NSAllowsArbitraryLoads）+ http 不安全徽章**。
+  验收：`LSApplicationQueriesSchemes` 声明；点击深链；http Profile 显示“不安全”徽章。
 - **T15 错误处理与脱敏**。
   验收：所有错误路径有中文文案；日志无密钥/cookie 值。
 - **T16 CI** — macos 构建/打包 IPA + Linux swift test。
@@ -352,7 +350,7 @@ actor SSHConnection {
 - **不** 提交 `.xcodeproj`；不提交任何密钥/私钥/真实 Profile JSON。
 - **不** 在后台做长轮询或高频轮询；后台一律挂起。
 - **不** 复制 vibebuddy 代码。
-- **不** 使用全局 `NSAllowsArbitraryLoads` 除非用户明确选择；默认用异常域。
+- **不** 在仓库中出现任何真实主机名、IP、密钥或个人信息（仓库将公开）。
 - **不** 把 Citadel 引入 MagpieKit；SSH 只存在于 SSHKit。
 - **不** 在日志/截图/测试 Fixture 中放真实凭据。
 
@@ -361,14 +359,19 @@ actor SSHConnection {
 - **runtime key 轮换**：magpie 重启后 web key 变化，需可靠重认证，否则 Agent Tab 静默失效。
 - **Citadel Linux 兼容**：已通过拆分 SSHKit 规避，代价是 SSH 逻辑无法在 Linux 单测，靠解析器纯函数 + macos 集成测试覆盖。
 - **SSH 输出格式漂移**：`ss`/`docker ps`/`systemctl` 跨发行版/版本输出不同，解析器要容忍列数变化与缺失字段。
-- **ATS 与 http**：tailnet 非 TLS 依赖异常域；用户 host 多变时配置成本高。
+- **ATS 与 http**：全局放开 http，靠 UI 徽章提醒用户；建议在 Tailscale 内使用或改用 https。
 - **TOFU 误报**：主机重装/重建容器导致指纹变化属正常，需清晰的重置 UI，避免用户误以为被攻击。
 
-## 19. 待用户决策
-1. 概览/动态的前台轮询间隔（建议 15–30s；是否需可配置）。
-2. 是否内置 `MAGPIE_WEB_KEY` 固定时的“记住 cookie”行为（与 session cookie 的差异提示）。
-3. ATS 策略：异常域 vs 全局放开（给出默认推荐：异常域 + 用户可添加 host）。
-4. SSH 私钥格式范围（是否只支持 ed25519/rsa，是否支持加密私钥口令）。
-5. 是否需要在概览 Tab 增加 gateway `/v1/magpie/limit` 的显式展示。
-6. UU Remote 按钮目标语义（仅跳转 App vs 打开具体受控端，后者需更多 URL 参数信息）。
-7. Mock Fixture 是否提交仓库（建议提交脱敏示例，便于截图与 CI）。
+## 19. 用户决策（已定）
+1. 前台轮询间隔默认 **20s**，设置页可配置（如 10/20/30/60s）；后台停止。
+2. Web cookie：App 每次可直接带 `Cookie: magpie_web_<port>=<key>`；cookie 失效（401/403 重认证仍失败）时提示“建议在 magpie 设置固定 `MAGPIE_WEB_KEY`”。
+3. ATS：`NSAllowsArbitraryLoads = true`，http/https 均支持；http Profile 显示“不安全”徽章（见 §11）。
+4. SSH 认证：ed25519 + RSA 私钥（支持带口令的加密私钥，能力以 Citadel 为准）+ 密码认证。
+5. Overview 可显示 `/v1/magpie/limit`（简单展示，非必需）。
+6. UU Remote 按钮仅打开 `uuremote://`（`LSApplicationQueriesSchemes` 声明）。
+7. 提交脱敏 Mock Fixture JSON（无真实主机/密钥/个人信息）。
+8. 403 时提示开启 magpie “Share on local network”；错误文案为中文（UI 中文，README 中英双语）。
+9. Mock 数据模式全程显示 “Mock data” 徽章，用于无服务器截图。
+10. CI：macOS job 构建**未签名** IPA（`CODE_SIGNING_ALLOWED=NO`，`Payload/` zip → `magpie-ios.ipa` artifact）；Linux job `swift test` MagpieKit。无签名配置。
+11. 仓库将公开（Logikinet/magpie-ios）：MIT LICENSE，并在 README/NOTICE 中致谢 magpie、SwiftTerm、Citadel 及其许可证。
+12. README 中英双语：功能、配置（Tailscale、magpie 设置、轻松签/LCSign 签名）、截图占位（日后 CI/模拟器 Mock 生成，标注 mock）。
