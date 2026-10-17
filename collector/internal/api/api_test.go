@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"magpie-monitor/collector/internal/config"
 )
@@ -20,7 +22,7 @@ func (f *fake) Collect(_ context.Context, kind string) (any, error) {
 	case "runtimes":
 		return map[string]any{"agents": []any{map[string]any{"id": "codex", "installed": true}}}, nil
 	case "services":
-		return map[string]any{"services": []any{map[string]any{"scope": "user", "port": 8080, "cmdline": "hidden", "cwd": "/home/demo/devbox", "text": "demo-user@example.com"}, map[string]any{"scope": "system", "port": 22}}}, nil
+		return map[string]any{"services": []any{map[string]any{"scope": "user", "port": 8080, "web": true, "cmdline": "hidden", "cwd": "/home/demo/devbox", "text": "demo-user@example.com"}, map[string]any{"scope": "system", "port": 22, "web": false}, "malformed", map[string]any{"port": 1234}}}, nil
 	case "chart":
 		return []any{1, 2, 3}, nil
 	case "activity":
@@ -77,6 +79,34 @@ func TestHandlers(t *testing.T) {
 		t.Fatal(h)
 	}
 }
+func TestHelloAdvertisesWritableActions(t *testing.T) {
+	s := &Server{Backend: &fake{}, Config: config.Config{AllowActions: true, ActionKey: "demo-action", AuditLog: filepath.Join(t.TempDir(), "audit.jsonl")}}
+	w := request(s, "GET", "hello", "", "")
+	var hello map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &hello); err != nil {
+		t.Fatal(err)
+	}
+	caps := hello["caps"].([]any)
+	for _, expected := range []string{"actions/tmux-send", "actions/tmux-kill", "actions/tmux-new", "actions/tmux-wake", "actions/quota-refresh"} {
+		found := false
+		for _, cap := range caps {
+			if cap == expected {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("missing %s from %#v", expected, caps)
+		}
+	}
+}
+func TestWebScopeSkipsMalformedRowsAndUsesWebFlag(t *testing.T) {
+	f := &fake{}
+	s := &Server{Backend: f}
+	w := request(s, "GET", "services?scope=web", "", "")
+	if w.Code != 200 || strings.Count(w.Body.String(), `"port"`) != 1 || !strings.Contains(w.Body.String(), `"web":true`) {
+		t.Fatalf("unexpected web-filter response: %d %s", w.Code, w.Body)
+	}
+}
 func TestActions(t *testing.T) {
 	f := &fake{}
 	audit := filepath.Join(t.TempDir(), "audit.jsonl")
@@ -129,6 +159,24 @@ func TestActionAllowlist(t *testing.T) {
 			t.Fatal(e)
 		}
 	}
+	for _, item := range []struct {
+		action   string
+		body     Action
+		expected string
+	}{
+		{"tmux-kill", Action{Session: "demo.session"}, "tmux kill-session -t =demo.session"},
+		{"tmux-new", Action{Name: "demo-session"}, "tmux new-session -d -s demo-session"},
+		{"tmux-wake", Action{Session: "demo"}, "tmux new-session -Ad -s demo"},
+	} {
+		if _, e := l.Action(context.Background(), item.action, item.body); e != nil || calls[len(calls)-1] != item.expected {
+			t.Fatalf("%s: calls=%v err=%v", item.action, calls, e)
+		}
+	}
+	for _, session := range []string{"-a", "bad name", ""} {
+		if _, e := l.Action(context.Background(), "tmux-wake", Action{Session: session}); e == nil {
+			t.Fatalf("accepted invalid session %q", session)
+		}
+	}
 	if _, e := l.Action(context.Background(), "tmux-send", Action{Target: "-a"}); e == nil {
 		t.Fatal("option injection")
 	}
@@ -140,6 +188,29 @@ func TestActionAllowlist(t *testing.T) {
 		t.Fatal(calls)
 	}
 }
+func TestWebProbe(t *testing.T) {
+	called := false
+	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		called = true
+		recorder := httptest.NewRecorder()
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusNotFound) }).ServeHTTP(recorder, r)
+		response := recorder.Result()
+		response.Request = r
+		return response, nil
+	})}
+	if !probeWeb(client, 49152) || !called {
+		t.Fatal("an HTTP response should identify a web listener")
+	}
+	services := []map[string]any{{"port": 22}, {"port": 5355}, {"port": "bad"}}
+	markWebServices(services)
+	if services[0]["web"] != false || services[1]["web"] != false || services[2]["web"] != false {
+		t.Fatalf("probe results: %#v", services)
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 func TestLocalCachesAndRing(t *testing.T) {
 	l := New(config.Config{})
 	calls := 0
@@ -160,5 +231,16 @@ func TestLocalCachesAndRing(t *testing.T) {
 	_, _ = l.Collect(context.Background(), "unknown")
 	if calls != before {
 		t.Fatal("unknown command")
+	}
+}
+
+func TestQuotaRefreshInvalidatesRuntimeCache(t *testing.T) {
+	l := New(config.Config{})
+	l.cache["runtimes"] = cached{value: map[string]any{"stale": true}, at: time.Now()}
+	if _, err := l.Action(context.Background(), "quota-refresh", Action{}); err != nil {
+		t.Fatal(err)
+	}
+	if _, exists := l.cache["runtimes"]; exists {
+		t.Fatal("runtime cache was not invalidated")
 	}
 }

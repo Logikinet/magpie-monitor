@@ -26,6 +26,7 @@ const Version = "0.1.0"
 
 var publishedPorts = regexp.MustCompile(`:(\d+)->`)
 var unitName = regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.@:-]*\.service$`)
+var tmuxActionName = regexp.MustCompile(`^[A-Za-z0-9_.:%-]+$`)
 
 func intString(n int) string { return strconv.Itoa(n) }
 
@@ -88,7 +89,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if p == "hello" {
 		host, _ := os.Hostname()
-		s.write(w, 200, map[string]any{"name": "magpie-collector", "version": Version, "host": host, "caps": append(append([]string{}, parts...), "tmux/capture", "snapshot", "magpie/routing", "magpie/usage", "magpie/providers"), "readonly": !s.Config.Writable()})
+		caps := append(append([]string{}, parts...), "tmux/capture", "snapshot", "magpie/routing", "magpie/usage", "magpie/providers")
+		if s.Config.Writable() {
+			caps = append(caps, "actions/svc-pause", "actions/svc-resume", "actions/unit-start", "actions/unit-stop", "actions/tmux-send", "actions/tmux-kill", "actions/tmux-new", "actions/tmux-wake", "actions/task-run", "actions/quota-refresh")
+		}
+		s.write(w, 200, map[string]any{"name": "magpie-collector", "version": Version, "host": host, "caps": caps, "readonly": !s.Config.Writable()})
 		return
 	}
 	if p == "tmux/capture" {
@@ -208,9 +213,22 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		if kind == "services" && scope != "" && scope != "all" {
 			rows := []any{}
-			for _, row := range m["services"].([]any) {
-				svc := row.(map[string]any)
-				if svc["scope"] == scope || (scope == "web" && webPort(svc["port"])) {
+			rowsIn, ok := m["services"].([]any)
+			if !ok {
+				m["services"] = rows
+				s.write(w, 200, v)
+				return
+			}
+			for _, row := range rowsIn {
+				svc, ok := row.(map[string]any)
+				if !ok {
+					continue
+				}
+				if scope == "web" {
+					if svc["web"] == true {
+						rows = append(rows, svc)
+					}
+				} else if svc["scope"] == scope {
 					rows = append(rows, svc)
 				}
 			}
@@ -219,9 +237,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	s.write(w, 200, v)
 }
-func webPort(v any) bool {
-	n, ok := v.(float64)
-	return ok && (n == 80 || n == 443 || n == 3000 || n == 3426 || n == 5173 || n == 8000 || n == 8080 || n == 8787)
+func validTmuxActionName(s string) bool {
+	return s != "" && !strings.HasPrefix(s, "-") && tmuxActionName.MatchString(s)
 }
 func boundedInt(s string, def, min, max int) (int, error) {
 	if s == "" {
@@ -284,7 +301,7 @@ func (s *Server) action(w http.ResponseWriter, r *http.Request, action string) {
 		s.fail(w, 401, "action token required")
 		return
 	}
-	if !contains([]string{"svc-pause", "svc-resume", "unit-start", "unit-stop", "tmux-send", "tmux-kill", "tmux-new", "task-run"}, action) {
+	if !contains([]string{"svc-pause", "svc-resume", "unit-start", "unit-stop", "tmux-send", "tmux-kill", "tmux-new", "tmux-wake", "task-run", "quota-refresh"}, action) {
 		s.fail(w, 404, "unknown action")
 		return
 	}

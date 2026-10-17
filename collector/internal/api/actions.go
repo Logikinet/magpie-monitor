@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"magpie-monitor/collector/internal/agents"
-	"magpie-monitor/collector/internal/tmux"
 )
 
 func contains(items []string, item string) bool {
@@ -70,13 +69,13 @@ func (l *Local) Action(ctx context.Context, action string, b Action) (any, error
 		}
 		name = "systemctl"
 	case "tmux-kill":
-		if !tmux.ValidName(b.Session) {
+		if !validTmuxActionName(b.Session) {
 			return nil, errors.New("invalid session")
 		}
 		name = "tmux"
 		args = []string{"kill-session", "-t", "=" + b.Session}
 	case "tmux-send":
-		if !tmux.ValidTarget(b.Target) {
+		if !validTmuxActionName(b.Target) {
 			return nil, errors.New("invalid target")
 		}
 		name = "tmux"
@@ -89,7 +88,7 @@ func (l *Local) Action(ctx context.Context, action string, b Action) (any, error
 			args = []string{"send-keys", "-t", b.Target, "-l", "--", b.Text}
 		}
 	case "tmux-new":
-		if !tmux.ValidName(b.Name) {
+		if !validTmuxActionName(b.Name) {
 			return nil, errors.New("invalid session name")
 		}
 		if b.Agent != "" && !contains(agents.IDs, b.Agent) {
@@ -134,6 +133,17 @@ func (l *Local) Action(ctx context.Context, action string, b Action) (any, error
 		} else if b.Prompt != "" {
 			return nil, errors.New("prompt requires a registry agent")
 		}
+	case "tmux-wake":
+		if !validTmuxActionName(b.Session) {
+			return nil, errors.New("invalid session")
+		}
+		name = "tmux"
+		args = []string{"new-session", "-Ad", "-s", b.Session}
+	case "quota-refresh":
+		l.mu.Lock()
+		delete(l.cache, "runtimes")
+		l.mu.Unlock()
+		return map[string]any{"ok": true}, nil
 
 	default:
 		return nil, errors.New("unknown action")

@@ -130,6 +130,7 @@ func (l *Local) Collect(ctx context.Context, kind string) (any, error) {
 				services = append(services, map[string]any{"name": unit["unit"], "unit": unit["unit"], "type": "systemd", "scope": scope, "state": unit["active"], "port": nil, "pids": []int{}})
 			}
 		}
+		markWebServices(services)
 		v["services"] = services
 		out = v
 	case "tmux":
