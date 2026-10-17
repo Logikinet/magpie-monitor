@@ -11,6 +11,7 @@ import {
   TmuxView,
   RuntimesView,
   gigabytes,
+  localDayKey,
   portalServices,
 } from '../../src/views/collector/CollectorViews';
 import { readPage } from '../../src/views/agent/AgentNav';
@@ -22,6 +23,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 const client = new CollectorClient(new MockTransport());
+function localDay(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
 async function data() {
   return {
     sys: await client.sys(),
@@ -201,22 +207,52 @@ it('formats durations for all supported languages without inventing missing valu
 });
 
 it('renders all activity filters, file truncation, nodes and only supplied diff links', async () => {
+  const fixedNow = new Date('2026-10-17T03:30:00Z');
+  const probe = new Date('2026-10-16T18:30:00Z');
+  expect(localDayKey(probe)).toBe(localDay(probe));
   const d = await data();
-  await act(() => render(<ActivityTimeline data={d} />, root));
-  expect(root.querySelectorAll('.collector-chips button')).toHaveLength(7);
-  expect(root.querySelectorAll('.activity-timeline')).toHaveLength(3);
-  expect(root.querySelector('.act-spine.first .act-node')).not.toBeNull();
-  expect(root.querySelector('.act-spine.last')).not.toBeNull();
-  expect(root.querySelector('.commit-files')?.querySelectorAll('p')).toHaveLength(8);
-  expect(root.querySelector('.commit-files small')?.textContent).toContain('3');
-  expect(root.querySelector('.pii')).not.toBeNull();
-  for (const anchor of root.querySelectorAll('a')) {
-    expect(d.activity.events.some((e: any) => e.url === anchor.href)).toBe(true);
+  localStorage.setItem('mm-lang', 'zh');
+  try {
+    await act(() => render(<ActivityTimeline data={d} now={fixedNow} />, root));
+    expect(root.querySelectorAll('.collector-chips button')).toHaveLength(7);
+    const events = [...d.activity.events].sort((a: { ts: number }, b: { ts: number }) => b.ts - a.ts);
+    let published = false;
+    const visible = events.filter((e: { auto_publish?: boolean }) => {
+      if (!e.auto_publish) return true;
+      if (published) return false;
+      published = true;
+      return true;
+    });
+    const groups = new Map<string, number>();
+    for (const event of visible) {
+      const day = localDay(new Date(event.ts * 1000));
+      groups.set(day, (groups.get(day) ?? 0) + 1);
+    }
+    const today = localDay(fixedNow);
+    const sections = [...root.querySelectorAll('.activity-timeline')];
+    expect(sections).toHaveLength(groups.size);
+    [...groups].forEach(([day, count], index) => {
+      const heading = sections[index].querySelector('h2')?.textContent ?? '';
+      expect(heading).toContain(day);
+      expect(heading).toContain(`（${count} 项变更）`);
+      expect(heading.includes('今天')).toBe(day === today);
+      expect(sections[index].querySelectorAll('.act-node')).toHaveLength(count);
+    });
+    expect(root.querySelector('.act-spine.first .act-node')).not.toBeNull();
+    expect(root.querySelector('.act-spine.last')).not.toBeNull();
+    expect(root.querySelector('.commit-files')?.querySelectorAll('p')).toHaveLength(8);
+    expect(root.querySelector('.commit-files small')?.textContent).toContain('3');
+    expect(root.querySelector('.pii')).not.toBeNull();
+    for (const anchor of root.querySelectorAll('a')) {
+      expect(d.activity.events.some((e: any) => e.url === anchor.href)).toBe(true);
+    }
+    await act(() => root.querySelectorAll<HTMLButtonElement>('.collector-chips button')[2].click());
+    expect(root.querySelectorAll('.act-node')).toHaveLength(3);
+    await act(() => root.querySelectorAll<HTMLButtonElement>('.collector-chips button')[5].click());
+    expect(root.querySelectorAll('.act-node')).toHaveLength(3);
+  } finally {
+    localStorage.removeItem('mm-lang');
   }
-  await act(() => root.querySelectorAll<HTMLButtonElement>('.collector-chips button')[2].click());
-  expect(root.querySelectorAll('.act-node')).toHaveLength(3);
-  await act(() => root.querySelectorAll<HTMLButtonElement>('.collector-chips button')[5].click());
-  expect(root.querySelectorAll('.act-node')).toHaveLength(3);
 });
 
 it('classifies HTTP services from metadata and preserves zero resources', async () => {

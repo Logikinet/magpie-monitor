@@ -350,7 +350,13 @@ function RuntimeQuotas({ agents }: { agents: RecordData[] }) {
     <Empty />
   );
 }
-export function ActivityTimeline({ data }: { data: RecordData }) {
+/** Local calendar day (`YYYY-MM-DD`) in the runtime timezone. */
+export function localDayKey(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+export function ActivityTimeline({ data, now = new Date() }: { data: RecordData; now?: Date }) {
   const [filter, setFilter] = useState('all'),
     [autoPublish, setAutoPublish] = useState(false);
   const events: RecordData[] = [...(data.activity?.events ?? [])].sort((a, b) => b.ts - a.ts);
@@ -361,13 +367,12 @@ export function ActivityTimeline({ data }: { data: RecordData }) {
     published = true;
     return true;
   });
-  const dayKey = (date: Date) =>
-    new Intl.DateTimeFormat('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+  const today = localDayKey(now);
   const days = new Map<string, RecordData[]>();
   visible
     .filter((e) => activityMatches(e, filter))
     .forEach((e) => {
-      const day = dayKey(new Date(e.ts * 1000));
+      const day = localDayKey(new Date(e.ts * 1000));
       days.set(day, [...(days.get(day) ?? []), e]);
     });
   return (
@@ -390,7 +395,7 @@ export function ActivityTimeline({ data }: { data: RecordData }) {
         <section class="activity-timeline">
           <h2>
             {day} ·{' '}
-            {day === dayKey(new Date())
+            {day === today
               ? text('today')
               : new Intl.DateTimeFormat(detectLocale(), { weekday: 'long' }).format(
                   new Date(rows[0].ts * 1000),
